@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>B&T Pro Mark - Online</title>
+<title>Chấm Trắc Nghiệm</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Itim&display=swap">
 <style>
@@ -229,6 +229,11 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
 .lv-bar{height:5px;border-radius:3px;background:#fff3;overflow:hidden}
 .lv-bar i{display:block;height:100%;width:0;background:#3ddc84;transition:width .12s}
 .lv-last{background:#000b;border:1px solid #fff4;border-radius:12px;padding:8px 12px;font-size:14px;text-align:center}
+.lv-opts{display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+.lv-score{position:absolute;z-index:3;top:calc(max(12px,env(safe-area-inset-top)) + 58px);right:16px;background:#000b;border:1px solid #fff5;border-radius:14px;padding:8px 14px;text-align:center;line-height:1.1}
+.lv-score b{font:700 34px/1 'Itim','Be Vietnam Pro',sans-serif;color:#ff6b5e}
+.lv-score span{font-size:16px;opacity:.85}
+.lv-score small{display:block;font-size:11px;opacity:.8;margin-top:4px}
 
 </style>
 
@@ -273,8 +278,9 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
       <div class="lv-top">
         <button class="lv-btn" type="button" id="lvClose" aria-label="Đóng">✕</button>
         <div class="lv-chip" id="lvChip">Chưa chấm tờ nào</div>
-        <label class="lv-cont"><input type="checkbox" id="lvCont"> Chấm liên tiếp</label>
+        <div class="lv-opts"><label class="lv-cont"><input type="checkbox" id="lvLive" checked> Hiện kết quả ngay</label><label class="lv-cont"><input type="checkbox" id="lvCont"> Chấm liên tiếp</label></div>
       </div>
+      <div class="lv-score" id="lvScore" hidden></div>
       <div class="lv-bottom">
         <div class="lv-msg" id="lvMsg">Đang mở camera…</div>
         <div class="lv-bar"><i id="lvBar"></i></div>
@@ -1154,10 +1160,10 @@ function renderPhoto(sheetImg, cfg, marks, o) {
 
 
   /* ---------- Chấm trực tiếp: neo 4 góc, tự chụp và chấm ---------- */
-  const LV = { stream: null, raf: 0, timer: 0, stable: 0, last: null, busy: false, miss: 0, cool: 0, count: 0, work: document.createElement('canvas') };
+  const LV = { rd: null, rdT: 0, stream: null, raf: 0, timer: 0, stable: 0, last: null, busy: false, miss: 0, cool: 0, count: 0, work: document.createElement('canvas') };
   function camSupported() { return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); }
   function lvMsg(t) { $('#lvMsg').textContent = t; }
-  function lvOverlay(pts, state) {
+  function lvOverlay(pts, state, rd) {
     const cv = $('#lvOv'), v = $('#lvVideo'), r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
     if (cv.width !== Math.round(r.width * dpr)) { cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); }
     const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, r.width, r.height);
@@ -1170,6 +1176,12 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         c.beginPath(); c.moveTo(q[0], q[1] + q[3] * L); c.lineTo(q[0], q[1]); c.lineTo(q[0] + q[2] * L, q[1]); c.stroke();
       });
       return;
+    }
+    if (rd) {
+      const sc = rd.scan, kk = k / rd.k;
+      c.save(); c.translate(ox, oy); c.scale(kk, kk);
+      try { paintMarks(c, sc, rd.g, cfg.versions[sc.ver], Math.max(1.6, sc.ppm * 0.26)); } catch (e) {}
+      c.restore();
     }
     const col = state === 'ok' ? '#3ddc84' : '#ffd23f', P = pts.map(function (p) { return [p[0] * LV.sx * k + ox, p[1] * LV.sy * k + oy]; });
     const sd = Math.max(14, (LV.side || 8) * LV.sx * k * 1.6);
@@ -1188,6 +1200,22 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     for (let i = 0; i < 4; i++) if (Math.hypot(a[i][0] - b[i][0], a[i][1] - b[i][1]) > diag * 0.018) return false;
     return true;
   }
+  function lvRead(v) {
+    const k = Math.min(1, 1000 / Math.max(v.videoWidth, v.videoHeight)), w = Math.round(v.videoWidth * k), h = Math.round(v.videoHeight * k);
+    const cv = LV.rdc || (LV.rdc = document.createElement('canvas')); cv.width = w; cv.height = h;
+    const c = cv.getContext('2d', { willReadFrequently: true }); c.drawImage(v, 0, 0, w, h);
+    const r = analyzeImage(c.getImageData(0, 0, w, h), w, h, cfg, cfg.thr);
+    if (r.error) return null;
+    r.sbdStr = r.sbd.join(''); r.mdStr = r.md.join(''); pickVersionFor(r);
+    const g = gradeAll({ p1: r.p1, p2: r.p2, p3: r.p3 }, cfg, cfg.versions[r.ver]);
+    return { scan: r, g: g, k: k };
+  }
+  function lvShowScore(rd) {
+    const e = $('#lvScore');
+    if (!rd) { e.hidden = true; return; }
+    e.hidden = false;
+    e.innerHTML = '<b>' + fmt(rd.g.total) + '</b><span>/' + fmt(rd.g.max) + '</span><small>SBD ' + esc(rd.scan.sbdStr || '—') + ' · Mã đề ' + esc(rd.scan.mdStr || '—') + '</small>';
+  }
   function lvTick() {
     if (!LV.stream) return;
     const v = $('#lvVideo');
@@ -1203,7 +1231,9 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       LV.side = d.side; const diag = Math.hypot(w, h);
       LV.stable = lvSameQuad(LV.last, d.pts, diag) ? LV.stable + 1 : 1; LV.last = d.pts; LV.miss = 0;
       const need = 5;
-      lvOverlay(d.pts, LV.stable >= 2 ? 'ok' : 'wait');
+      const t = Date.now();
+      if (LV.stable >= 1 && t - LV.rdT > 300) { LV.rdT = t; try { LV.rd = lvRead(v); } catch (e) { LV.rd = null; } lvShowScore(LV.rd); }
+      lvOverlay(d.pts, LV.stable >= 2 ? 'ok' : 'wait', $('#lvLive').checked ? LV.rd : null);
       $('#lvBar').style.width = Math.min(100, LV.stable / need * 100) + '%';
       lvMsg(LV.stable >= 2 ? 'Giữ yên máy…' : 'Đã thấy phiếu');
       if (LV.stable >= need) { lvCapture(false); return; }
@@ -1213,6 +1243,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       else if (d.found === 1) lvMsg('Thấy 4 góc nhưng chưa rõ chiều phiếu, giữ máy thẳng hơn');
       else lvMsg('Đưa 4 ô vuông đen ở góc phiếu vào khung');
       lvOverlay(d.found >= 1 ? d.pts : null, 'wait');
+      if (LV.miss > 4) { LV.rd = null; lvShowScore(null); }
     }
     LV.timer = setTimeout(lvTick, 90);
   }
@@ -1232,7 +1263,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       const e = $('#lvLast'); e.hidden = false;
       e.textContent = 'SBD ' + (s.sbdStr || '—') + ' · Mã đề ' + (s.mdStr || '—') + ' · ' + (Math.round(g.total * 100) / 100) + '/' + (Math.round(g.max * 100) / 100) + ' điểm' + (s.matched ? '' : ' (chưa khớp mã đề, dùng đáp án đang chọn)');
       scan = s; s.saved = true;
-      lvMsg('Xong, đưa tờ tiếp theo vào'); LV.cool = Date.now() + 2200; LV.timer = setTimeout(lvTick, 200);
+      lvShowScore({ scan: s, g: g }); lvMsg('Xong, đưa tờ tiếp theo vào'); LV.cool = Date.now() + 2200; LV.timer = setTimeout(lvTick, 200);
       return;
     }
     scan = s; lvStop(); renderScan();
@@ -1247,8 +1278,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   }
   async function startLive() {
     if (!camSupported()) { scan = { error: 'cam', camTitle: 'Trình duyệt này không hỗ trợ camera trực tiếp.', camBody: 'Dùng nút Chụp ảnh rồi chấm để thay thế.' }; renderScan(); return; }
-    LV.count = 0; LV.stable = 0; LV.last = null; LV.miss = 0; LV.cool = 0; LV.busy = false;
-    $('#lvChip').textContent = 'Chưa chấm tờ nào'; $('#lvLast').hidden = true; $('#lvBar').style.width = '0';
+    LV.count = 0; LV.rd = null; LV.stable = 0; LV.last = null; LV.miss = 0; LV.cool = 0; LV.busy = false;
+    $('#lvChip').textContent = 'Chưa chấm tờ nào'; lvShowScore(null); $('#lvLast').hidden = true; $('#lvBar').style.width = '0';
     $('#live').hidden = false; document.body.style.overflow = 'hidden'; lvMsg('Đang mở camera…'); lvOverlay(null);
     try {
       let st;
@@ -1270,41 +1301,44 @@ function renderPhoto(sheetImg, cfg, marks, o) {
 
   /* ---------- Hiển thị kết quả chấm ---------- */
   function grade() { return gradeAll({ p1: scan.p1, p2: scan.p2, p3: scan.p3 }, cfg, cfg.versions[scan.ver]); }
-  function ringPts(b, f) {
-    const H = hOf(scan.HB, b.y), pts = [];
+  function ringPts(sc, b, f) {
+    const H = hOf(sc.HB, b.y), pts = [];
     for (let i = 0; i < 20; i++) { const t = i * Math.PI / 10; pts.push(applyH(H, b.x + RB * f * Math.cos(t), b.y + RB * f * Math.sin(t))); }
     return pts;
   }
-  function drawOverlay() {
-    const cv = scan.view, c = cv.getContext('2d'), g = grade(), ver = cfg.versions[scan.ver];
-    c.drawImage(scan.photo, 0, 0);
-    const lw = Math.max(1.8, scan.ppm * 0.28);
+  function paintMarks(c, sc, g, ver, lw) {
     c.lineJoin = 'round';
-    c.strokeStyle = 'rgba(60,130,255,0.9)'; c.lineWidth = Math.max(2, lw); c.setLineDash([]);
-    c.beginPath(); scan.P.forEach(function (p, i) { if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath(); c.stroke();
     function poly(pts, col, dash, w) {
       c.beginPath(); pts.forEach(function (p, i) { if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath();
       c.setLineDash(dash ? [lw * 1.4, lw * 1.1] : []); c.strokeStyle = col; c.lineWidth = w || lw; c.stroke(); c.setLineDash([]);
     }
     const GOOD = '#1fb86a', BAD = '#ff4b3e', NEU = '#9aa3b5', KEY = '#1fb86a';
-    scan.L.p1.forEach(function (b) {
-      const st = g.p1.st[b.q], isSel = scan.p1[b.q].indexOf(b.o) >= 0, isKey = ver.mcq[b.q] === b.o;
-      if (isSel) poly(ringPts(b, 1.4), st === 'ok' ? GOOD : (st === 'skip' ? NEU : BAD), false);
-      else if (isKey && st !== 'ok') poly(ringPts(b, 1.4), KEY, true, lw * 0.9);
+    sc.L.p1.forEach(function (b) {
+      const st = g.p1.st[b.q], isSel = sc.p1[b.q].indexOf(b.o) >= 0, isKey = ver.mcq[b.q] === b.o;
+      if (isSel) poly(ringPts(sc, b, 1.4), st === 'ok' ? GOOD : (st === 'skip' ? NEU : BAD), false);
+      else if (isKey && st !== 'ok') poly(ringPts(sc, b, 1.4), KEY, true, lw * 0.9);
     });
-    scan.L.p2.forEach(function (b) {
-      const sv = scan.p2[b.q][b.r], kv = ver.tf[b.q][b.r], mine = b.s === 0 ? 'D' : 'S';
+    sc.L.p2.forEach(function (b) {
+      const sv = sc.p2[b.q][b.r], kv = ver.tf[b.q][b.r], mine = b.s === 0 ? 'D' : 'S';
       const isSel = sv === mine || sv === 'X';
-      if (isSel) poly(ringPts(b, 1.4), kv === null ? NEU : (kv === mine && sv !== 'X' ? GOOD : BAD), false);
-      else if (kv === mine && sv !== kv) poly(ringPts(b, 1.4), KEY, true, lw * 0.9);
+      if (isSel) poly(ringPts(sc, b, 1.4), kv === null ? NEU : (kv === mine && sv !== 'X' ? GOOD : BAD), false);
+      else if (kv === mine && sv !== kv) poly(ringPts(sc, b, 1.4), KEY, true, lw * 0.9);
     });
-    scan.L.p3.forEach(function (b) {
-      const cells = numToCells(scan.p3[b.q]), st = g.p3.st[b.q];
-      if (cells.some(function (m) { return m.c === b.c && m.k === b.k; })) poly(ringPts(b, 1.4), st === 'ok' ? GOOD : (st === 'skip' ? NEU : BAD), false);
-      else if (st !== 'ok' && st !== 'skip' && numToCells(ver.num[b.q]).some(function (m) { return m.c === b.c && m.k === b.k; })) poly(ringPts(b, 1.4), KEY, true, lw * 0.9);
+    sc.L.p3.forEach(function (b) {
+      const cells = numToCells(sc.p3[b.q]), st = g.p3.st[b.q];
+      if (cells.some(function (m) { return m.c === b.c && m.k === b.k; })) poly(ringPts(sc, b, 1.4), st === 'ok' ? GOOD : (st === 'skip' ? NEU : BAD), false);
+      else if (st !== 'ok' && st !== 'skip' && numToCells(ver.num[b.q]).some(function (m) { return m.c === b.c && m.k === b.k; })) poly(ringPts(sc, b, 1.4), KEY, true, lw * 0.9);
     });
-    scan.L.sbd.forEach(function (b) { if (scan.sbd[b.c] === String(b.d)) poly(ringPts(b, 1.45), 'rgba(60,130,255,0.95)', false, lw * 0.9); });
-    scan.L.md.forEach(function (b) { if (scan.md[b.c] === String(b.d)) poly(ringPts(b, 1.45), 'rgba(60,130,255,0.95)', false, lw * 0.9); });
+    sc.L.sbd.forEach(function (b) { if (sc.sbd[b.c] === String(b.d)) poly(ringPts(sc, b, 1.45), 'rgba(60,130,255,0.95)', false, lw * 0.9); });
+    sc.L.md.forEach(function (b) { if (sc.md[b.c] === String(b.d)) poly(ringPts(sc, b, 1.45), 'rgba(60,130,255,0.95)', false, lw * 0.9); });
+  }
+  function drawOverlay() {
+    const cv = scan.view, c = cv.getContext('2d'), g = grade(), ver = cfg.versions[scan.ver];
+    c.drawImage(scan.photo, 0, 0);
+    const lw = Math.max(1.8, scan.ppm * 0.28);
+    c.strokeStyle = 'rgba(60,130,255,0.9)'; c.lineWidth = Math.max(2, lw); c.setLineDash([]);
+    c.beginPath(); scan.P.forEach(function (p, i) { if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath(); c.stroke();
+    paintMarks(c, scan, g, ver, lw);
   }
   function warnHTML() {
     let h = '';
