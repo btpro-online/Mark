@@ -213,6 +213,23 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
 .qrpaste[open] summary { margin-bottom: 6px; }
 .qrpaste .actions { margin-top: 8px; }
 
+/* ---- Quét trực tiếp ---- */
+.live{position:fixed;inset:0;z-index:50;background:#000;color:#fff;display:flex;flex-direction:column}
+.live[hidden]{display:none}
+.live video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+.live canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.lv-top,.lv-bottom{position:relative;z-index:2;display:flex;align-items:center;gap:10px;padding:12px max(16px,env(safe-area-inset-left)) 12px max(16px,env(safe-area-inset-right))}
+.lv-top{padding-top:max(12px,env(safe-area-inset-top));background:linear-gradient(#000a,#0000)}
+.lv-bottom{margin-top:auto;flex-direction:column;align-items:stretch;padding-bottom:max(16px,env(safe-area-inset-bottom));background:linear-gradient(#0000,#000b)}
+.lv-btn{border:1px solid #fff6;background:#0008;color:#fff;border-radius:999px;min-width:44px;height:44px;font:600 15px/1 inherit;font-family:inherit;cursor:pointer;padding:0 14px}
+.lv-btn.wide{height:48px;background:#fff;color:#111;border-color:#fff}
+.lv-chip{flex:1;text-align:center;font-size:14px;font-weight:600;text-shadow:0 1px 3px #000}
+.lv-cont{display:flex;align-items:center;gap:6px;font-size:13px;text-shadow:0 1px 3px #000}
+.lv-msg{text-align:center;font-size:16px;font-weight:600;text-shadow:0 1px 4px #000;min-height:22px}
+.lv-bar{height:5px;border-radius:3px;background:#fff3;overflow:hidden}
+.lv-bar i{display:block;height:100%;width:0;background:#3ddc84;transition:width .12s}
+.lv-last{background:#000b;border:1px solid #fff4;border-radius:12px;padding:8px 12px;font-size:14px;text-align:center}
+
 </style>
 
 <div class="wrap">
@@ -233,9 +250,13 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
     <section id="v-scan" class="view" aria-label="Chấm bài">
       <div class="card">
         <div class="actions">
-          <label class="btn primary big" for="cam">
+          <button class="btn primary big" type="button" id="btnLive">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+            Chấm trực tiếp (tự chụp)
+          </button>
+          <label class="btn" for="cam">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>
-            Chụp phiếu để chấm
+            Chụp ảnh rồi chấm
           </label>
           <input class="vh" type="file" id="cam" accept="image/*" capture="environment">
           <label class="btn" for="pick">Chọn ảnh có sẵn</label>
@@ -246,6 +267,21 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
       </div>
       <div id="scanOut" aria-live="polite"></div>
     </section>
+    <div id="live" class="live" hidden role="dialog" aria-label="Chấm trực tiếp">
+      <video id="lvVideo" playsinline muted autoplay></video>
+      <canvas id="lvOv"></canvas>
+      <div class="lv-top">
+        <button class="lv-btn" type="button" id="lvClose" aria-label="Đóng">✕</button>
+        <div class="lv-chip" id="lvChip">Chưa chấm tờ nào</div>
+        <label class="lv-cont"><input type="checkbox" id="lvCont"> Chấm liên tiếp</label>
+      </div>
+      <div class="lv-bottom">
+        <div class="lv-msg" id="lvMsg">Đang mở camera…</div>
+        <div class="lv-bar"><i id="lvBar"></i></div>
+        <div class="lv-last" id="lvLast" hidden></div>
+        <button class="lv-btn wide" type="button" id="lvShot">Chụp ngay</button>
+      </div>
+    </div>
 
     <section id="v-key" class="view" hidden aria-label="Đáp án">
       <div class="card" id="qrCard"></div>
@@ -714,6 +750,32 @@ function gradeAll(st, cfg, ver) {
   return out;
 }
 
+/* ---------- Quét trực tiếp: chỉ tìm 4 ô neo + hướng phiếu, đủ nhẹ để chạy mỗi khung hình ---------- */
+function detectFrame(imgData, w, h) {
+  const g = redOf(imgData.data, w * h);
+  const mask = adaptiveMask(g, w, h);
+  const blobs = findBlobs(mask, w, h);
+  const cands = [];
+  blobs.forEach(function (px) {
+    const sh = blobShape(px, w);
+    if (sh.fill >= 0.8 && sh.ratio <= 1.5 && sh.side >= 4) cands.push(sh);
+  });
+  if (cands.length < 4) return { found: 0, cands: cands };
+  const quad = pickQuad(cands, w, h);
+  if (!quad) return { found: 0, cands: cands };
+  const fit = orient(g, w, h, quad.pts);
+  let area = 0;
+  for (let i = 0; i < 4; i++) { const p = quad.pts[i], q = quad.pts[(i + 1) % 4]; area += p[0] * q[1] - q[0] * p[1]; }
+  area = Math.abs(area) / 2;
+  let side = 0;
+  quad.pts.forEach(function (p) {
+    let best = null;
+    cands.forEach(function (c) { const d = Math.hypot(c.cx - p[0], c.cy - p[1]); if (!best || d < best.d) best = { d: d, s: c.side }; });
+    side += best ? best.s : 6;
+  });
+  return { found: fit ? 2 : 1, pts: fit ? fit.P : quad.pts, side: side / 4, areaFrac: area / (w * h), cands: cands };
+}
+
 /* Tạo ảnh chụp giả lập từ chính ảnh phiếu: tô đáp án, chụp nghiêng, lệch sáng, nhiễu. */
 function renderPhoto(sheetImg, cfg, marks, o) {
   o = o || {};
@@ -978,6 +1040,14 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   /* ---------- Tab Phiếu in ---------- */
   function b64bytes(b64) { const bin = atob(b64), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; }
   async function saveFile(name, data) {
+    if (!window.claude) {
+      try {
+        const blob = data instanceof Blob ? data : new Blob([data]), a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+        return 'saved';
+      } catch (e) { return 'unavailable'; }
+    }
     let dl = null;
     try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { dl = null; }
     if (!dl) return 'unavailable';
@@ -1061,24 +1131,142 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     try { const cv = await getCanvas(); analyze(cv, source); }
     catch (e) { scan = { error: 'load', source: source }; renderScan(); }
   }
-  function analyze(cv, source) {
+  function buildScan(cv, source) {
     const c = cv.getContext('2d', { willReadFrequently: true });
     const id = c.getImageData(0, 0, cv.width, cv.height);
     const r = analyzeImage(id, cv.width, cv.height, cfg, cfg.thr);
-    if (r.error) { scan = { error: r.error, source: source, photo: cv }; renderScan(); return; }
-    scan = r; scan.photo = cv; scan.source = source; scan.saved = false;
-    scan.sbdStr = r.sbd.join(''); scan.mdStr = r.md.join('');
-    pickVersion();
-    renderScan();
+    if (r.error) return { error: r.error, source: source, photo: cv };
+    const s = r; s.photo = cv; s.source = source; s.saved = false;
+    s.sbdStr = r.sbd.join(''); s.mdStr = r.md.join('');
+    pickVersionFor(s);
+    return s;
   }
+  function analyze(cv, source) { scan = buildScan(cv, source); renderScan(); }
   function reanalyze() { if (scan && scan.photo) analyze(scan.photo, scan.source); }
-  function pickVersion() {
-    const i = cfg.versions.findIndex(function (v) { return v.code && v.code === scan.mdStr; });
-    if (i >= 0) { scan.ver = i; scan.matched = true; } else { scan.ver = Math.min(cfg.active, cfg.versions.length - 1); scan.matched = false; }
+  function pickVersionFor(s) {
+    const i = cfg.versions.findIndex(function (v) { return v.code && v.code === s.mdStr; });
+    if (i >= 0) { s.ver = i; s.matched = true; } else { s.ver = Math.min(cfg.active, cfg.versions.length - 1); s.matched = false; }
   }
+  function pickVersion() { pickVersionFor(scan); }
   $('#cam').addEventListener('change', function () { const f = this.files && this.files[0]; this.value = ''; if (f) runPhoto(function () { return fileToCanvas(f); }, 'camera'); });
   $('#pick').addEventListener('change', function () { const f = this.files && this.files[0]; this.value = ''; if (f) runPhoto(function () { return fileToCanvas(f); }, 'camera'); });
   $('#btnSample').addEventListener('click', function () { runPhoto(function () { return makeSample().then(function (s) { return s.canvas; }); }, 'sample'); });
+
+
+  /* ---------- Chấm trực tiếp: neo 4 góc, tự chụp và chấm ---------- */
+  const LV = { stream: null, raf: 0, timer: 0, stable: 0, last: null, busy: false, miss: 0, cool: 0, count: 0, work: document.createElement('canvas') };
+  function camSupported() { return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); }
+  function lvMsg(t) { $('#lvMsg').textContent = t; }
+  function lvOverlay(pts, state) {
+    const cv = $('#lvOv'), v = $('#lvVideo'), r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (cv.width !== Math.round(r.width * dpr)) { cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); }
+    const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, r.width, r.height);
+    const vw = v.videoWidth || 1, vh = v.videoHeight || 1, k = Math.max(r.width / vw, r.height / vh);
+    const ox = (r.width - vw * k) / 2, oy = (r.height - vh * k) / 2;
+    if (!pts) {
+      const m = Math.min(r.width, r.height) * 0.08, L = 34; c.strokeStyle = '#fff9'; c.lineWidth = 3; c.lineCap = 'round';
+      const x0 = r.width * 0.07, x1 = r.width * 0.93, y0 = r.height * 0.14, y1 = r.height * 0.8;
+      [[x0, y0, 1, 1], [x1, y0, -1, 1], [x1, y1, -1, -1], [x0, y1, 1, -1]].forEach(function (q) {
+        c.beginPath(); c.moveTo(q[0], q[1] + q[3] * L); c.lineTo(q[0], q[1]); c.lineTo(q[0] + q[2] * L, q[1]); c.stroke();
+      });
+      return;
+    }
+    const col = state === 'ok' ? '#3ddc84' : '#ffd23f', P = pts.map(function (p) { return [p[0] * LV.sx * k + ox, p[1] * LV.sy * k + oy]; });
+    const sd = Math.max(14, (LV.side || 8) * LV.sx * k * 1.6);
+    c.lineWidth = 4; c.lineCap = 'round'; c.lineJoin = 'round';
+    for (let i = 0; i < 4; i++) {
+      const p = P[i], a = P[(i + 1) % 4], b = P[(i + 3) % 4], L = Math.min(46, Math.hypot(a[0] - p[0], a[1] - p[1]) * 0.22);
+      const da = [(a[0] - p[0]), (a[1] - p[1])], db = [(b[0] - p[0]), (b[1] - p[1])], la = Math.hypot(da[0], da[1]) || 1, lb = Math.hypot(db[0], db[1]) || 1;
+      c.strokeStyle = col; c.beginPath();
+      c.moveTo(p[0] + da[0] / la * L, p[1] + da[1] / la * L); c.lineTo(p[0], p[1]); c.lineTo(p[0] + db[0] / lb * L, p[1] + db[1] / lb * L); c.stroke();
+      c.strokeStyle = '#2f80ff'; c.lineWidth = 3; c.strokeRect(p[0] - sd / 2, p[1] - sd / 2, sd, sd); c.lineWidth = 4;
+    }
+    c.strokeStyle = col + '88'; c.lineWidth = 2; c.beginPath(); c.moveTo(P[0][0], P[0][1]); for (let i = 1; i < 4; i++) c.lineTo(P[i][0], P[i][1]); c.closePath(); c.stroke();
+  }
+  function lvSameQuad(a, b, diag) {
+    if (!a || !b) return false;
+    for (let i = 0; i < 4; i++) if (Math.hypot(a[i][0] - b[i][0], a[i][1] - b[i][1]) > diag * 0.018) return false;
+    return true;
+  }
+  function lvTick() {
+    if (!LV.stream) return;
+    const v = $('#lvVideo');
+    if (LV.busy || v.readyState < 2 || !v.videoWidth) { LV.timer = setTimeout(lvTick, 120); return; }
+    const W = 560, k = Math.min(1, W / Math.max(v.videoWidth, v.videoHeight)), w = Math.round(v.videoWidth * k), h = Math.round(v.videoHeight * k);
+    const cv = LV.work; cv.width = w; cv.height = h; LV.sx = v.videoWidth / w * 1; LV.sy = v.videoHeight / h * 1;
+    LV.sx = 1 / k; LV.sy = 1 / k;
+    const c = cv.getContext('2d', { willReadFrequently: true }); c.drawImage(v, 0, 0, w, h);
+    let d; try { d = detectFrame(c.getImageData(0, 0, w, h), w, h); } catch (e) { d = { found: 0 }; }
+    const now = Date.now();
+    if (now < LV.cool) { lvOverlay(d.found === 2 ? d.pts : null, 'ok'); LV.timer = setTimeout(lvTick, 120); return; }
+    if (d.found === 2 && d.areaFrac >= 0.14) {
+      LV.side = d.side; const diag = Math.hypot(w, h);
+      LV.stable = lvSameQuad(LV.last, d.pts, diag) ? LV.stable + 1 : 1; LV.last = d.pts; LV.miss = 0;
+      const need = 5;
+      lvOverlay(d.pts, LV.stable >= 2 ? 'ok' : 'wait');
+      $('#lvBar').style.width = Math.min(100, LV.stable / need * 100) + '%';
+      lvMsg(LV.stable >= 2 ? 'Giữ yên máy…' : 'Đã thấy phiếu');
+      if (LV.stable >= need) { lvCapture(false); return; }
+    } else {
+      LV.miss++; if (LV.miss > 2) { LV.stable = 0; LV.last = null; $('#lvBar').style.width = '0'; }
+      if (d.found >= 1 && d.areaFrac < 0.14) lvMsg('Đưa máy lại gần hơn để phiếu choán khung');
+      else if (d.found === 1) lvMsg('Thấy 4 góc nhưng chưa rõ chiều phiếu, giữ máy thẳng hơn');
+      else lvMsg('Đưa 4 ô vuông đen ở góc phiếu vào khung');
+      lvOverlay(d.found >= 1 ? d.pts : null, 'wait');
+    }
+    LV.timer = setTimeout(lvTick, 90);
+  }
+  async function lvCapture(manual) {
+    if (LV.busy) return; LV.busy = true;
+    const v = $('#lvVideo'); lvMsg('Đang chấm…');
+    await nextFrame();
+    const k = Math.min(1, 1800 / Math.max(v.videoWidth, v.videoHeight)), cv = document.createElement('canvas');
+    cv.width = Math.round(v.videoWidth * k); cv.height = Math.round(v.videoHeight * k);
+    cv.getContext('2d', { willReadFrequently: true }).drawImage(v, 0, 0, cv.width, cv.height);
+    const s = buildScan(cv, 'camera');
+    LV.busy = false; LV.stable = 0; LV.last = null; $('#lvBar').style.width = '0';
+    if (s.error) { if (manual) { scan = s; lvStop(); renderScan(); return; } lvMsg('Chưa đọc rõ, giữ yên máy thêm chút'); LV.cool = Date.now() + 500; LV.timer = setTimeout(lvTick, 120); return; }
+    if ($('#lvCont').checked) {
+      const g = pushResult(s); LV.count++;
+      $('#lvChip').textContent = 'Đã chấm ' + LV.count + ' tờ';
+      const e = $('#lvLast'); e.hidden = false;
+      e.textContent = 'SBD ' + (s.sbdStr || '—') + ' · Mã đề ' + (s.mdStr || '—') + ' · ' + (Math.round(g.total * 100) / 100) + '/' + (Math.round(g.max * 100) / 100) + ' điểm' + (s.matched ? '' : ' (chưa khớp mã đề, dùng đáp án đang chọn)');
+      scan = s; s.saved = true;
+      lvMsg('Xong, đưa tờ tiếp theo vào'); LV.cool = Date.now() + 2200; LV.timer = setTimeout(lvTick, 200);
+      return;
+    }
+    scan = s; lvStop(); renderScan();
+    try { document.querySelector('#v-scan').scrollIntoView({ block: 'start' }); } catch (e) {}
+  }
+  function lvStop() {
+    clearTimeout(LV.timer); LV.timer = 0;
+    if (LV.stream) { LV.stream.getTracks().forEach(function (t) { t.stop(); }); LV.stream = null; }
+    const v = $('#lvVideo'); try { v.srcObject = null; } catch (e) {}
+    $('#live').hidden = true; document.body.style.overflow = '';
+    if (LV.count) { renderChip(); }
+  }
+  async function startLive() {
+    if (!camSupported()) { scan = { error: 'cam', camTitle: 'Trình duyệt này không hỗ trợ camera trực tiếp.', camBody: 'Dùng nút Chụp ảnh rồi chấm để thay thế.' }; renderScan(); return; }
+    LV.count = 0; LV.stable = 0; LV.last = null; LV.miss = 0; LV.cool = 0; LV.busy = false;
+    $('#lvChip').textContent = 'Chưa chấm tờ nào'; $('#lvLast').hidden = true; $('#lvBar').style.width = '0';
+    $('#live').hidden = false; document.body.style.overflow = 'hidden'; lvMsg('Đang mở camera…'); lvOverlay(null);
+    try {
+      let st;
+      try { st = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); }
+      catch (e1) { if (e1 && (e1.name === 'NotAllowedError' || e1.name === 'SecurityError')) throw e1; st = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); }
+      LV.stream = st; const v = $('#lvVideo'); v.srcObject = st; await v.play();
+      lvMsg('Đưa 4 ô vuông đen ở góc phiếu vào khung'); LV.timer = setTimeout(lvTick, 200);
+    } catch (e) {
+      lvStop();
+      const denied = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError');
+      scan = { error: 'cam', camTitle: denied ? 'Trang này không được phép dùng camera trực tiếp.' : 'Không mở được camera.', camBody: denied ? 'Khung xem này (hoặc quyền của trình duyệt) đang chặn camera. Hãy dùng nút Chụp ảnh rồi chấm để thay thế.' : 'Kiểm tra camera có đang bị ứng dụng khác dùng không, rồi thử lại.' };
+      renderScan();
+    }
+  }
+  $('#btnLive').addEventListener('click', startLive);
+  $('#lvClose').addEventListener('click', lvStop);
+  $('#lvShot').addEventListener('click', function () { lvCapture(true); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden && LV.stream) lvStop(); });
 
   /* ---------- Hiển thị kết quả chấm ---------- */
   function grade() { return gradeAll({ p1: scan.p1, p2: scan.p2, p3: scan.p3 }, cfg, cfg.versions[scan.ver]); }
@@ -1134,7 +1322,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         markers: ['Không thấy đủ 4 ô vuông đen ở góc phiếu.', 'Chụp trọn cả tờ phiếu, đủ sáng, không để ngón tay hay vật khác che góc. Giữ điện thoại song song mặt bàn.'],
         quad: ['Không ghép được 4 góc của phiếu.', 'Có thể ảnh chụp quá gần hoặc có nhiều vật đen trong khung. Chụp lại sát vào tờ phiếu, nền sáng hơn.'],
         orient: ['Thấy 4 góc nhưng không nhận ra các vạch đen nhỏ ở mép phải phiếu.', 'Hãy chụp cả tờ phiếu còn nguyên mép, không bị cắt, và dùng đúng mẫu phiếu của ứng dụng.'],
-        load: ['Không mở được ảnh này.', 'Thử chụp lại hoặc chọn một ảnh JPG hoặc PNG khác.']
+        load: ['Không mở được ảnh này.', 'Thử chụp lại hoặc chọn một ảnh JPG hoặc PNG khác.'],
+        cam: [scan.camTitle || 'Không mở được camera.', scan.camBody || 'Kiểm tra quyền camera của trình duyệt rồi thử lại, hoặc dùng nút Chụp phiếu để chấm.']
       }[scan.error] || ['Không đọc được phiếu.', 'Chụp lại với đủ sáng.'];
       out.innerHTML = '<div class="card" style="margin-top:14px"><div class="note err"><b>' + msgs[0] + '</b><br>' + msgs[1] + '</div></div>';
       return;
@@ -1174,7 +1363,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     $('#mdIn').onchange = function () { scan.mdStr = this.value.replace(/[^0-9_?]/g, '').slice(0, 4); pickVersion(); scan.saved = false; renderScan(); };
     $$('[data-sv]', out).forEach(function (b) { b.onclick = function () { scan.ver = +b.dataset.sv; scan.matched = true; scan.saved = false; renderScan(); }; });
     $('#saveBtn').onclick = saveResult;
-    const nb = $('#nextBtn'); if (nb) nb.onclick = function () { $('#cam').click(); };
+    const nb = $('#nextBtn'); if (nb) nb.onclick = function () { if (camSupported()) startLive(); else $('#cam').click(); };
   }
   function keepScroll(fn) { const y = window.scrollY; fn(); window.scrollTo(0, y); }
   function drawReview(g, ver) {
@@ -1227,12 +1416,14 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       };
     }
   }
-  function saveResult() {
-    const g = grade();
-    results.unshift({ id: Date.now(), t: Date.now(), sbd: scan.sbdStr, md: scan.mdStr, total: Math.round(g.total * 100) / 100, max: Math.round(g.max * 100) / 100, parts: [g.p1.pts, g.p2.pts, g.p3.pts].map(function (x) { return Math.round(x * 100) / 100; }) });
+  function pushResult(s) {
+    const g = gradeAll({ p1: s.p1, p2: s.p2, p3: s.p3 }, cfg, cfg.versions[s.ver]);
+    results.unshift({ id: Date.now(), t: Date.now(), sbd: s.sbdStr, md: s.mdStr, total: Math.round(g.total * 100) / 100, max: Math.round(g.max * 100) / 100, parts: [g.p1.pts, g.p2.pts, g.p3.pts].map(function (x) { return Math.round(x * 100) / 100; }) });
     if (results.length > 500) results.length = 500;
-    saveResults(); scan.saved = true; renderChip(); renderScan();
+    saveResults(); s.saved = true; renderChip();
+    return g;
   }
+  function saveResult() { pushResult(scan); renderScan(); }
 
   /* ---------- Tab Kết quả ---------- */
   function renderRes() {
@@ -1490,7 +1681,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     renderPhoto: function (marks, o) { return sheetReady.then(function (img) { return renderPhoto(img, cfg, marks, o); }); },
     buildMarks: function () { return buildMarks(curVer()); },
     parseQrKey: parseQrKey,
-    decodeQrCanvas: decodeQrCanvas
+    decodeQrCanvas: decodeQrCanvas,
+    startLive: startLive, lvStop: lvStop, LV: LV
   };
 })();
 
