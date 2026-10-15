@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Chấm Trắc Nghiệm</title>
+<title>B&T Pro Mark - Online</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Itim&display=swap">
 <style>
@@ -247,7 +247,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>Chấm Trắc Nghiệm</h1>
+      <h1>B&T Pro Mark - Online</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -263,7 +263,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
           </button>
           <label class="btn" for="cam">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>
-            Chụp bằng camera máy
+            Chụp bằng camera
           </label>
           <input class="vh" type="file" id="cam" accept="image/*" capture="environment">
           <label class="btn" for="pick">Chọn ảnh có sẵn</label>
@@ -332,7 +332,7 @@ const SHEET_PDF_B64="JVBERi0xLjUNJeLjz9MNCjEgMCBvYmoNPDwvTWV0YWRhdGEgMiAwIFIvT0N
 /* Toạ độ tính bằng mm trên trang 208 x 297 mm, đo trực tiếp từ file PDF gốc. */
 /* ---- Phiếu 1: PHIẾU TLTN Nguyễn Huệ (mm, trang 208 x 297) ---- */
 const SHEET_NH = {
-  id: 'nh', name: 'Phiếu TLTN Nguyễn Huệ', PW: 208, PH: 297, RB: 1.45,
+  id: 'nh', name: 'Phiếu Bộ GD-ĐT', PW: 208, PH: 297, RB: 1.45,
   CORNERS: [[6.69, 5.46], [202.41, 5.38], [202.46, 288.04], [6.65, 288.04]],
   MARK_ROWS: [
     [[6.69, 5.46], [202.41, 5.38]], [[6.98, 96.38], [202.46, 96.38]], [[6.98, 161.23], [202.46, 161.23]], [[6.65, 202.71], [202.46, 202.71]], [[6.65, 288.04], [202.46, 288.04]]
@@ -352,7 +352,7 @@ const SHEET_NH = {
 };
 /* ---- Phiếu 2: BÀI KIỂM TRA 45 phút (đơn vị = điểm ảnh của ảnh mẫu 583 x 309) ---- */
 const SHEET_KT = {
-  id: 'kt', name: 'Phiếu Bài kiểm tra 45 phút', PW: 583, PH: 309, RB: 4.0,
+  id: 'kt', name: 'Phiếu B&T Pro Mark', PW: 583, PH: 309, RB: 4.0,
   CORNERS: [[12.0, 58.6], [569.5, 58.5], [570.0, 279.0], [13.0, 278.0]],
   BAND_Y: [1e9, 1e9, 1e9], bands: false,
   SPOT: [308.11, 58.34, 4.2],
