@@ -1,0 +1,1085 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Chấm Trắc Nghiệm</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Itim&display=swap">
+<style>
+/* Bố cục: một cột, thanh tab dưới cùng; nền ô li vở; điểm viết tay bằng bút đỏ. */
+:root {
+  --bg: #f5f6f9;
+  --grid: rgba(36, 72, 168, 0.065);
+  --card: #ffffff;
+  --fg: #1a2033;
+  --muted: #5a647a;
+  --line: #d6dce8;
+  --ink: #1c3f94;
+  --ink-fg: #ffffff;
+  --ink-soft: #e6edfb;
+  --red: #c92d26;
+  --red-soft: #fce8e6;
+  --ok: #12794a;
+  --ok-soft: #dcf2e6;
+  --warn: #8f5a00;
+  --warn-soft: #fcefd0;
+  --f-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-hand: "Itim", "Be Vietnam Pro", "Comic Sans MS", cursive;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1218; --grid: rgba(143, 176, 255, 0.055); --card: #171c26; --fg: #e8ebf2; --muted: #98a2b8;
+    --line: #29313f; --ink: #8fb0ff; --ink-fg: #0b1330; --ink-soft: #1b2a4f; --red: #ff7d72; --red-soft: #3b1b1a;
+    --ok: #62d49c; --ok-soft: #143122; --warn: #f2c14e; --warn-soft: #36290f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1218; --grid: rgba(143, 176, 255, 0.055); --card: #171c26; --fg: #e8ebf2; --muted: #98a2b8;
+  --line: #29313f; --ink: #8fb0ff; --ink-fg: #0b1330; --ink-soft: #1b2a4f; --red: #ff7d72; --red-soft: #3b1b1a;
+  --ok: #62d49c; --ok-soft: #143122; --warn: #f2c14e; --warn-soft: #36290f; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  font: 400 15px/1.5 var(--f-body);
+  color: var(--fg);
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  padding-block: 14px 96px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  -webkit-text-size-adjust: 100%;
+}
+.wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+h1, h2, h3, p { margin: 0; }
+h2 { font-size: 15px; font-weight: 700; letter-spacing: 0.01em; text-wrap: balance; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Đầu trang */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand svg { flex: none; color: var(--red); }
+.brand h1 { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
+.pill { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--ink-soft); color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* Thẻ và nút */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.row > * { min-width: 0; }
+.lbl { font-size: 13px; color: var(--muted); }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--fg);
+  font-weight: 600; font-size: 14px; cursor: pointer; text-align: center; -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--ink); color: var(--ink-fg); border-color: var(--ink); }
+.btn.big { min-height: 56px; font-size: 16px; flex: 1 1 100%; }
+.btn.ghost { background: transparent; }
+.btn.danger { color: var(--red); }
+.btn[disabled] { opacity: 0.55; cursor: default; }
+.btn.small { min-height: 36px; padding: 0 12px; font-size: 13px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions .btn:not(.big) { flex: 1 1 140px; }
+.hint { font-size: 13px; color: var(--muted); }
+.note { font-size: 13px; padding: 10px 12px; border-radius: 10px; background: var(--warn-soft); color: var(--warn); }
+.note.err { background: var(--red-soft); color: var(--red); }
+.note b { font-weight: 700; }
+.tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 6px; background: var(--warn-soft); color: var(--warn); }
+
+/* Điểm viết tay */
+.gradebox { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.grade { position: relative; display: inline-flex; align-items: baseline; gap: 2px; padding: 8px 22px 6px; color: var(--red); font-family: var(--f-hand); line-height: 1; transform: rotate(-3deg); }
+.grade .num { font-size: 60px; font-variant-numeric: tabular-nums; }
+.grade .of { font-size: 24px; opacity: 0.85; }
+.grade svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.sum { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.sum strong { font-size: 17px; font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--ink-soft); color: var(--ink); font-variant-numeric: tabular-nums; }
+.chip.bad { background: var(--red-soft); color: var(--red); }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.mid { background: var(--warn-soft); color: var(--warn); }
+
+/* Ô nhập */
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field input, .field textarea { min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); width: 100%; }
+.field textarea { min-height: 64px; resize: vertical; font-family: var(--f-body); }
+.mono { font-variant-numeric: tabular-nums; letter-spacing: 0.12em; font-weight: 600; }
+.fields { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.stepper button { width: 44px; height: 42px; border: 0; background: var(--bg); font-size: 20px; cursor: pointer; }
+.stepper output { min-width: 48px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button { min-height: 42px; padding: 0 14px; border: 0; background: var(--bg); cursor: pointer; font-weight: 600; font-size: 14px; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--ink-fg); }
+.num-in { width: 84px; min-height: 42px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); text-align: center; font-weight: 700; }
+input[type="range"] { width: 100%; accent-color: var(--ink); }
+.range-row { display: flex; flex-direction: column; gap: 4px; }
+.range-lbls { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+
+/* Lưới đáp án */
+.qgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 8px 12px; --chip: 28px; }
+.qgrid.k5 { --chip: 25px; }
+.q { display: flex; align-items: center; gap: 6px; padding: 2px 6px 2px 0; border-radius: 8px; min-width: 0; }
+.q.bad { background: var(--red-soft); }
+.q.mid { background: var(--warn-soft); }
+.qn { width: 22px; text-align: right; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; flex: none; }
+.opts { display: flex; gap: 4px; }
+.o { width: var(--chip); height: var(--chip); border-radius: 50%; border: 1.5px solid var(--line); background: var(--card); font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; display: grid; place-items: center; color: var(--muted); }
+.o.sel { background: var(--ink); border-color: var(--ink); color: var(--ink-fg); }
+.o.sel.ok { background: var(--ok); border-color: var(--ok); color: var(--card); }
+.o.sel.bad { background: var(--red); border-color: var(--red); color: var(--card); }
+.o.key { border: 2px dashed var(--ok); color: var(--ok); }
+
+.vchips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.vchip { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); font-weight: 600; font-size: 13px; cursor: pointer; }
+.vchip[aria-pressed="true"] { background: var(--ink); color: var(--ink-fg); border-color: var(--ink); }
+
+canvas.photo { display: block; width: 100%; height: auto; border-radius: 8px; background: #222; }
+.sheetimg { display: block; width: 100%; max-width: 520px; height: auto; margin: 0 auto; border: 1px solid var(--line); border-radius: 4px; background: #fff; }
+
+/* Kết quả đã lưu */
+.stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stats b { color: var(--fg); font-size: 16px; }
+.hist { display: flex; align-items: flex-end; gap: 4px; height: 64px; }
+.hist i { flex: 1; background: var(--ink); border-radius: 3px 3px 0 0; min-height: 2px; opacity: 0.85; }
+.hist-ax { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.list { display: flex; flex-direction: column; }
+.item { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.item:first-child { border-top: 0; }
+.item .who { font-weight: 600; font-variant-numeric: tabular-nums; }
+.item .meta { font-size: 12px; color: var(--muted); }
+.item .sc { font-family: var(--f-hand); font-size: 24px; color: var(--red); font-variant-numeric: tabular-nums; }
+.item button { width: 36px; height: 36px; border: 1px solid var(--line); background: transparent; border-radius: 8px; color: var(--muted); cursor: pointer; }
+.empty { text-align: center; color: var(--muted); padding: 18px 8px; font-size: 14px; }
+
+.spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--ink-soft); border-top-color: var(--ink); animation: sp 0.8s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+.busy { display: flex; align-items: center; gap: 12px; justify-content: center; padding: 22px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 3s; } .btn:active { transform: none; } }
+
+/* Thanh tab dưới */
+.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; justify-content: center;
+  background: var(--card); border-top: 1px solid var(--line);
+  padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+}
+.tabs > div { display: flex; width: 100%; max-width: 640px; gap: 4px; }
+.tab { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border: 0; background: transparent; color: var(--muted); font-size: 11px; font-weight: 600; border-radius: 8px; cursor: pointer; position: relative; }
+.tab[aria-current="page"] { color: var(--ink); background: var(--ink-soft); }
+.tab svg { width: 22px; height: 22px; }
+.tab .bd { position: absolute; top: 2px; left: calc(50% + 6px); min-width: 16px; padding: 0 4px; height: 16px; border-radius: 8px; background: var(--red); color: var(--card); font-size: 10px; line-height: 16px; text-align: center; }
+
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="4" y="3" width="20" height="26" rx="3" stroke="currentColor" stroke-width="2.2"/>
+        <circle cx="10.5" cy="11" r="2.2" fill="currentColor"/><circle cx="10.5" cy="18" r="2.2" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h1>Chấm Trắc Nghiệm</h1>
+    </div>
+    <span class="pill" id="cfgChip"></span>
+  </header>
+
+  <main>
+    <section id="v-scan" class="view" aria-label="Chấm bài">
+      <div class="card">
+        <div class="actions">
+          <label class="btn primary big" for="cam">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>
+            Chụp phiếu để chấm
+          </label>
+          <input class="vh" type="file" id="cam" accept="image/*" capture="environment">
+          <label class="btn" for="pick">Chọn ảnh có sẵn</label>
+          <input class="vh" type="file" id="pick" accept="image/*">
+          <button class="btn ghost" type="button" id="btnSample">Chấm ảnh mẫu</button>
+        </div>
+        <p class="hint">Đặt phiếu phẳng trên mặt bàn, chụp trọn cả tờ để thấy đủ 4 ô vuông đen ở góc. Nghiêng nhẹ hoặc hơi lệch sáng vẫn nhận được.</p>
+      </div>
+      <div id="scanOut" aria-live="polite"></div>
+    </section>
+
+    <section id="v-key" class="view" hidden aria-label="Đáp án">
+      <div class="card" id="cfgCard"></div>
+      <div class="card" id="keyCard"></div>
+    </section>
+
+    <section id="v-sheet" class="view" hidden aria-label="Phiếu in">
+      <div class="card" id="sheetCard"></div>
+    </section>
+
+    <section id="v-res" class="view" hidden aria-label="Kết quả">
+      <div class="card" id="resCard"></div>
+    </section>
+  </main>
+</div>
+
+<nav class="tabs" aria-label="Chuyển mục">
+  <div>
+    <button class="tab" type="button" data-tab="scan" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.4"/></svg>
+      Chấm bài</button>
+    <button class="tab" type="button" data-tab="key">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5l1.8 1.8L9 5M4 12.5l1.8 1.8L9 11M4 18.5l1.8 1.8L9 17"/><path d="M13 7h7M13 13h7M13 19h7"/></svg>
+      Đáp án</button>
+    <button class="tab" type="button" data-tab="sheet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><rect x="8.6" y="11" width="2.6" height="2.6"/><rect x="12.8" y="11" width="2.6" height="2.6" fill="currentColor"/><rect x="8.6" y="15.4" width="2.6" height="2.6"/></svg>
+      Phiếu in</button>
+    <button class="tab" type="button" data-tab="res">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>
+      Kết quả<span class="bd" id="resBadge" hidden>0</span></button>
+  </div>
+</nav>
+
+<script>
+/* ===================== Lõi nhận diện phiếu trắc nghiệm ===================== */
+/* Mọi toạ độ phiếu tính bằng mm trên khổ A4 dọc (210 x 297). */
+const SW = 210, SH = 297;
+const MARKERS = [[13, 13], [197, 13], [197, 284], [13, 284]]; /* TL, TR, BR, BL (tâm ô vuông 10 mm) */
+const BAR = { x: 28, y: 8, w: 16, h: 10 };                     /* vạch định hướng cạnh góc trên trái */
+const ROWS = 15, MAXQ = 60;
+const SBD_X0 = 120, MD_X0 = 166, ID_PITCH = 6, ID_Y0 = 52, ID_DY = 4.6;
+const OPT_PITCH = 6.6;
+
+function makeLayout(n, k) {
+  const ans = [];
+  for (let i = 0; i < n; i++) {
+    const b = Math.floor(i / ROWS), row = i % ROWS, x0 = 17 + 45 * b, y = 114 + row * 10;
+    for (let j = 0; j < k; j++) ans.push({ q: i, o: j, x: x0 + 12 + j * OPT_PITCH, y: y, r: 2.2 });
+  }
+  const sbd = [], md = [];
+  for (let c = 0; c < 6; c++) for (let d = 0; d < 10; d++) sbd.push({ c: c, d: d, x: SBD_X0 + c * ID_PITCH, y: ID_Y0 + d * ID_DY, r: 1.7 });
+  for (let c = 0; c < 3; c++) for (let d = 0; d < 10; d++) md.push({ c: c, d: d, x: MD_X0 + c * ID_PITCH, y: ID_Y0 + d * ID_DY, r: 1.7 });
+  return { n: n, k: k, ans: ans, sbd: sbd, md: md };
+}
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* Vẽ phiếu lên canvas đã scale sao cho 1 đơn vị = 1 mm. marks (tuỳ chọn) để tạo ảnh mẫu. */
+function drawSheet(ctx, L, marks, seed) {
+  const FONT = '"Be Vietnam Pro", Arial, Helvetica, sans-serif';
+  ctx.save();
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, SW, SH);
+  ctx.fillStyle = '#000';
+  MARKERS.forEach(function (m) { ctx.fillRect(m[0] - 5, m[1] - 5, 10, 10); });
+  ctx.fillRect(BAR.x, BAR.y, BAR.w, BAR.h);
+  function T(s, x, y, size, o) {
+    o = o || {};
+    ctx.font = (o.w || 400) + ' ' + size + 'px ' + FONT;
+    ctx.textAlign = o.a || 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = o.c || '#000';
+    ctx.fillText(s, x, y);
+  }
+  T('PHIẾU TRẢ LỜI TRẮC NGHIỆM', 105, 26, 6, { a: 'center', w: 700 });
+  T('Tô kín ô tròn bằng bút chì đen hoặc bút mực đậm. Muốn đổi đáp án, tẩy sạch ô cũ.', 105, 32, 2.5, { a: 'center', c: '#444' });
+  ['Họ và tên:', 'Lớp:', 'Môn thi:', 'Ngày thi:'].forEach(function (s, i) {
+    const y = 47 + i * 12;
+    T(s, 20, y, 3.4, { w: 500 });
+    ctx.beginPath(); ctx.setLineDash([0.6, 0.9]); ctx.lineWidth = 0.25; ctx.strokeStyle = '#555';
+    ctx.moveTo(42, y + 0.8); ctx.lineTo(102, y + 0.8); ctx.stroke(); ctx.setLineDash([]);
+  });
+  T('SỐ BÁO DANH', SBD_X0 + 15, 38, 3.2, { a: 'center', w: 700 });
+  T('MÃ ĐỀ', MD_X0 + 6, 38, 3.2, { a: 'center', w: 700 });
+  ctx.lineWidth = 0.25; ctx.strokeStyle = '#000';
+  for (let c = 0; c < 6; c++) ctx.strokeRect(SBD_X0 + c * ID_PITCH - 2.6, 41, 5.2, 6);
+  for (let c = 0; c < 3; c++) ctx.strokeRect(MD_X0 + c * ID_PITCH - 2.6, 41, 5.2, 6);
+  for (let d = 0; d < 10; d++) {
+    T(String(d), SBD_X0 - 6.5, ID_Y0 + d * ID_DY + 1.1, 2.8, { a: 'center', c: '#444' });
+    T(String(d), MD_X0 - 6.5, ID_Y0 + d * ID_DY + 1.1, 2.8, { a: 'center', c: '#444' });
+  }
+  ctx.lineWidth = 0.3; ctx.strokeStyle = '#000';
+  function ring(b) { ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.stroke(); }
+  L.sbd.forEach(ring); L.md.forEach(ring); L.ans.forEach(ring);
+  const blocks = Math.ceil(L.n / ROWS);
+  for (let b = 0; b < blocks; b++) {
+    const x0 = 17 + 45 * b;
+    for (let j = 0; j < L.k; j++) T('ABCDE'[j], x0 + 12 + j * OPT_PITCH, 105.8, 3.4, { a: 'center', w: 700 });
+    const rows = Math.min(ROWS, L.n - b * ROWS);
+    for (let r = 0; r < rows; r++) T(String(b * ROWS + r + 1), x0 + 7.2, 114 + r * 10 + 1.2, 3.4, { a: 'right', w: 600 });
+    [5, 10].forEach(function (r) {
+      if (rows > r) {
+        ctx.beginPath(); ctx.lineWidth = 0.15; ctx.strokeStyle = '#aaa';
+        ctx.moveTo(x0, 114 + r * 10 - 5); ctx.lineTo(x0 + 42, 114 + r * 10 - 5); ctx.stroke();
+      }
+    });
+  }
+  T('Không gập, không làm bẩn phiếu; giữ nguyên 4 ô vuông đen ở góc.', 105, 274, 2.6, { a: 'center', c: '#444' });
+
+  if (marks) {
+    const rng = mulberry32(seed || 7);
+    const pen = function (b) {
+      ctx.fillStyle = 'rgba(28,28,32,0.9)';
+      for (let t = 0; t < 2; t++) {
+        ctx.beginPath();
+        ctx.ellipse(b.x + (rng() - 0.5) * 0.4, b.y + (rng() - 0.5) * 0.4, b.r * (0.8 + rng() * 0.14), b.r * (0.8 + rng() * 0.14), rng() * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
+    L.ans.forEach(function (b) { if (marks.ans[b.q] && marks.ans[b.q].indexOf(b.o) >= 0) pen(b); });
+    L.sbd.forEach(function (b) { if (marks.sbd && marks.sbd[b.c] === String(b.d)) pen(b); });
+    L.md.forEach(function (b) { if (marks.md && marks.md[b.c] === String(b.d)) pen(b); });
+    ctx.font = '500 3.6px "Be Vietnam Pro", Arial, sans-serif';
+    ctx.fillStyle = '#1b3a8c'; ctx.textAlign = 'left';
+    ctx.fillText('Nguyễn Minh Anh', 43.5, 46.6);
+    ctx.fillText('12A3', 43.5, 58.6);
+    ctx.fillText('Toán', 43.5, 70.6);
+    ctx.fillText('15/10/2026', 43.5, 82.6);
+  }
+  ctx.restore();
+}
+
+/* ---------- Hình học ---------- */
+function solveHomography(S, D) {
+  const A = [];
+  for (let i = 0; i < 4; i++) {
+    const x = S[i][0], y = S[i][1], u = D[i][0], v = D[i][1];
+    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y, u]);
+    A.push([0, 0, 0, x, y, 1, -v * x, -v * y, v]);
+  }
+  for (let c = 0; c < 8; c++) {
+    let p = c;
+    for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    if (Math.abs(A[p][c]) < 1e-12) return null;
+    const tmp = A[c]; A[c] = A[p]; A[p] = tmp;
+    for (let r = 0; r < 8; r++) {
+      if (r === c) continue;
+      const f = A[r][c] / A[c][c];
+      for (let k = c; k < 9; k++) A[r][k] -= f * A[c][k];
+    }
+  }
+  return A.map(function (row, i) { return row[8] / row[i]; });
+}
+function applyH(H, x, y) {
+  const d = H[6] * x + H[7] * y + 1;
+  return [(H[0] * x + H[1] * y + H[2]) / d, (H[3] * x + H[4] * y + H[5]) / d];
+}
+function lumAt(g, w, h, u, v) {
+  if (!(u >= 0 && v >= 0 && u <= w - 1 && v <= h - 1)) return NaN;
+  const x0 = u | 0, y0 = v | 0, x1 = Math.min(x0 + 1, w - 1), y1 = Math.min(y0 + 1, h - 1);
+  const fx = u - x0, fy = v - y0;
+  const a = g[y0 * w + x0], b = g[y0 * w + x1], c = g[y1 * w + x0], d = g[y1 * w + x1];
+  return (a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy;
+}
+function sampleMM(g, w, h, H, x, y) {
+  const p = applyH(H, x, y);
+  return lumAt(g, w, h, p[0], p[1]);
+}
+
+/* ---------- Tìm 4 ô vuông định vị ---------- */
+function grayOf(d, n) {
+  const g = new Float32Array(n);
+  for (let i = 0, p = 0; i < n; i++, p += 4) g[i] = 0.299 * d[p] + 0.587 * d[p + 1] + 0.114 * d[p + 2];
+  return g;
+}
+function adaptiveMask(g, w, h) {
+  const R = Math.max(12, Math.round(Math.min(w, h) / 12));
+  const W1 = w + 1, I = new Float64Array(W1 * (h + 1));
+  for (let y = 0; y < h; y++) {
+    let row = 0;
+    for (let x = 0; x < w; x++) { row += g[y * w + x]; I[(y + 1) * W1 + x + 1] = I[y * W1 + x + 1] + row; }
+  }
+  const m = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    const y0 = Math.max(0, y - R), y1 = Math.min(h, y + R + 1);
+    for (let x = 0; x < w; x++) {
+      const x0 = Math.max(0, x - R), x1 = Math.min(w, x + R + 1);
+      const sum = I[y1 * W1 + x1] - I[y0 * W1 + x1] - I[y1 * W1 + x0] + I[y0 * W1 + x0];
+      const mean = sum / ((x1 - x0) * (y1 - y0));
+      const v = g[y * w + x];
+      if (v < mean * 0.62 && mean - v > 45) m[y * w + x] = 1;
+    }
+  }
+  return m;
+}
+function findBlobs(mask, w, h) {
+  const N = w * h, seen = new Uint8Array(N), stack = new Int32Array(N), buf = new Int32Array(N);
+  const minA = Math.max(40, N / 12000), maxA = N / 100, out = [];
+  for (let s = 0; s < N; s++) {
+    if (!mask[s] || seen[s]) continue;
+    let sp = 0, cnt = 0;
+    stack[sp++] = s; seen[s] = 1;
+    while (sp) {
+      const p = stack[--sp]; buf[cnt++] = p;
+      const x = p % w, y = (p - x) / w;
+      if (x > 0 && mask[p - 1] && !seen[p - 1]) { seen[p - 1] = 1; stack[sp++] = p - 1; }
+      if (x < w - 1 && mask[p + 1] && !seen[p + 1]) { seen[p + 1] = 1; stack[sp++] = p + 1; }
+      if (y > 0 && mask[p - w] && !seen[p - w]) { seen[p - w] = 1; stack[sp++] = p - w; }
+      if (y < h - 1 && mask[p + w] && !seen[p + w]) { seen[p + w] = 1; stack[sp++] = p + w; }
+    }
+    if (cnt >= minA && cnt <= maxA) out.push(Int32Array.from(buf.subarray(0, cnt)));
+  }
+  return out;
+}
+function blobShape(px, w) {
+  const n = px.length, xs = new Float32Array(n), ys = new Float32Array(n);
+  let sx = 0, sy = 0;
+  for (let i = 0; i < n; i++) { const x = px[i] % w, y = (px[i] - x) / w; xs[i] = x; ys[i] = y; sx += x; sy += y; }
+  let best = Infinity, ratio = 9;
+  for (let a = 0; a < 90; a += 5) {
+    const r = a * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+    let u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9;
+    for (let i = 0; i < n; i++) {
+      const u = xs[i] * c + ys[i] * s, v = -xs[i] * s + ys[i] * c;
+      if (u < u0) u0 = u; if (u > u1) u1 = u; if (v < v0) v0 = v; if (v > v1) v1 = v;
+    }
+    const bw = u1 - u0 + 1, bh = v1 - v0 + 1, area = bw * bh;
+    if (area < best) { best = area; ratio = Math.max(bw, bh) / Math.min(bw, bh); }
+  }
+  return { cx: sx / n, cy: sy / n, n: n, fill: n / best, ratio: ratio, side: Math.sqrt(best) };
+}
+function pickQuad(cands, w, h) {
+  const list = cands.slice().sort(function (a, b) { return b.n - a.n; }).slice(0, 16);
+  let best = null;
+  for (let a = 0; a < list.length; a++) for (let b = a + 1; b < list.length; b++)
+    for (let c = b + 1; c < list.length; c++) for (let d = c + 1; d < list.length; d++) {
+      const q = [list[a], list[b], list[c], list[d]];
+      let mn = 1e12, mx = 0;
+      q.forEach(function (p) { mn = Math.min(mn, p.n); mx = Math.max(mx, p.n); });
+      if (mx / mn > 10) continue;
+      const mxc = (q[0].cx + q[1].cx + q[2].cx + q[3].cx) / 4, myc = (q[0].cy + q[1].cy + q[2].cy + q[3].cy) / 4;
+      const o = q.slice().sort(function (p1, p2) { return Math.atan2(p1.cy - myc, p1.cx - mxc) - Math.atan2(p2.cy - myc, p2.cx - mxc); });
+      let area = 0, sign = 0, convex = true;
+      for (let i = 0; i < 4; i++) {
+        const p = o[i], p2 = o[(i + 1) % 4], p3 = o[(i + 2) % 4];
+        area += p.cx * p2.cy - p2.cx * p.cy;
+        const cr = (p2.cx - p.cx) * (p3.cy - p2.cy) - (p2.cy - p.cy) * (p3.cx - p2.cx);
+        if (sign === 0) sign = cr > 0 ? 1 : -1; else if ((cr > 0 ? 1 : -1) !== sign) convex = false;
+      }
+      area = Math.abs(area) / 2;
+      if (!convex || area < 0.02 * w * h) continue;
+      const score = area * Math.sqrt(mn / mx);
+      if (!best || score > best.score) best = { score: score, pts: o.map(function (p) { return [p.cx, p.cy]; }) };
+    }
+  return best;
+}
+function dist(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }
+function paperRef(g, w, h, H) {
+  const a = [];
+  for (let y = 36; y <= 268; y += 7) for (let x = 24; x <= 186; x += 7) {
+    const l = sampleMM(g, w, h, H, x, y);
+    if (l === l) a.push(l);
+  }
+  a.sort(function (p, q) { return p - q; });
+  return a.length ? a[Math.floor(a.length * 0.8)] : 200;
+}
+function barScore(g, w, h, H, ref) {
+  let s = 0, c = 0;
+  for (let y = BAR.y + 1.5; y < BAR.y + BAR.h - 1.4; y += 0.8)
+    for (let x = BAR.x + 1.5; x < BAR.x + BAR.w - 1.4; x += 0.8) {
+      const l = sampleMM(g, w, h, H, x, y);
+      if (l === l) { s += l; c++; }
+    }
+  return c ? 1 - (s / c) / ref : 0;
+}
+function orient(g, w, h, pts) {
+  let best = null;
+  for (let r = 0; r < 4; r++) {
+    const P = [pts[r % 4], pts[(r + 1) % 4], pts[(r + 2) % 4], pts[(r + 3) % 4]];
+    const top = dist(P[0], P[1]), bottom = dist(P[3], P[2]), left = dist(P[0], P[3]), right = dist(P[1], P[2]);
+    const ratio = ((top + bottom) / 2) / ((left + right) / 2);
+    if (ratio < 0.45 || ratio > 0.95) continue;
+    const H = solveHomography(MARKERS, P);
+    if (!H) continue;
+    const ref = paperRef(g, w, h, H);
+    const bs = barScore(g, w, h, H, ref);
+    if (!best || bs > best.bar) best = { H: H, P: P, bar: bs, ref: ref };
+  }
+  return best && best.bar > 0.45 ? best : null;
+}
+
+/* ---------- Đọc ô tô ---------- */
+function discOffsets(rad, step) {
+  const o = [];
+  for (let y = -rad; y <= rad + 1e-9; y += step) for (let x = -rad; x <= rad + 1e-9; x += step) if (x * x + y * y <= rad * rad) o.push([x, y]);
+  return o;
+}
+function bubbleRead(g, w, h, H, b, inOff) {
+  let s = 0, c = 0;
+  for (let i = 0; i < inOff.length; i++) {
+    const l = sampleMM(g, w, h, H, b.x + inOff[i][0], b.y + inOff[i][1]);
+    if (l === l) { s += l; c++; }
+  }
+  if (c < inOff.length * 0.6) return { s: 0, ring: 0, ok: false };
+  const mIn = s / c, arr = [];
+  [b.r + 0.55, b.r + 0.85].forEach(function (rr) {
+    for (let a = 0; a < 12; a++) {
+      const t = a * Math.PI / 6.0 + (rr > b.r + 0.7 ? 0.26 : 0);
+      const l = sampleMM(g, w, h, H, b.x + rr * Math.cos(t), b.y + rr * Math.sin(t));
+      if (l === l) arr.push(l);
+    }
+  });
+  if (!arr.length) return { s: 0, ring: 0, ok: false };
+  arr.sort(function (p, q) { return p - q; });
+  const ref = Math.max(arr[Math.floor(arr.length * 0.7)], 1);
+  let rs = 0, rc = 0;
+  for (let a = 0; a < 16; a++) {
+    const t = a * Math.PI / 8;
+    const l = sampleMM(g, w, h, H, b.x + b.r * Math.cos(t), b.y + b.r * Math.sin(t));
+    if (l === l) { rs += l; rc++; }
+  }
+  return { s: Math.max(0, Math.min(1, 1 - mIn / ref)), ring: rc ? 1 - (rs / rc) / ref : 0, ok: true };
+}
+function decideMarks(scores, thr) {
+  let mx = 0;
+  scores.forEach(function (s) { if (s > mx) mx = s; });
+  if (mx < thr) return [];
+  const out = [];
+  scores.forEach(function (s, i) { if (s >= thr && s >= 0.55 * mx) out.push(i); });
+  return out;
+}
+function scanSheet(g, w, h, L, H, thr) {
+  const offA = discOffsets(2.2 * 0.62, 0.28), offI = discOffsets(1.7 * 0.62, 0.28);
+  const answers = [], scores = [];
+  let ringSum = 0, ringN = 0;
+  for (let q = 0; q < L.n; q++) { answers.push([]); scores.push([]); }
+  L.ans.forEach(function (b) {
+    const r = bubbleRead(g, w, h, H, b, offA);
+    scores[b.q][b.o] = r.s;
+    if (r.ok && r.s < 0.15) { ringSum += r.ring; ringN++; }
+  });
+  for (let q = 0; q < L.n; q++) answers[q] = decideMarks(scores[q], thr);
+  function readId(cells, cols) {
+    const sc = [], out = [];
+    for (let c = 0; c < cols; c++) sc.push([]);
+    cells.forEach(function (b) {
+      const r = bubbleRead(g, w, h, H, b, offI);
+      sc[b.c][b.d] = r.s;
+      if (r.ok && r.s < 0.15) { ringSum += r.ring; ringN++; }
+    });
+    for (let c = 0; c < cols; c++) {
+      const m = decideMarks(sc[c], thr);
+      out.push(m.length === 1 ? String(m[0]) : (m.length === 0 ? '_' : '?'));
+    }
+    return out;
+  }
+  const sbd = readId(L.sbd, 6), md = readId(L.md, 3);
+  return { answers: answers, scores: scores, sbd: sbd, md: md, align: ringN ? ringSum / ringN : 0 };
+}
+
+function analyzeImage(imgData, w, h, L, thr) {
+  const g = grayOf(imgData.data, w * h);
+  const mask = adaptiveMask(g, w, h);
+  const blobs = findBlobs(mask, w, h);
+  const cands = [];
+  blobs.forEach(function (px) {
+    const sh = blobShape(px, w);
+    if (sh.fill >= 0.8 && sh.ratio <= 1.5 && sh.side >= 6) cands.push(sh);
+  });
+  if (cands.length < 4) return { error: 'markers', found: cands.length };
+  const quad = pickQuad(cands, w, h);
+  if (!quad) return { error: 'quad' };
+  const fit = orient(g, w, h, quad.pts);
+  if (!fit) return { error: 'orient' };
+  const res = scanSheet(g, w, h, L, fit.H, thr);
+  res.H = fit.H; res.P = fit.P;
+  res.ppm = (dist(fit.P[0], fit.P[1]) + dist(fit.P[3], fit.P[2])) / 2 / (MARKERS[1][0] - MARKERS[0][0]);
+  return res;
+}
+
+/* ---------- Chấm điểm ---------- */
+function gradeAnswers(answers, key, scale) {
+  let ok = 0, total = 0, wrong = 0, blank = 0, multi = 0;
+  const st = [];
+  for (let q = 0; q < answers.length; q++) {
+    const kq = key[q];
+    const m = answers[q];
+    if (kq === null || kq === undefined) { st.push('skip'); continue; }
+    total++;
+    if (m.length === 0) { st.push('blank'); blank++; }
+    else if (m.length > 1) { st.push('multi'); multi++; }
+    else if (m[0] === kq) { st.push('ok'); ok++; }
+    else { st.push('wrong'); wrong++; }
+  }
+  return { ok: ok, total: total, wrong: wrong, blank: blank, multi: multi, st: st, score: total ? ok / total * scale : 0 };
+}
+
+/* ===================== Giao diện ===================== */
+(function () {
+  const $ = function (s, r) { return (r || document).querySelector(s); };
+  const $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  const LET = 'ABCDE';
+  const fmt = function (x) { return String(Math.round(x * 100) / 100).replace('.', ','); };
+  const esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  const LS = {
+    get: function (k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* bỏ qua */ } }
+  };
+
+  /* ---------- Cấu hình & dữ liệu ---------- */
+  const DEFAULT_KEY = 'CADBBACDABDCADBCABDA';
+  function defaultCfg() {
+    return { n: 20, k: 4, scale: 10, thr: 0.3, active: 0, versions: [{ code: '101', key: DEFAULT_KEY.split('').map(function (c) { return LET.indexOf(c); }) }] };
+  }
+  function sanitizeCfg(c) {
+    try {
+      if (!c || !c.versions) return null;
+      const n = Math.max(5, Math.min(MAXQ, c.n | 0)), k = c.k === 5 ? 5 : 4;
+      const vs = c.versions.slice(0, 8).map(function (v) {
+        const key = [];
+        for (let i = 0; i < n; i++) {
+          const x = v.key && v.key[i];
+          key.push(x === null || x === undefined || x < 0 || x >= k ? null : x | 0);
+        }
+        return { code: String(v.code || '').replace(/\D/g, '').slice(0, 3), key: key };
+      });
+      if (!vs.length) return null;
+      return { n: n, k: k, scale: Math.max(1, Math.min(1000, +c.scale || 10)), thr: Math.max(0.12, Math.min(0.7, +c.thr || 0.3)), active: Math.min(Math.max(c.active | 0, 0), vs.length - 1), versions: vs };
+    } catch (e) { return null; }
+  }
+  let cfg = sanitizeCfg(LS.get('omr.cfg', null)) || defaultCfg();
+  let results = LS.get('omr.results', []);
+  if (!Array.isArray(results)) results = [];
+  function saveCfg() { LS.set('omr.cfg', cfg); }
+  function saveResults() { LS.set('omr.results', results); }
+
+  let tab = 'scan';
+  let scan = null; /* kết quả lần chấm hiện tại */
+
+  /* ---------- Tab ---------- */
+  function showTab(t) {
+    tab = t;
+    $$('.view').forEach(function (v) { v.hidden = v.id !== 'v-' + t; });
+    $$('.tab').forEach(function (b) { if (b.dataset.tab === t) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+    if (t === 'key') renderKey();
+    if (t === 'sheet') renderSheet();
+    if (t === 'res') renderRes();
+    window.scrollTo(0, 0);
+  }
+  $$('.tab').forEach(function (b) { b.addEventListener('click', function () { showTab(b.dataset.tab); }); });
+
+  function renderChip() {
+    $('#cfgChip').textContent = cfg.n + ' câu · A–' + LET[cfg.k - 1];
+    const bd = $('#resBadge');
+    bd.hidden = !results.length; bd.textContent = results.length > 99 ? '99+' : results.length;
+  }
+
+  /* ---------- Lưới chọn đáp án ---------- */
+  function gridHTML(n, k, cell, row) {
+    let h = '<div class="qgrid k' + k + '">';
+    for (let q = 0; q < n; q++) {
+      h += '<div class="q ' + (row ? row(q) : '') + '"><span class="qn">' + (q + 1) + '</span><span class="opts">';
+      for (let o = 0; o < k; o++) {
+        const c = cell(q, o);
+        h += '<button type="button" class="o ' + c + '" data-q="' + q + '" data-o="' + o + '" aria-pressed="' + (/\bsel\b/.test(c) ? 'true' : 'false') + '" aria-label="Câu ' + (q + 1) + ', đáp án ' + LET[o] + '">' + LET[o] + '</button>';
+      }
+      h += '</span></div>';
+    }
+    return h + '</div>';
+  }
+
+  /* ---------- Tab Đáp án ---------- */
+  function curVer() { return cfg.versions[cfg.active]; }
+  function renderKey() {
+    const ver = curVer();
+    $('#cfgCard').innerHTML =
+      '<h2>Bài thi</h2>' +
+      '<div class="row"><span class="lbl">Số câu (tối đa ' + MAXQ + ')</span><span class="stepper"><button type="button" id="nDec" aria-label="Bớt một câu">−</button><output id="nVal">' + cfg.n + '</output><button type="button" id="nInc" aria-label="Thêm một câu">+</button></span></div>' +
+      '<div class="row"><span class="lbl">Số lựa chọn mỗi câu</span><span class="seg"><button type="button" data-k="4" aria-pressed="' + (cfg.k === 4) + '">A–D</button><button type="button" data-k="5" aria-pressed="' + (cfg.k === 5) + '">A–E</button></span></div>' +
+      '<div class="row"><label class="lbl" for="scaleIn">Thang điểm</label><input class="num-in" id="scaleIn" type="number" inputmode="decimal" min="1" max="1000" value="' + cfg.scale + '"></div>' +
+      '<div class="range-row"><div class="row"><label class="lbl" for="thrIn">Độ nhạy khi đọc ô tô</label><span class="mono" id="thrVal">' + Math.round(cfg.thr * 100) + '%</span></div>' +
+      '<input id="thrIn" type="range" min="15" max="60" step="1" value="' + Math.round(cfg.thr * 100) + '"><div class="range-lbls"><span>Nhạy, nhận cả nét mờ</span><span>Chặt, chỉ nhận ô tô đậm</span></div></div>';
+    $('#nDec').onclick = function () { setN(cfg.n - 1); };
+    $('#nInc').onclick = function () { setN(cfg.n + 1); };
+    $$('.seg button', $('#cfgCard')).forEach(function (b) { b.onclick = function () { setK(+b.dataset.k); }; });
+    $('#scaleIn').onchange = function () { cfg.scale = Math.max(1, Math.min(1000, +this.value || 10)); this.value = cfg.scale; saveCfg(); if (scan) renderScan(); };
+    $('#thrIn').oninput = function () { cfg.thr = this.value / 100; $('#thrVal').textContent = this.value + '%'; };
+    $('#thrIn').onchange = function () { saveCfg(); if (scan && scan.photo) reanalyze(); };
+
+    let vh = '<div class="row"><h2>Đáp án</h2><span class="hint">' + ver.key.filter(function (x) { return x !== null; }).length + '/' + cfg.n + ' câu đã đặt</span></div><div class="vchips">';
+    cfg.versions.forEach(function (v, i) { vh += '<button type="button" class="vchip" data-v="' + i + '" aria-pressed="' + (i === cfg.active) + '">Đề ' + (i + 1) + (v.code ? ' · ' + v.code : '') + '</button>'; });
+    if (cfg.versions.length < 8) vh += '<button type="button" class="vchip" id="addVer" aria-label="Thêm mã đề">+ Thêm đề</button>';
+    vh += '</div>';
+    vh += '<div class="fields"><div class="field"><label class="lbl" for="codeIn">Mã đề (3 chữ số, để trống nếu chỉ có một đề)</label><input id="codeIn" class="mono" inputmode="numeric" maxlength="3" value="' + esc(ver.code) + '"></div></div>';
+    vh += '<div class="field"><label class="lbl" for="pasteIn">Dán nhanh chuỗi đáp án, ví dụ ABCDDCBA…</label><textarea id="pasteIn" spellcheck="false" autocapitalize="characters" placeholder="CADBBACDABDCADBCABDA"></textarea></div>';
+    vh += '<div class="actions"><button type="button" class="btn small" id="pasteGo">Điền đáp án</button><button type="button" class="btn small ghost" id="keyClear">Xoá hết</button>' + (cfg.versions.length > 1 ? '<button type="button" class="btn small ghost danger" id="verDel">Xoá đề này</button>' : '') + '</div>';
+    vh += '<div id="keyGrid"></div><p class="hint">Chạm một ô để chọn đáp án đúng, chạm lần nữa để bỏ chọn. Câu chưa đặt đáp án sẽ không tính điểm.</p>';
+    $('#keyCard').innerHTML = vh;
+    drawKeyGrid();
+    $$('.vchip[data-v]', $('#keyCard')).forEach(function (b) { b.onclick = function () { cfg.active = +b.dataset.v; saveCfg(); renderKey(); }; });
+    const add = $('#addVer');
+    if (add) add.onclick = function () { cfg.versions.push({ code: '', key: new Array(cfg.n).fill(null) }); cfg.active = cfg.versions.length - 1; saveCfg(); renderKey(); };
+    $('#codeIn').onchange = function () { ver.code = this.value.replace(/\D/g, '').slice(0, 3); saveCfg(); renderKey(); };
+    $('#pasteGo').onclick = function () {
+      const letters = ($('#pasteIn').value.toUpperCase().match(/[A-E]/g) || []);
+      letters.slice(0, cfg.n).forEach(function (c, i) { const o = LET.indexOf(c); ver.key[i] = o < cfg.k ? o : null; });
+      saveCfg(); renderKey();
+    };
+    $('#keyClear').onclick = function () { ver.key = new Array(cfg.n).fill(null); saveCfg(); renderKey(); };
+    const del = $('#verDel');
+    if (del) del.onclick = function () { cfg.versions.splice(cfg.active, 1); cfg.active = Math.max(0, cfg.active - 1); saveCfg(); renderKey(); };
+  }
+  function drawKeyGrid() {
+    const ver = curVer(), host = $('#keyGrid');
+    host.innerHTML = gridHTML(cfg.n, cfg.k, function (q, o) { return ver.key[q] === o ? 'sel' : ''; });
+    host.onclick = function (e) {
+      const b = e.target.closest('.o'); if (!b) return;
+      const q = +b.dataset.q, o = +b.dataset.o;
+      ver.key[q] = ver.key[q] === o ? null : o;
+      saveCfg();
+      $$('.o', b.parentNode).forEach(function (x) { const on = +x.dataset.o === ver.key[q]; x.classList.toggle('sel', on); x.setAttribute('aria-pressed', on); });
+      const hint = $('#keyCard .hint'); if (hint) hint.textContent = ver.key.filter(function (x) { return x !== null; }).length + '/' + cfg.n + ' câu đã đặt';
+    };
+  }
+  function setN(n) {
+    n = Math.max(5, Math.min(MAXQ, n));
+    if (n === cfg.n) return;
+    cfg.versions.forEach(function (v) { while (v.key.length < n) v.key.push(null); v.key.length = n; });
+    cfg.n = n; saveCfg(); scan = null; renderScan(); renderChip(); renderKey();
+  }
+  function setK(k) {
+    if (k === cfg.k) return;
+    cfg.versions.forEach(function (v) { v.key = v.key.map(function (x) { return x !== null && x >= k ? null : x; }); });
+    cfg.k = k; saveCfg(); scan = null; renderScan(); renderChip(); renderKey();
+  }
+
+  /* ---------- Tab Phiếu in ---------- */
+  function sheetCanvas(ppm) {
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(SW * ppm); cv.height = Math.round(SH * ppm);
+    const c = cv.getContext('2d');
+    c.setTransform(ppm, 0, 0, ppm, 0, 0);
+    drawSheet(c, makeLayout(cfg.n, cfg.k));
+    return cv;
+  }
+  function renderSheet() {
+    const cv = sheetCanvas(4);
+    $('#sheetCard').innerHTML =
+      '<h2>Phiếu trả lời khổ A4</h2>' +
+      '<p class="hint">Phiếu này khớp với cấu hình hiện tại: ' + cfg.n + ' câu, lựa chọn A–' + LET[cfg.k - 1] + ', số báo danh 6 chữ số, mã đề 3 chữ số. Đổi cấu hình ở mục Đáp án rồi quay lại đây để tải phiếu mới.</p>' +
+      '<img class="sheetimg" id="sheetImg" alt="Xem trước phiếu trả lời" src="' + cv.toDataURL('image/png') + '">' +
+      '<div class="actions"><button type="button" class="btn primary" id="pdfBtn">Tải phiếu PDF</button></div>' +
+      '<p class="hint" id="pdfMsg">In khổ A4, tỉ lệ 100% (không chọn “vừa trang”). Đừng cắt hoặc làm bẩn 4 ô vuông đen ở góc, ứng dụng dựa vào đó để căn phiếu.</p>';
+    $('#pdfBtn').onclick = exportPdf;
+  }
+  function buildPdf(jpg, w, h) {
+    const enc = new TextEncoder(), parts = [], offs = [];
+    let len = 0;
+    function push(x) { const b = typeof x === 'string' ? enc.encode(x) : x; parts.push(b); len += b.length; }
+    function obj(n, fn) { offs[n] = len; push(n + ' 0 obj\n'); fn(); push('endobj\n'); }
+    push('%PDF-1.4\n');
+    obj(1, function () { push('<< /Type /Catalog /Pages 2 0 R >>\n'); });
+    obj(2, function () { push('<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n'); });
+    obj(3, function () { push('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.276 841.89] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\n'); });
+    obj(4, function () { push('<< /Type /XObject /Subtype /Image /Width ' + w + ' /Height ' + h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpg.length + ' >>\nstream\n'); push(jpg); push('\nendstream\n'); });
+    const content = 'q 595.276 0 0 841.89 0 0 cm /Im0 Do Q\n';
+    obj(5, function () { push('<< /Length ' + content.length + ' >>\nstream\n' + content + 'endstream\n'); });
+    const xref = len;
+    let x = 'xref\n0 6\n0000000000 65535 f \n';
+    for (let i = 1; i <= 5; i++) x += String(offs[i]).padStart(10, '0') + ' 00000 n \n';
+    push(x + 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
+    const out = new Uint8Array(len);
+    let p = 0;
+    parts.forEach(function (b) { out.set(b, p); p += b.length; });
+    return out;
+  }
+  async function saveFile(name, data) {
+    let dl = null;
+    try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { dl = null; }
+    if (!dl) return 'unavailable';
+    try { await dl.save({ filename: name, data: data }); return 'saved'; }
+    catch (e) { return e && e.code === 'declined' ? 'declined' : 'unavailable'; }
+  }
+  async function exportPdf() {
+    const msg = $('#pdfMsg'), btn = $('#pdfBtn');
+    btn.disabled = true;
+    try {
+      const cv = sheetCanvas(200 / 25.4);
+      const blob = await new Promise(function (r) { cv.toBlob(r, 'image/jpeg', 0.93); });
+      const jpg = new Uint8Array(await blob.arrayBuffer());
+      const st = await saveFile('phieu-tra-loi-' + cfg.n + '-cau.pdf', buildPdf(jpg, cv.width, cv.height));
+      if (st === 'saved') msg.textContent = 'Đã lưu phiếu PDF. Mở file và in khổ A4, tỉ lệ 100%.';
+      else if (st === 'declined') msg.textContent = 'Bạn đã huỷ lưu. Nhấn lại nút để tải.';
+      else msg.textContent = 'Chế độ xem này không cho tải file. Nhấn giữ ảnh phiếu ở trên để lưu về máy, hoặc mở ứng dụng trong Claude để tải PDF.';
+    } catch (e) { msg.textContent = 'Không tạo được file PDF. Thử lại sau.'; }
+    btn.disabled = false;
+  }
+
+  /* ---------- Ảnh mẫu ---------- */
+  function makeSample(o) {
+    o = o || {};
+    const ver = curVer(), L = makeLayout(cfg.n, cfg.k), rng = mulberry32(o.seed || 11);
+    const ans = [];
+    for (let q = 0; q < cfg.n; q++) {
+      const kq = ver.key[q], right = kq === null ? Math.floor(rng() * cfg.k) : kq;
+      const other = function () { let x; do { x = Math.floor(rng() * cfg.k); } while (x === right); return x; };
+      if (q === 4 || q === 13) ans.push([other()]);
+      else if (q === 9) ans.push([]);
+      else if (q === 16) ans.push([right, other()]);
+      else ans.push([right]);
+    }
+    const marks = { ans: ans, sbd: '250417'.split(''), md: (ver.code || '101').padEnd(3, '0').slice(0, 3).split('') };
+    const ppm = 6, paper = document.createElement('canvas');
+    paper.width = SW * ppm; paper.height = SH * ppm;
+    const pc = paper.getContext('2d');
+    pc.setTransform(ppm, 0, 0, ppm, 0, 0);
+    drawSheet(pc, L, marks, o.seed || 11);
+    const pd = pc.getImageData(0, 0, paper.width, paper.height).data, PW = paper.width, PH = paper.height;
+    const DW = o.w || 1100, DH = o.h || 1500;
+    const dq = o.quad || [[150, 170], [985, 120], [1050, 1400], [95, 1360]];
+    const Hi = solveHomography(dq, [[0, 0], [SW, 0], [SW, SH], [0, SH]]);
+    const out = document.createElement('canvas');
+    out.width = DW; out.height = DH;
+    const oc = out.getContext('2d'), img = oc.createImageData(DW, DH), od = img.data;
+    const light = o.light === undefined ? 0.28 : o.light, noise = o.noise === undefined ? 10 : o.noise;
+    for (let v = 0; v < DH; v++) {
+      for (let u = 0; u < DW; u++) {
+        const d = Hi[6] * u + Hi[7] * v + 1;
+        const x = (Hi[0] * u + Hi[1] * v + Hi[2]) / d, y = (Hi[3] * u + Hi[4] * v + Hi[5]) / d;
+        const p = (v * DW + u) * 4;
+        let r, g, b;
+        if (x >= 0 && y >= 0 && x <= SW && y <= SH) {
+          const fx = Math.min(x * ppm, PW - 1.001), fy = Math.min(y * ppm, PH - 1.001);
+          const x0 = fx | 0, y0 = fy | 0, tx = fx - x0, ty = fy - y0, i00 = (y0 * PW + x0) * 4, i01 = i00 + 4, i10 = i00 + PW * 4, i11 = i10 + 4;
+          r = (pd[i00] * (1 - tx) + pd[i01] * tx) * (1 - ty) + (pd[i10] * (1 - tx) + pd[i11] * tx) * ty;
+          g = (pd[i00 + 1] * (1 - tx) + pd[i01 + 1] * tx) * (1 - ty) + (pd[i10 + 1] * (1 - tx) + pd[i11 + 1] * tx) * ty;
+          b = (pd[i00 + 2] * (1 - tx) + pd[i01 + 2] * tx) * (1 - ty) + (pd[i10 + 2] * (1 - tx) + pd[i11 + 2] * tx) * ty;
+          r *= 0.97; g *= 0.97; b *= 0.94;
+        } else {
+          const s = 0.88 + 0.12 * Math.sin(v / 9 + u / 210);
+          r = 96 * s; g = 74 * s; b = 58 * s;
+        }
+        const lf = 1 - light * (u / DW * 0.5 + v / DH * 0.5), nz = (rng() - 0.5) * noise;
+        od[p] = r * lf + nz; od[p + 1] = g * lf + nz; od[p + 2] = b * lf + nz; od[p + 3] = 255;
+      }
+    }
+    oc.putImageData(img, 0, 0);
+    if (o.blur) {
+      const c2 = document.createElement('canvas'); c2.width = DW; c2.height = DH;
+      const x2 = c2.getContext('2d'); x2.filter = 'blur(' + o.blur + 'px)'; x2.drawImage(out, 0, 0);
+      return { canvas: c2, marks: marks };
+    }
+    return { canvas: out, marks: marks };
+  }
+
+  /* ---------- Nạp ảnh ---------- */
+  async function fileToCanvas(file) {
+    let src = null, w = 0, h = 0, url = null;
+    try { src = await createImageBitmap(file, { imageOrientation: 'from-image' }); w = src.width; h = src.height; }
+    catch (e) {
+      url = URL.createObjectURL(file);
+      src = await new Promise(function (res, rej) { const im = new Image(); im.onload = function () { res(im); }; im.onerror = rej; im.src = url; });
+      w = src.naturalWidth; h = src.naturalHeight;
+    }
+    const k = Math.min(1, 1600 / Math.max(w, h));
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+    const c = cv.getContext('2d', { willReadFrequently: true });
+    c.imageSmoothingQuality = 'high';
+    c.drawImage(src, 0, 0, cv.width, cv.height);
+    if (url) URL.revokeObjectURL(url);
+    return cv;
+  }
+  function nextFrame() { return new Promise(function (r) { setTimeout(r, 40); }); }
+  async function runPhoto(getCanvas, source) {
+    $('#scanOut').innerHTML = '<div class="card"><div class="busy"><span class="spin"></span>Đang đọc phiếu…</div></div>';
+    await nextFrame();
+    try {
+      const cv = await getCanvas();
+      analyze(cv, source);
+    } catch (e) {
+      scan = { error: 'load', source: source };
+      renderScan();
+    }
+  }
+  function analyze(cv, source) {
+    const c = cv.getContext('2d', { willReadFrequently: true });
+    const id = c.getImageData(0, 0, cv.width, cv.height);
+    const L = makeLayout(cfg.n, cfg.k);
+    const r = analyzeImage(id, cv.width, cv.height, L, cfg.thr);
+    if (r.error) { scan = { error: r.error, source: source, photo: cv }; renderScan(); return; }
+    scan = r; scan.photo = cv; scan.L = L; scan.source = source; scan.saved = false;
+    scan.sbdStr = r.sbd.join(''); scan.mdStr = r.md.join('');
+    pickVersion();
+    renderScan();
+  }
+  function reanalyze() {
+    if (!scan || !scan.photo) return;
+    analyze(scan.photo, scan.source);
+  }
+  function pickVersion() {
+    const i = cfg.versions.findIndex(function (v) { return v.code && v.code === scan.mdStr; });
+    if (i >= 0) { scan.ver = i; scan.matched = true; }
+    else { scan.ver = Math.min(cfg.active, cfg.versions.length - 1); scan.matched = false; }
+  }
+
+  $('#cam').addEventListener('change', function () { const f = this.files && this.files[0]; this.value = ''; if (f) runPhoto(function () { return fileToCanvas(f); }, 'camera'); });
+  $('#pick').addEventListener('change', function () { const f = this.files && this.files[0]; this.value = ''; if (f) runPhoto(function () { return fileToCanvas(f); }, 'camera'); });
+  $('#btnSample').addEventListener('click', function () { runPhoto(function () { return makeSample().canvas; }, 'sample'); });
+
+  /* ---------- Hiển thị kết quả chấm ---------- */
+  function currentGrade() { return gradeAnswers(scan.answers, cfg.versions[scan.ver].key, cfg.scale); }
+  function ringPath(b, f) {
+    const pts = [];
+    for (let i = 0; i < 20; i++) { const t = i * Math.PI / 10; pts.push(applyH(scan.H, b.x + b.r * f * Math.cos(t), b.y + b.r * f * Math.sin(t))); }
+    return pts;
+  }
+  function drawOverlay() {
+    const cv = scan.view, c = cv.getContext('2d'), g = currentGrade(), key = cfg.versions[scan.ver].key;
+    c.drawImage(scan.photo, 0, 0);
+    const lw = Math.max(2, scan.ppm * 0.45);
+    c.lineJoin = 'round';
+    c.strokeStyle = 'rgba(60,130,255,0.9)'; c.lineWidth = Math.max(2, lw * 0.8); c.setLineDash([]);
+    c.beginPath(); scan.P.forEach(function (p, i) { if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath(); c.stroke();
+    function poly(pts, col, dash, w) {
+      c.beginPath(); pts.forEach(function (p, i) { if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath();
+      c.setLineDash(dash ? [lw * 1.6, lw * 1.2] : []); c.strokeStyle = col; c.lineWidth = w || lw; c.stroke(); c.setLineDash([]);
+    }
+    scan.L.ans.forEach(function (b) {
+      const m = scan.answers[b.q], st = g.st[b.q], isSel = m.indexOf(b.o) >= 0, isKey = key[b.q] === b.o;
+      if (isSel) poly(ringPath(b, 1.5), st === 'ok' ? '#1fb86a' : (st === 'skip' ? '#9aa3b5' : '#ff4b3e'), false);
+      else if (isKey && st !== 'ok') poly(ringPath(b, 1.5), '#1fb86a', true, lw * 0.9);
+    });
+  }
+  function warnHTML() {
+    let h = '';
+    if (scan.align < 0.08) h += '<div class="note"><b>Phiếu có vẻ không khớp.</b> Số câu hoặc số lựa chọn trên phiếu in có thể khác cấu hình hiện tại (' + cfg.n + ' câu, A–' + LET[cfg.k - 1] + '). Kiểm tra lại ở mục Đáp án.</div>';
+    const unk = (scan.sbdStr + scan.mdStr).split('').filter(function (c) { return c === '?'; }).length;
+    if (unk) h += '<div class="note"><b>Số báo danh hoặc mã đề có cột bị tô nhiều ô.</b> Sửa lại trong các ô bên dưới.</div>';
+    return h;
+  }
+  function renderScan() {
+    const out = $('#scanOut');
+    if (!scan) { out.innerHTML = ''; return; }
+    if (scan.error) {
+      const msgs = {
+        markers: ['Không thấy đủ 4 ô vuông đen ở góc phiếu.', 'Chụp trọn cả tờ phiếu, đủ sáng, không để ngón tay hay vật khác che góc. Giữ điện thoại song song mặt bàn.'],
+        quad: ['Không ghép được 4 góc của phiếu.', 'Có thể ảnh chụp quá gần hoặc có nhiều vật đen trong khung. Chụp lại sát vào tờ phiếu, nền sáng hơn.'],
+        orient: ['Thấy 4 góc nhưng không thấy vạch đen định hướng cạnh góc trên trái.', 'Hãy dùng đúng phiếu tải ở mục Phiếu in, và chụp phiếu còn nguyên, không bị cắt mép.'],
+        load: ['Không mở được ảnh này.', 'Thử chụp lại hoặc chọn một ảnh JPG hoặc PNG khác.']
+      }[scan.error] || ['Không đọc được phiếu.', 'Chụp lại với đủ sáng.'];
+      out.innerHTML = '<div class="card"><div class="note err"><b>' + msgs[0] + '</b><br>' + msgs[1] + '</div></div>';
+      return;
+    }
+    const g = currentGrade(), ver = cfg.versions[scan.ver];
+    const sample = scan.source === 'sample';
+    let h = '<div class="card" style="margin-top:14px">';
+    if (sample) h += '<div><span class="tag">Ảnh mẫu</span> <span class="hint">Phiếu do ứng dụng tự tạo, chụp nghiêng và lệch sáng. Chưa phải bài của học sinh.</span></div>';
+    h += '<div class="gradebox"><div class="grade" role="img" aria-label="Điểm ' + fmt(g.score) + ' trên ' + fmt(cfg.scale) + '">' +
+      '<svg viewBox="0 0 200 100" preserveAspectRatio="none" aria-hidden="true"><path d="M30 58C22 28 78 6 126 12c46 6 70 30 56 56-14 26-82 32-124 20C22 78 14 54 38 30" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></svg>' +
+      '<span class="num">' + fmt(g.score) + '</span><span class="of">/' + fmt(cfg.scale) + '</span></div>' +
+      '<div class="sum"><strong>' + g.ok + '/' + g.total + ' câu đúng</strong><div class="chips">' +
+      '<span class="chip ok">Đúng ' + g.ok + '</span>' + (g.wrong ? '<span class="chip bad">Sai ' + g.wrong + '</span>' : '') +
+      (g.blank ? '<span class="chip mid">Bỏ trống ' + g.blank + '</span>' : '') + (g.multi ? '<span class="chip bad">Tô nhiều ô ' + g.multi + '</span>' : '') + '</div></div></div>';
+    h += warnHTML();
+    h += '<div class="fields"><div class="field"><label class="lbl" for="sbdIn">Số báo danh</label><input id="sbdIn" class="mono" maxlength="6" inputmode="numeric" value="' + esc(scan.sbdStr) + '"></div>' +
+      '<div class="field"><label class="lbl" for="mdIn">Mã đề</label><input id="mdIn" class="mono" maxlength="3" inputmode="numeric" value="' + esc(scan.mdStr) + '"></div></div>';
+    if (cfg.versions.length > 1 || !scan.matched) {
+      h += '<div class="vchips"><span class="lbl">Chấm theo</span>';
+      cfg.versions.forEach(function (v, i) { h += '<button type="button" class="vchip" data-sv="' + i + '" aria-pressed="' + (i === scan.ver) + '">Đề ' + (i + 1) + (v.code ? ' · ' + v.code : '') + '</button>'; });
+      h += '</div>';
+      if (!scan.matched && ver.code) h += '<p class="hint">Mã đề đọc được chưa trùng đề nào đã nhập, đang chấm theo Đề ' + (scan.ver + 1) + '.</p>';
+    }
+    h += '<div class="actions"><button type="button" class="btn primary" id="saveBtn"' + (scan.saved ? ' disabled' : '') + '>' + (scan.saved ? 'Đã lưu' : 'Lưu kết quả') + '</button></div>';
+    h += '</div>';
+    h += '<div class="card" style="margin-top:14px"><h2>Ảnh đã nhận diện</h2><div id="cvHost"></div><p class="hint">Vòng xanh là câu đúng, vòng đỏ là câu sai, vòng nét đứt xanh là đáp án đúng ở câu sai hoặc bỏ trống. Khung xanh dương là 4 góc phiếu máy tìm thấy.</p></div>';
+    h += '<div class="card" style="margin-top:14px"><h2>Kiểm tra từng câu</h2><p class="hint">Máy đọc sai ô nào thì chạm vào ô đó để sửa, điểm tự tính lại.</p><div id="revGrid"></div></div>';
+    out.innerHTML = h;
+    if (!scan.view) { scan.view = document.createElement('canvas'); scan.view.className = 'photo'; scan.view.width = scan.photo.width; scan.view.height = scan.photo.height; }
+    $('#cvHost').appendChild(scan.view);
+    drawOverlay();
+    drawReview();
+    $('#sbdIn').onchange = function () { scan.sbdStr = this.value.replace(/[^0-9_?]/g, '').slice(0, 6); this.value = scan.sbdStr; scan.saved = false; renderScan(); };
+    $('#mdIn').onchange = function () { scan.mdStr = this.value.replace(/[^0-9_?]/g, '').slice(0, 3); pickVersion(); scan.saved = false; renderScan(); };
+    $$('[data-sv]', out).forEach(function (b) { b.onclick = function () { scan.ver = +b.dataset.sv; scan.matched = true; scan.saved = false; renderScan(); }; });
+    $('#saveBtn').onclick = saveResult;
+  }
+  function drawReview() {
+    const g = currentGrade(), key = cfg.versions[scan.ver].key, host = $('#revGrid');
+    host.innerHTML = gridHTML(cfg.n, cfg.k, function (q, o) {
+      const sel = scan.answers[q].indexOf(o) >= 0, st = g.st[q];
+      let c = sel ? 'sel' : '';
+      if (sel && st === 'ok') c += ' ok'; else if (sel && st !== 'skip') c += ' bad';
+      if (!sel && key[q] === o && st !== 'ok') c += ' key';
+      return c;
+    }, function (q) { const st = g.st[q]; return st === 'wrong' || st === 'multi' ? 'bad' : (st === 'blank' ? 'mid' : ''); });
+    host.onclick = function (e) {
+      const b = e.target.closest('.o'); if (!b) return;
+      const q = +b.dataset.q, o = +b.dataset.o, m = scan.answers[q];
+      scan.answers[q] = (m.length === 1 && m[0] === o) ? [] : [o];
+      scan.saved = false;
+      const y = window.scrollY;
+      renderScan();
+      window.scrollTo(0, y);
+    };
+  }
+  function saveResult() {
+    const g = currentGrade();
+    results.unshift({ id: Date.now(), t: Date.now(), sbd: scan.sbdStr, md: scan.mdStr, ok: g.ok, total: g.total, score: Math.round(g.score * 100) / 100, scale: cfg.scale });
+    if (results.length > 500) results.length = 500;
+    saveResults(); scan.saved = true; renderChip(); renderScan();
+  }
+
+  /* ---------- Tab Kết quả ---------- */
+  function renderRes() {
+    const host = $('#resCard');
+    if (!results.length) {
+      host.innerHTML = '<h2>Kết quả đã lưu</h2><div class="empty">Chưa có bài nào. Chấm một phiếu rồi nhấn “Lưu kết quả”, điểm sẽ hiện ở đây.</div>';
+      return;
+    }
+    const pcts = results.map(function (r) { return r.scale ? r.score / r.scale : 0; });
+    const avg = pcts.reduce(function (a, b) { return a + b; }, 0) / pcts.length;
+    const bins = new Array(10).fill(0);
+    pcts.forEach(function (p) { bins[Math.min(9, Math.floor(p * 10))]++; });
+    const mx = Math.max.apply(null, bins);
+    let h = '<div class="row"><h2>Kết quả đã lưu</h2><span class="hint">' + results.length + ' bài</span></div>' +
+      '<div class="stats"><span>Trung bình <b>' + fmt(avg * cfg.scale) + '</b></span><span>Cao nhất <b>' + fmt(Math.max.apply(null, pcts) * cfg.scale) + '</b></span><span>Thấp nhất <b>' + fmt(Math.min.apply(null, pcts) * cfg.scale) + '</b></span></div>' +
+      '<div class="hist" role="img" aria-label="Phân bố điểm">' + bins.map(function (n) { return '<i style="height:' + Math.max(3, n / mx * 100) + '%" title="' + n + ' bài"></i>'; }).join('') + '</div>' +
+      '<div class="hist-ax"><span>0</span><span>' + fmt(cfg.scale / 2) + '</span><span>' + fmt(cfg.scale) + '</span></div>' +
+      '<div class="list">';
+    results.forEach(function (r) {
+      const d = new Date(r.t), tm = d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      h += '<div class="item"><div><div class="who">SBD ' + esc(r.sbd || '—') + ' · Mã đề ' + esc(r.md || '—') + '</div><div class="meta">' + tm + ' · ' + r.ok + '/' + r.total + ' câu đúng</div></div><span class="sc">' + fmt(r.score) + '</span><button type="button" data-del="' + r.id + '" aria-label="Xoá bài này">×</button></div>';
+    });
+    h += '</div><div class="actions"><button type="button" class="btn primary" id="csvBtn">Tải bảng điểm CSV</button><button type="button" class="btn ghost danger" id="clrBtn">Xoá tất cả</button></div><p class="hint" id="resMsg">Kết quả được giữ trong trình duyệt này. Tải CSV để lưu lại hoặc mở bằng Excel, Google Sheets.</p>';
+    host.innerHTML = h;
+    $$('[data-del]', host).forEach(function (b) { b.onclick = function () { results = results.filter(function (r) { return String(r.id) !== b.dataset.del; }); saveResults(); renderChip(); renderRes(); }; });
+    $('#csvBtn').onclick = exportCsv;
+    $('#clrBtn').onclick = function () {
+      this.textContent = 'Chạm lần nữa để xoá hết';
+      this.onclick = function () { results = []; saveResults(); renderChip(); renderRes(); };
+    };
+  }
+  async function exportCsv() {
+    const rows = [['Thời gian', 'Số báo danh', 'Mã đề', 'Số câu đúng', 'Tổng số câu', 'Điểm', 'Thang điểm']];
+    results.slice().reverse().forEach(function (r) {
+      const d = new Date(r.t);
+      rows.push([d.toLocaleString('vi-VN'), r.sbd, r.md, r.ok, r.total, r.score, r.scale]);
+    });
+    const csv = '﻿' + rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
+    const st = await saveFile('bang-diem-trac-nghiem.csv', csv), msg = $('#resMsg');
+    if (st === 'saved') msg.textContent = 'Đã lưu bảng điểm.';
+    else if (st === 'declined') msg.textContent = 'Bạn đã huỷ lưu. Nhấn lại nút để tải.';
+    else {
+      msg.textContent = 'Chế độ xem này không cho tải file. Sao chép nội dung bảng điểm bên dưới.';
+      const ta = document.createElement('textarea'); ta.className = 'field'; ta.readOnly = true; ta.value = csv.slice(1); ta.style.cssText = 'width:100%;min-height:120px;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:8px';
+      msg.parentNode.appendChild(ta); ta.focus(); ta.select();
+    }
+  }
+
+  /* ---------- Khởi động ---------- */
+  renderChip();
+  renderScan();
+  const first = function () { if (!scan) runPhoto(function () { return makeSample().canvas; }, 'sample'); };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { setTimeout(first, 30); }); else setTimeout(first, 200);
+  window.__omr = { makeSample: makeSample, analyze: analyze, getScan: function () { return scan; }, cfg: function () { return cfg; }, grade: function () { return scan && !scan.error ? currentGrade() : null; } };
+})();
+
+</script>
+
+</body></html>
