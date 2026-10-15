@@ -929,7 +929,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   function renderSheetSel() {
     const e = $('#sheetSel'); if (!e) return;
     e.innerHTML = '<span class="lbl">Loại phiếu</span><div class="vchips">' +
-      [['nh', 'Phiếu 1 · Nguyễn Huệ'], ['kt', 'Phiếu 2 · Bài kiểm tra']].map(function (x) { return '<button type="button" class="vchip" data-sh="' + x[0] + '" aria-pressed="' + (cfg.sheet === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
+      [['nh', 'Phiếu 1 · Bộ GD-ĐT'], ['kt', 'Phiếu 2 · B&T Pro']].map(function (x) { return '<button type="button" class="vchip" data-sh="' + x[0] + '" aria-pressed="' + (cfg.sheet === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
     $$('[data-sh]', e).forEach(function (b) { b.onclick = function () { switchSheet(b.dataset.sh); }; });
   }
   function switchSheet(id) {
