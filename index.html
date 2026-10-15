@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Chấm Trắc Nghiệm</title>
+<title>B&T Pro Mark</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Itim&display=swap">
 <style>
@@ -247,7 +247,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>Chấm Trắc Nghiệm</h1>
+      <h1>B&T Pro Mark</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -956,7 +956,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   function renderSheetSel() {
     const e = $('#sheetSel'); if (!e) return;
     e.innerHTML = '<span class="lbl">Loại phiếu</span><div class="vchips">' +
-      [['nh', 'Phiếu 1 · Nguyễn Huệ'], ['kt', 'Phiếu 2 · Bài kiểm tra']].map(function (x) { return '<button type="button" class="vchip" data-sh="' + x[0] + '" aria-pressed="' + (cfg.sheet === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
+      [['nh', 'Phiếu 1 · Bộ GD-ĐT'], ['kt', 'Phiếu 2 · B&T Pro']].map(function (x) { return '<button type="button" class="vchip" data-sh="' + x[0] + '" aria-pressed="' + (cfg.sheet === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
     $$('[data-sh]', e).forEach(function (b) { b.onclick = function () { switchSheet(b.dataset.sh); }; });
   }
   function switchSheet(id) {
