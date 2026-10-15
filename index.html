@@ -246,7 +246,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>B&T Pro Mark - Online</h1>
+      <h1>Chấm Trắc Nghiệm</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -1201,8 +1201,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     return true;
   }
   function lvRead(v) {
-    const k = Math.min(1, 1000 / Math.max(v.videoWidth, v.videoHeight)), w = Math.round(v.videoWidth * k), h = Math.round(v.videoHeight * k);
-    const cv = LV.rdc || (LV.rdc = document.createElement('canvas')); cv.width = w; cv.height = h;
+    const k = Math.min(1, 900 / Math.max(v.videoWidth, v.videoHeight)), w = Math.round(v.videoWidth * k), h = Math.round(v.videoHeight * k);
+    const cv = LV.rdc || (LV.rdc = document.createElement('canvas')); if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
     const c = cv.getContext('2d', { willReadFrequently: true }); c.drawImage(v, 0, 0, w, h);
     const r = analyzeImage(c.getImageData(0, 0, w, h), w, h, cfg, cfg.thr);
     if (r.error) return null;
@@ -1217,11 +1217,14 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     e.innerHTML = '<b>' + fmt(rd.g.total) + '</b><span>/' + fmt(rd.g.max) + '</span><small>SBD ' + esc(rd.scan.sbdStr || '—') + ' · Mã đề ' + esc(rd.scan.mdStr || '—') + '</small>';
   }
   function lvTick() {
+    try { lvTick0(); } catch (e) { lvMsg('Lỗi: ' + ((e && e.message) || e)); if (LV.stream) LV.timer = setTimeout(lvTick, 400); }
+  }
+  function lvTick0() {
     if (!LV.stream) return;
     const v = $('#lvVideo');
     if (LV.busy || v.readyState < 2 || !v.videoWidth) { LV.timer = setTimeout(lvTick, 120); return; }
     const W = 560, k = Math.min(1, W / Math.max(v.videoWidth, v.videoHeight)), w = Math.round(v.videoWidth * k), h = Math.round(v.videoHeight * k);
-    const cv = LV.work; cv.width = w; cv.height = h; LV.sx = v.videoWidth / w * 1; LV.sy = v.videoHeight / h * 1;
+    const cv = LV.work; if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; } LV.sx = v.videoWidth / w * 1; LV.sy = v.videoHeight / h * 1;
     LV.sx = 1 / k; LV.sy = 1 / k;
     const c = cv.getContext('2d', { willReadFrequently: true }); c.drawImage(v, 0, 0, w, h);
     let d; try { d = detectFrame(c.getImageData(0, 0, w, h), w, h); } catch (e) { d = { found: 0 }; }
@@ -1232,7 +1235,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       LV.stable = lvSameQuad(LV.last, d.pts, diag) ? LV.stable + 1 : 1; LV.last = d.pts; LV.miss = 0;
       const need = 5;
       const t = Date.now();
-      if (LV.stable >= 1 && t - LV.rdT > 300) { LV.rdT = t; try { LV.rd = lvRead(v); } catch (e) { LV.rd = null; } lvShowScore(LV.rd); }
+      if (LV.stable >= 1 && t - LV.rdT > 450) { LV.rdT = t; try { LV.rd = lvRead(v); } catch (e) { LV.rd = null; } lvShowScore(LV.rd); }
       lvOverlay(d.pts, LV.stable >= 2 ? 'ok' : 'wait', $('#lvLive').checked ? LV.rd : null);
       $('#lvBar').style.width = Math.min(100, LV.stable / need * 100) + '%';
       lvMsg(LV.stable >= 2 ? 'Giữ yên máy…' : 'Đã thấy phiếu');
@@ -1249,32 +1252,47 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   }
   async function lvCapture(manual) {
     if (LV.busy) return; LV.busy = true;
-    const v = $('#lvVideo'); lvMsg('Đang chấm…');
-    await nextFrame();
-    const k = Math.min(1, 1800 / Math.max(v.videoWidth, v.videoHeight)), cv = document.createElement('canvas');
-    cv.width = Math.round(v.videoWidth * k); cv.height = Math.round(v.videoHeight * k);
-    cv.getContext('2d', { willReadFrequently: true }).drawImage(v, 0, 0, cv.width, cv.height);
-    const s = buildScan(cv, 'camera');
+    const v = $('#lvVideo');
+    let s = null, errMsg = '';
+    try {
+      lvMsg('Đang chấm…');
+      const k = Math.min(1, 1500 / Math.max(v.videoWidth, v.videoHeight)), cv = document.createElement('canvas');
+      cv.width = Math.round(v.videoWidth * k); cv.height = Math.round(v.videoHeight * k);
+      cv.getContext('2d', { willReadFrequently: true }).drawImage(v, 0, 0, cv.width, cv.height);
+      try { v.pause(); } catch (e) {}
+      await nextFrame();
+      s = buildScan(cv, 'camera');
+    } catch (e) { errMsg = (e && e.message) || String(e); s = { error: 'load', source: 'camera' }; }
     LV.busy = false; LV.stable = 0; LV.last = null; $('#lvBar').style.width = '0';
-    if (s.error) { if (manual) { scan = s; lvStop(); renderScan(); return; } lvMsg('Chưa đọc rõ, giữ yên máy thêm chút'); LV.cool = Date.now() + 500; LV.timer = setTimeout(lvTick, 120); return; }
+    if (s.error) {
+      if (manual) { scan = s; lvStop(); renderScan(); return; }
+      lvMsg(errMsg ? 'Lỗi: ' + errMsg : 'Chưa đọc rõ, giữ yên máy thêm chút');
+      try { v.play(); } catch (e) {}
+      LV.cool = Date.now() + 700; LV.timer = setTimeout(lvTick, 150); return;
+    }
     if ($('#lvCont').checked) {
-      const g = pushResult(s); LV.count++;
-      $('#lvChip').textContent = 'Đã chấm ' + LV.count + ' tờ';
-      const e = $('#lvLast'); e.hidden = false;
-      e.textContent = 'SBD ' + (s.sbdStr || '—') + ' · Mã đề ' + (s.mdStr || '—') + ' · ' + (Math.round(g.total * 100) / 100) + '/' + (Math.round(g.max * 100) / 100) + ' điểm' + (s.matched ? '' : ' (chưa khớp mã đề, dùng đáp án đang chọn)');
-      scan = s; s.saved = true;
-      lvShowScore({ scan: s, g: g }); lvMsg('Xong, đưa tờ tiếp theo vào'); LV.cool = Date.now() + 2200; LV.timer = setTimeout(lvTick, 200);
+      let g;
+      try {
+        g = pushResult(s); LV.count++;
+        $('#lvChip').textContent = 'Đã chấm ' + LV.count + ' tờ';
+        const e = $('#lvLast'); e.hidden = false;
+        e.textContent = 'SBD ' + (s.sbdStr || '—') + ' · Mã đề ' + (s.mdStr || '—') + ' · ' + fmt(g.total) + '/' + fmt(g.max) + ' điểm' + (s.matched ? '' : ' (chưa khớp mã đề, dùng đáp án đang chọn)');
+        scan = s; s.saved = true; lvShowScore({ scan: s, g: g });
+      } catch (e) { lvMsg('Lỗi: ' + ((e && e.message) || e)); }
+      try { v.play(); } catch (e) {}
+      lvMsg('Xong, đưa tờ tiếp theo vào'); LV.cool = Date.now() + 2200; LV.timer = setTimeout(lvTick, 200);
       return;
     }
-    scan = s; lvStop(); renderScan();
-    try { document.querySelector('#v-scan').scrollIntoView({ block: 'start' }); } catch (e) {}
+    scan = s; lvStop();
+    try { renderScan(); } catch (e) { $('#scanOut').innerHTML = '<div class="card" style="margin-top:14px"><div class="note err"><b>Lỗi hiển thị kết quả.</b><br>' + esc((e && e.message) || e) + '</div></div>'; }
+    try { window.scrollTo(0, 0); document.querySelector('#v-scan').scrollIntoView({ block: 'start' }); } catch (e) {}
   }
   function lvStop() {
     clearTimeout(LV.timer); LV.timer = 0;
     if (LV.stream) { LV.stream.getTracks().forEach(function (t) { t.stop(); }); LV.stream = null; }
     const v = $('#lvVideo'); try { v.srcObject = null; } catch (e) {}
     $('#live').hidden = true; document.body.style.overflow = '';
-    if (LV.count) { renderChip(); }
+    try { if (LV.count) renderChip(); } catch (e) {}
   }
   async function startLive() {
     if (!camSupported()) { scan = { error: 'cam', camTitle: 'Trình duyệt này không hỗ trợ camera trực tiếp.', camBody: 'Dùng nút Chụp ảnh rồi chấm để thay thế.' }; renderScan(); return; }
