@@ -206,6 +206,13 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
 .keyv b { color: var(--fg); }
 .item .meta { overflow-wrap: anywhere; }
 
+/* Nhập bằng mã QR */
+.note.ok { background: var(--ok-soft); color: var(--ok); }
+.qrprev { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.qrpaste summary { cursor: pointer; font-size: 13px; color: var(--ink); font-weight: 600; padding: 6px 0; }
+.qrpaste[open] summary { margin-bottom: 6px; }
+.qrpaste .actions { margin-top: 8px; }
+
 </style>
 
 <div class="wrap">
@@ -241,6 +248,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
     </section>
 
     <section id="v-key" class="view" hidden aria-label="Đáp án">
+      <div class="card" id="qrCard"></div>
       <div class="card" id="cfgCard"></div>
       <div class="card" id="keyCard"></div>
     </section>
@@ -859,6 +867,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
 
   /* ---------- Tab Đáp án ---------- */
   function renderKey() {
+    renderQr();
     const ver = curVer(), tot = maxTotal();
     let h = '<div class="row"><h2>Cấu trúc đề</h2><span class="hint">Số câu mỗi phần</span></div>' +
       '<div class="chips" role="group" aria-label="Mẫu có sẵn">';
@@ -1028,7 +1037,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   }
 
   /* ---------- Nạp ảnh ---------- */
-  async function fileToCanvas(file) {
+  async function fileToCanvas(file, maxEdge) {
     let src = null, w = 0, h = 0, url = null;
     try { src = await createImageBitmap(file, { imageOrientation: 'from-image' }); w = src.width; h = src.height; }
     catch (e) {
@@ -1036,7 +1045,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       src = await new Promise(function (res, rej) { const im = new Image(); im.onload = function () { res(im); }; im.onerror = rej; im.src = url; });
       w = src.naturalWidth; h = src.naturalHeight;
     }
-    const k = Math.min(1, 1800 / Math.max(w, h));
+    const k = Math.min(1, (maxEdge || 1800) / Math.max(w, h));
     const cv = document.createElement('canvas');
     cv.width = Math.round(w * k); cv.height = Math.round(h * k);
     const c = cv.getContext('2d', { willReadFrequently: true });
@@ -1272,6 +1281,201 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     }
   }
 
+  /* ---------- Nhập đáp án bằng mã QR ---------- */
+  const JSQR_URL = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+  const ZXING_URL = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+  const scriptLoads = {};
+  function loadScript(url) {
+    if (!scriptLoads[url]) scriptLoads[url] = new Promise(function (res, rej) {
+      const el = document.createElement('script');
+      el.src = url; el.onload = function () { res(true); };
+      el.onerror = function () { delete scriptLoads[url]; rej(new Error('load')); };
+      document.head.appendChild(el);
+    });
+    return scriptLoads[url];
+  }
+  function scaledCanvas(cv, k) {
+    if (k === 1) return cv;
+    const c = document.createElement('canvas');
+    c.width = Math.max(16, Math.round(cv.width * k)); c.height = Math.max(16, Math.round(cv.height * k));
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.imageSmoothingQuality = 'high'; x.drawImage(cv, 0, 0, c.width, c.height);
+    return c;
+  }
+  const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }); };
+  async function decodeQrCanvas(cv) {
+    if (window.BarcodeDetector) {
+      try {
+        const det = new window.BarcodeDetector({ formats: ['qr_code'] });
+        const r = await det.detect(cv);
+        if (r && r.length && r[0].rawValue) return r[0].rawValue;
+      } catch (e) { /* thử cách khác */ }
+    }
+    const scales = [1, 0.5, 0.75, 0.35, 1.5];
+    try { await loadScript(JSQR_URL); } catch (e) { /* bỏ qua */ }
+    if (window.jsQR) {
+      for (let i = 0; i < scales.length; i++) {
+        if (scales[i] > 1 && Math.max(cv.width, cv.height) * scales[i] > 3200) continue;
+        const c = scaledCanvas(cv, scales[i]), d = c.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, c.width, c.height);
+        const r = window.jsQR(d.data, c.width, c.height, { inversionAttempts: 'attemptBoth' });
+        if (r && r.data) return r.data;
+        await tick();
+      }
+    }
+    try { await loadScript(ZXING_URL); } catch (e) { /* bỏ qua */ }
+    if (window.ZXing) {
+      for (let i = 0; i < scales.length; i++) {
+        if (scales[i] > 1 && Math.max(cv.width, cv.height) * scales[i] > 3200) continue;
+        try {
+          const c = scaledCanvas(cv, scales[i]), d = c.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, c.width, c.height);
+          const lum = new Uint8ClampedArray(c.width * c.height);
+          for (let j = 0, p = 0; j < lum.length; j++, p += 4) lum[j] = (d.data[p] * 299 + d.data[p + 1] * 587 + d.data[p + 2] * 114) / 1000;
+          const bmp = new window.ZXing.BinaryBitmap(new window.ZXing.HybridBinarizer(new window.ZXing.RGBLuminanceSource(lum, c.width, c.height)));
+          const hints = new Map(); hints.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
+          return new window.ZXing.QRCodeReader().decode(bmp, hints).getText();
+        } catch (e) { /* thử tỉ lệ khác */ }
+        await tick();
+      }
+    }
+    return null;
+  }
+  function numLike(x) { return typeof x === 'number' || (typeof x === 'string' && /^-?\d+([.,]\d+)?$/.test(x.trim())); }
+  function numToKey(x) {
+    const v = typeof x === 'number' ? x : parseFloat(String(x).trim().replace(',', '.'));
+    if (!isFinite(v)) return '';
+    let s = String(v);
+    if (/e/i.test(s)) s = v.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+    return s.replace('.', ',');
+  }
+  /* Mỗi mã đề là một dòng: [mã đề, đáp án Phần I (A–D), đáp án Phần II (D = đúng, S = sai, mỗi câu 4 ý), đáp án Phần III (số)]. */
+  function parseQrKey(text) {
+    let data;
+    try { data = JSON.parse(String(text).trim()); } catch (e) { return { error: 'json' }; }
+    let rows;
+    if (Array.isArray(data)) rows = data.length && Array.isArray(data[0]) ? data : [data];
+    else if (data && typeof data === 'object') rows = Object.keys(data).map(function (k) { return [k].concat(Array.isArray(data[k]) ? data[k] : []); });
+    else return { error: 'shape' };
+    rows = rows.filter(function (r) { return Array.isArray(r) && r.length > 1; });
+    if (!rows.length) return { error: 'shape' };
+    const P = [];
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i], raw = String(r[0]).replace(/\D/g, '').slice(0, 4), rest = r.slice(1);
+      let j = rest.length;
+      while (j > 0 && numLike(rest[j - 1])) j--;
+      const letters = rest.slice(0, j).map(function (x) { return String(x).trim().toUpperCase(); });
+      if (letters.some(function (x) { return !/^[ABCDS]$/.test(x); })) return { error: 'shape' };
+      P.push({ code: raw && raw.length < 4 ? raw.padStart(4, '0') : raw, letters: letters, nums: rest.slice(j) });
+    }
+    const L = P[0].letters.length, N3 = P[0].nums.length;
+    if (P.some(function (p) { return p.letters.length !== L || p.nums.length !== N3; })) return { error: 'inconsistent' };
+    if (N3 > MAX3) return { error: 'toomany' };
+    let fsMin = L, lcMax = -1;
+    P.forEach(function (p) {
+      p.letters.forEach(function (x, i) { if (x === 'S' && i < fsMin) fsMin = i; if (x !== 'S' && x !== 'D' && i > lcMax) lcMax = i; });
+    });
+    const cands = [];
+    for (let n2 = 0; n2 <= MAX2; n2++) {
+      const n1 = L - 4 * n2;
+      if (n1 < 0 || n1 > MAX1 || n1 > fsMin || n1 <= lcMax) continue;
+      cands.push({ n1: n1, n2: n2 });
+    }
+    if (!cands.length) return { error: 'structure' };
+    let best = null;
+    cands.forEach(function (c) {
+      const isPreset = PRESETS.some(function (p) { return p.n1 === c.n1 && p.n2 === c.n2 && p.n3 === N3; });
+      const isCur = c.n1 === cfg.n1 && c.n2 === cfg.n2 && N3 === cfg.n3;
+      const sc = (isPreset ? 0 : (isCur ? 100 : 200)) + Math.abs(c.n2 - 4);
+      if (!best || sc < best.sc) best = { n1: c.n1, n2: c.n2, sc: sc };
+    });
+    const warnings = [];
+    if (cands.length > 1) warnings.push('Cấu trúc đề có thể hiểu theo nhiều cách, app chọn ' + best.n1 + ' câu Phần I và ' + best.n2 + ' câu Phần II. Kiểm tra lại ở mục Cấu trúc đề.');
+    if (P.length > 8) warnings.push('Chỉ lấy 8 mã đề đầu tiên.');
+    const codes = P.map(function (p) { return p.code; });
+    if (codes.some(function (c, i) { return c && codes.indexOf(c) !== i; })) warnings.push('Có mã đề bị trùng nhau.');
+    const versions = P.slice(0, 8).map(function (p) {
+      const v = emptyVer(p.code);
+      for (let i = 0; i < best.n1; i++) v.mcq[i] = LET.indexOf(p.letters[i]);
+      for (let q = 0; q < best.n2; q++) for (let r = 0; r < 4; r++) v.tf[q][r] = p.letters[best.n1 + q * 4 + r];
+      for (let q = 0; q < N3; q++) v.num[q] = numToKey(p.nums[q]);
+      return v;
+    });
+    const longNum = versions.some(function (v) { return v.num.slice(0, N3).some(function (x) { return x.length > 4; }); });
+    if (longNum) warnings.push('Có đáp án Phần III dài hơn 4 ký tự, học sinh không thể tô hết trên phiếu.');
+    return { versions: versions, n1: best.n1, n2: best.n2, n3: N3, warnings: warnings, total: P.length };
+  }
+
+  let qrState = { kind: 'idle' }, qrUndo = null;
+  function renderQr() {
+    const host = $('#qrCard');
+    let h = '<h2>Nhập đáp án bằng mã QR</h2><p class="hint">Chụp hoặc chọn ảnh mã QR chứa đáp án các mã đề. App đọc mã, cho bạn xem lại rồi mới áp dụng.</p>' +
+      '<div class="actions"><label class="btn primary" for="qrCam">Chụp mã QR</label><label class="btn" for="qrPick">Chọn ảnh QR</label></div>' +
+      '<input class="vh" type="file" id="qrCam" accept="image/*" capture="environment"><input class="vh" type="file" id="qrPick" accept="image/*">' +
+      '<details class="qrpaste"' + (qrState.kind === 'paste' ? ' open' : '') + '><summary>Hoặc dán nội dung mã QR</summary><div class="field"><textarea id="qrText" spellcheck="false" placeholder=\'[["0101","A","B",…],["0102",…]]\'></textarea></div>' +
+      '<div class="actions"><button type="button" class="btn small" id="qrParse">Đọc nội dung</button></div></details>';
+    if (qrState.kind === 'busy') h += '<div class="busy"><span class="spin"></span>Đang đọc mã QR…</div>';
+    else if (qrState.kind === 'error') h += '<div class="note err"><b>' + esc(qrState.title) + '</b><br>' + esc(qrState.body) + '</div>';
+    else if (qrState.kind === 'preview') {
+      const r = qrState.res, pr = PRESETS.find(function (p) { return p.n1 === r.n1 && p.n2 === r.n2 && p.n3 === r.n3; });
+      h += '<div class="qrprev"><div><b>Đọc được ' + r.total + ' mã đề:</b> <span class="mono">' + r.versions.map(function (v) { return esc(v.code || '—'); }).join(' · ') + '</span></div>' +
+        '<div class="chips"><span class="chip">Phần I: ' + r.n1 + ' câu</span><span class="chip">Phần II: ' + r.n2 + ' câu</span><span class="chip">Phần III: ' + r.n3 + ' câu</span></div>' +
+        '<p class="hint">' + (pr ? 'Điểm sẽ đặt theo mẫu ' + pr.n1 + ' · ' + pr.n2 + ' · ' + pr.n3 + ': ' + fmt(pr.p1) + ' điểm mỗi câu Phần I, tối đa ' + fmt(pr.p2) + ' mỗi câu Phần II, ' + fmt(pr.p3) + ' mỗi câu Phần III.' : 'Điểm giữ nguyên như đang đặt (' + fmt(cfg.p1) + ' · ' + fmt(cfg.p2) + ' · ' + fmt(cfg.p3) + '). Chỉnh ở mục Cấu trúc đề nếu cần.') + ' Đáp án hiện có sẽ được thay bằng đáp án từ mã QR.</p>' +
+        r.warnings.map(function (w) { return '<div class="note">' + esc(w) + '</div>'; }).join('') +
+        '<div class="actions"><button type="button" class="btn primary" id="qrApply">Dùng đáp án này</button><button type="button" class="btn ghost" id="qrCancel">Bỏ qua</button></div></div>';
+    } else if (qrState.kind === 'done') {
+      h += '<div class="note ok"><b>Đã áp dụng đáp án từ mã QR.</b> ' + esc(qrState.text) + '</div>' + (qrUndo ? '<div class="actions"><button type="button" class="btn small" id="qrUndoBtn">Hoàn tác</button></div>' : '');
+    }
+    host.innerHTML = h;
+    ['qrCam', 'qrPick'].forEach(function (id) {
+      $('#' + id).onchange = function () { const f = this.files && this.files[0]; this.value = ''; if (f) qrFromFile(f); };
+    });
+    $('#qrParse').onclick = function () { qrFromText($('#qrText').value, true); };
+    const ap = $('#qrApply'); if (ap) ap.onclick = applyQr;
+    const ca = $('#qrCancel'); if (ca) ca.onclick = function () { qrState = { kind: 'idle' }; renderQr(); };
+    const un = $('#qrUndoBtn'); if (un) un.onclick = undoQr;
+  }
+  const QR_ERR = {
+    nocode: ['Không đọc được mã QR trong ảnh.', 'Chụp gần hơn để mã chiếm gần hết khung hình, đủ sáng, giữ máy thẳng và không để mã bị chói. Hoặc quét bằng ứng dụng khác rồi dán nội dung vào ô bên dưới.'],
+    json: ['Đọc được mã nhưng nội dung không phải bộ đáp án.', 'Mã QR cần chứa danh sách đáp án theo từng mã đề.'],
+    shape: ['Nội dung mã QR không đúng định dạng đáp án.', 'Mỗi mã đề cần có mã đề, đáp án Phần I (A đến D), Phần II (D là đúng, S là sai) và Phần III (số).'],
+    inconsistent: ['Các mã đề trong mã QR có số câu khác nhau.', 'Kiểm tra lại mã QR hoặc quét lại.'],
+    toomany: ['Phần III trong mã QR có nhiều hơn ' + MAX3 + ' câu.', 'Phiếu chỉ có ô tô cho tối đa ' + MAX3 + ' câu Phần III.'],
+    structure: ['Không suy ra được số câu của từng phần.', 'Tổng số đáp án không khớp với cấu trúc phiếu (Phần I tối đa ' + MAX1 + ' câu, Phần II tối đa ' + MAX2 + ' câu, mỗi câu 4 ý).']
+  };
+  function qrFromText(text, fromPaste) {
+    const r = parseQrKey(text);
+    if (r.error) { const m = QR_ERR[r.error] || QR_ERR.shape; qrState = { kind: 'error', title: m[0], body: m[1] }; }
+    else qrState = { kind: 'preview', res: r };
+    renderQr();
+    if (fromPaste) { const d = $('#qrCard .qrpaste'); if (d) d.open = true; }
+  }
+  async function qrFromFile(file) {
+    qrState = { kind: 'busy' }; renderQr();
+    await nextFrame();
+    try {
+      const cv = await fileToCanvas(file, 2400);
+      const text = await decodeQrCanvas(cv);
+      if (!text) { qrState = { kind: 'error', title: QR_ERR.nocode[0], body: QR_ERR.nocode[1] }; renderQr(); return; }
+      qrFromText(text, false);
+    } catch (e) { qrState = { kind: 'error', title: 'Không mở được ảnh này.', body: 'Thử chụp lại hoặc chọn ảnh JPG hoặc PNG khác.' }; renderQr(); }
+  }
+  function applyQr() {
+    const r = qrState.res; if (!r) return;
+    qrUndo = JSON.parse(JSON.stringify(cfg));
+    cfg.n1 = r.n1; cfg.n2 = r.n2; cfg.n3 = r.n3;
+    const pr = PRESETS.find(function (p) { return p.n1 === r.n1 && p.n2 === r.n2 && p.n3 === r.n3; });
+    if (pr) { cfg.p1 = pr.p1; cfg.p2 = pr.p2; cfg.p3 = pr.p3; }
+    cfg.versions = r.versions; cfg.active = 0;
+    qrState = { kind: 'done', text: r.total + ' mã đề, ' + r.n1 + ' · ' + r.n2 + ' · ' + r.n3 + ' câu.' };
+    saveCfg(); scan = null; renderScan(); renderChip(); renderKey();
+  }
+  function undoQr() {
+    if (!qrUndo) return;
+    const c = sanitizeCfg(qrUndo); qrUndo = null;
+    if (c) cfg = c;
+    qrState = { kind: 'idle' };
+    saveCfg(); scan = null; renderScan(); renderChip(); renderKey();
+  }
+
   /* ---------- Khởi động ---------- */
   renderChip();
   renderScan();
@@ -1284,7 +1488,9 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     cfg: function () { return cfg; },
     grade: function () { return scan && !scan.error ? grade() : null; },
     renderPhoto: function (marks, o) { return sheetReady.then(function (img) { return renderPhoto(img, cfg, marks, o); }); },
-    buildMarks: function () { return buildMarks(curVer()); }
+    buildMarks: function () { return buildMarks(curVer()); },
+    parseQrKey: parseQrKey,
+    decodeQrCanvas: decodeQrCanvas
   };
 })();
 
