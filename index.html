@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>B&T Pro Mark</title>
+<title>Chấm Trắc Nghiệm</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Itim&display=swap">
 <style>
@@ -247,7 +247,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>B&T Pro Mark</h1>
+      <h1>Chấm Trắc Nghiệm</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -263,7 +263,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
           </button>
           <label class="btn" for="cam">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>
-            Chụp bằng camera
+            Chụp bằng camera máy
           </label>
           <input class="vh" type="file" id="cam" accept="image/*" capture="environment">
           <label class="btn" for="pick">Chọn ảnh có sẵn</label>
@@ -884,9 +884,9 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     { n1: 40, n2: 0, n3: 0, p1: 0.25, p2: 0, p3: 0 }
   ];
   const PRESETS_KT = [
-    { n1: 10, n2: 2, n3: 3, p1: 0.4, p2: 1, p3: 0.5 },
-    { n1: 10, n2: 0, n3: 0, p1: 1, p2: 0, p3: 0 },
-    { n1: 10, n2: 2, n3: 3, p1: 0.25, p2: 1, p3: 0.25 }
+    { n1: 6, n2: 2, n3: 3, p1: 0.5, p2: 2, p3: 1 },
+    { n1: 10, n2: 2, n3: 3, p1: 0.3, p2: 1.5, p3: 1 },
+    { n1: 10, n2: 0, n3: 0, p1: 1, p2: 0, p3: 0 }
   ];
   const presetsNow = function () { return cfg && cfg.sheet === 'kt' ? PRESETS_KT : PRESETS; };
   function emptyVer(code) {
@@ -912,7 +912,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         return e;
       });
       const sh = SHEETS[c.sheet] ? c.sheet : 'nh', mx = SHEETS[sh];
-      return { v: 2, sheet: sh, n1: clampN(c.n1, 0, mx.MAX1), n2: clampN(c.n2, 0, mx.MAX2), n3: clampN(c.n3, 0, mx.MAX3), p1: clampP(c.p1, 0.25), p2: clampP(c.p2, 1), p3: clampP(c.p3, 0.25), thr: Math.max(0.08, Math.min(0.7, +c.thr || 0.3)), thrs: (c.thrs && typeof c.thrs === 'object') ? c.thrs : {}, active: Math.min(Math.max(c.active | 0, 0), vs.length - 1), versions: vs };
+      return { v: 2, sheet: sh, n1: clampN(c.n1, 0, mx.MAX1), n2: clampN(c.n2, 0, mx.MAX2), n3: clampN(c.n3, 0, mx.MAX3), p1: clampP(c.p1, 0.25), p2: clampP(c.p2, 1), p3: clampP(c.p3, 0.25), thr: Math.max(0.08, Math.min(0.7, +c.thr || 0.3)), thrs: (c.thrs && typeof c.thrs === 'object') ? c.thrs : {}, structs: (c.structs && typeof c.structs === 'object') ? c.structs : {}, active: Math.min(Math.max(c.active | 0, 0), vs.length - 1), versions: vs };
     } catch (e) { return null; }
   }
   let cfg = sanitizeCfg(LS.get('omr.cfg2', null)) || defaultCfg();
@@ -929,15 +929,19 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   function renderSheetSel() {
     const e = $('#sheetSel'); if (!e) return;
     e.innerHTML = '<span class="lbl">Loại phiếu</span><div class="vchips">' +
-      [['nh', 'Phiếu 1 · Bộ GD-ĐT'], ['kt', 'Phiếu 2 · B&T Pro']].map(function (x) { return '<button type="button" class="vchip" data-sh="' + x[0] + '" aria-pressed="' + (cfg.sheet === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
+      [['nh', 'Phiếu 1 · Nguyễn Huệ'], ['kt', 'Phiếu 2 · Bài kiểm tra']].map(function (x) { return '<button type="button" class="vchip" data-sh="' + x[0] + '" aria-pressed="' + (cfg.sheet === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
     $$('[data-sh]', e).forEach(function (b) { b.onclick = function () { switchSheet(b.dataset.sh); }; });
   }
   function switchSheet(id) {
     if (!SHEETS[id] || cfg.sheet === id) return Promise.resolve();
     cfg.thrs = cfg.thrs || {}; cfg.thrs[cfg.sheet] = cfg.thr;
+    const prevId = cfg.sheet;
     cfg.sheet = id; setSheet(id);
     cfg.thr = cfg.thrs[id] || (id === 'kt' ? 0.15 : 0.3);
-    cfg.n1 = Math.min(cfg.n1, MAX1); cfg.n2 = Math.min(cfg.n2, MAX2); cfg.n3 = Math.min(cfg.n3, MAX3);
+    cfg.structs = cfg.structs || {};
+    cfg.structs[prevId] = { n1: cfg.n1, n2: cfg.n2, n3: cfg.n3, p1: cfg.p1, p2: cfg.p2, p3: cfg.p3 };
+    const st = cfg.structs[id] || (id === 'kt' ? PRESETS_KT[0] : PRESETS[1]);
+    cfg.n1 = Math.min(st.n1, MAX1); cfg.n2 = Math.min(st.n2, MAX2); cfg.n3 = Math.min(st.n3, MAX3); cfg.p1 = st.p1; cfg.p2 = st.p2; cfg.p3 = st.p3;
     cfg.versions.forEach(function (v) { v.code = String(v.code || '').slice(0, MD_X.length); });
     saveCfg(); scan = null; renderSheetSel(); renderChip();
     if (tab === 'key') renderKey(); if (tab === 'sheet') renderSheet();
@@ -1255,7 +1259,9 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     const ox = (r.width - vw * k) / 2, oy = (r.height - vh * k) / 2;
     if (!pts) {
       const m = Math.min(r.width, r.height) * 0.08, L = 34; c.strokeStyle = '#fff9'; c.lineWidth = 3; c.lineCap = 'round';
-      const x0 = r.width * 0.07, x1 = r.width * 0.93, y0 = r.height * 0.14, y1 = r.height * 0.8;
+      const asp = (CORNERS[1][0] - CORNERS[0][0]) / (CORNERS[3][1] - CORNERS[0][1]);
+      const gw = Math.min(r.width * 0.9, r.height * 0.66 * asp), gh = gw / asp, cx = r.width / 2, cy = r.height * 0.47;
+      const x0 = cx - gw / 2, x1 = cx + gw / 2, y0 = cy - gh / 2, y1 = cy + gh / 2;
       [[x0, y0, 1, 1], [x1, y0, -1, 1], [x1, y1, -1, -1], [x0, y1, 1, -1]].forEach(function (q) {
         c.beginPath(); c.moveTo(q[0], q[1] + q[3] * L); c.lineTo(q[0], q[1]); c.lineTo(q[0] + q[2] * L, q[1]); c.stroke();
       });
