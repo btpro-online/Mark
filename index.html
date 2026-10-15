@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>B&T Pro Mark</title>
+<title>Chấm Trắc Nghiệm</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Itim&display=swap">
 <style>
@@ -247,7 +247,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>B&T Pro Mark</h1>
+      <h1>Chấm Trắc Nghiệm</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -263,7 +263,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
           </button>
           <label class="btn" for="cam">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>
-            Chụp bằng camera
+            Chụp bằng camera máy
           </label>
           <input class="vh" type="file" id="cam" accept="image/*" capture="environment">
           <label class="btn" for="pick">Chọn ảnh có sẵn</label>
@@ -726,7 +726,7 @@ function analyzeImage(imgData, w, h, cfg, thr) {
   const cands = [];
   blobs.forEach(function (px) {
     const sh = blobShape(px, w);
-    if (sh.fill >= 0.8 && sh.ratio <= 1.5 && sh.side >= 5) cands.push(sh);
+    if (sh.fill >= 0.8 && sh.ratio <= 1.5 && sh.side >= 4) cands.push(sh);
   });
   if (cands.length < 4) return { error: 'markers', found: cands.length };
   const quad = pickQuad(cands, w, h);
@@ -814,6 +814,33 @@ function detectFrame(imgData, w, h) {
     side += best ? best.s : 6;
   });
   return { found: fit ? 2 : 1, pts: fit ? fit.P : quad.pts, side: side / 4, areaFrac: area / (w * h), cands: cands };
+}
+
+/* ---------- Quét trực tiếp, bản nhanh: chỉ tìm ô vuông trong 4 ô cửa sổ ở bốn góc khung ---------- */
+/* wins: 4 hình chữ nhật [x0, y0, x1, y1] theo thứ tự góc trên trái, trên phải, dưới phải, dưới trái. */
+function detectCorners(imgData, w, h, wins) {
+  const g = redOf(imgData.data, w * h), pts = [], sides = [];
+  for (let k = 0; k < 4; k++) {
+    const x0 = Math.max(0, Math.floor(wins[k][0])), y0 = Math.max(0, Math.floor(wins[k][1]));
+    const x1 = Math.min(w, Math.ceil(wins[k][2])), y1 = Math.min(h, Math.ceil(wins[k][3]));
+    const cw = x1 - x0, ch = y1 - y0;
+    if (cw < 16 || ch < 16) return { found: 0, miss: k };
+    const g2 = new Float32Array(cw * ch);
+    for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) g2[y * cw + x] = g[(y0 + y) * w + x0 + x];
+    const blobs = findBlobs(adaptiveMask(g2, cw, ch), cw, ch);
+    let best = null;
+    blobs.forEach(function (px) {
+      const sh = blobShape(px, cw);
+      if (sh.fill >= 0.8 && sh.ratio <= 1.5 && sh.side >= 4 && (!best || sh.n > best.n)) best = sh;
+    });
+    if (!best) return { found: 0, miss: k };
+    pts.push([x0 + best.cx, y0 + best.cy]); sides.push(best.side);
+  }
+  let area = 0;
+  for (let i = 0; i < 4; i++) { const p = pts[i], q = pts[(i + 1) % 4]; area += p[0] * q[1] - q[0] * p[1]; }
+  area = Math.abs(area) / 2;
+  const fit = orient(g, w, h, pts);
+  return { found: fit ? 2 : 1, pts: fit ? fit.P : pts, side: (sides[0] + sides[1] + sides[2] + sides[3]) / 4, areaFrac: area / (w * h) };
 }
 
 /* Tạo ảnh chụp giả lập từ chính ảnh phiếu: tô đáp án, chụp nghiêng, lệch sáng, nhiễu. */
@@ -929,7 +956,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   function renderSheetSel() {
     const e = $('#sheetSel'); if (!e) return;
     e.innerHTML = '<span class="lbl">Loại phiếu</span><div class="vchips">' +
-      [['nh', 'Phiếu 1 · Bộ GD-ĐT'], ['kt', 'Phiếu 2 · B&T Pro']].map(function (x) { return '<button type="button" class="vchip" data-sh="' + x[0] + '" aria-pressed="' + (cfg.sheet === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
+      [['nh', 'Phiếu 1 · Nguyễn Huệ'], ['kt', 'Phiếu 2 · Bài kiểm tra']].map(function (x) { return '<button type="button" class="vchip" data-sh="' + x[0] + '" aria-pressed="' + (cfg.sheet === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
     $$('[data-sh]', e).forEach(function (b) { b.onclick = function () { switchSheet(b.dataset.sh); }; });
   }
   function switchSheet(id) {
@@ -1251,29 +1278,46 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   const LV = { rd: null, rdT: 0, stream: null, raf: 0, timer: 0, stable: 0, last: null, busy: false, miss: 0, cool: 0, count: 0, work: document.createElement('canvas') };
   function camSupported() { return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); }
   function lvMsg(t) { $('#lvMsg').textContent = t; }
+  function lvGeom(r, v) {
+    const asp = (CORNERS[1][0] - CORNERS[0][0]) / (CORNERS[3][1] - CORNERS[0][1]);
+    const gw = Math.min(r.width * 0.9, r.height * 0.66 * asp), gh = gw / asp, cx = r.width / 2, cy = r.height * 0.47;
+    const x0 = cx - gw / 2, x1 = cx + gw / 2, y0 = cy - gh / 2, y1 = cy + gh / 2;
+    const ws = Math.min(gw * 0.28, gh * 0.5, 120);
+    return { x0: x0, x1: x1, y0: y0, y1: y1, gw: gw, gh: gh, ws: ws, corners: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]] };
+  }
+  /* Vùng video cần phân tích: chỉ phần khung hướng dẫn cộng lề bằng nửa ô cửa sổ, lấy ở độ phân giải gốc nên ô vuông nhỏ vẫn rõ. */
+  function lvRegion(v, maxEdge) {
+    const orc = $('#lvOv').getBoundingClientRect(), G = lvGeom(orc, v), kc = Math.max(orc.width / v.videoWidth, orc.height / v.videoHeight);
+    const ox = (orc.width - v.videoWidth * kc) / 2, oy = (orc.height - v.videoHeight * kc) / 2, m = G.ws / 2 + 4;
+    const rx0 = Math.max(0, Math.floor((G.x0 - m - ox) / kc)), ry0 = Math.max(0, Math.floor((G.y0 - m - oy) / kc));
+    const rx1 = Math.min(v.videoWidth, Math.ceil((G.x1 + m - ox) / kc)), ry1 = Math.min(v.videoHeight, Math.ceil((G.y1 + m - oy) / kc));
+    const rw = Math.max(16, rx1 - rx0), rh = Math.max(16, ry1 - ry0), ka = Math.min(1, maxEdge / Math.max(rw, rh));
+    return { rx: rx0, ry: ry0, rw: rw, rh: rh, ka: ka, w: Math.round(rw * ka), h: Math.round(rh * ka), G: G, kc: kc, ox: ox, oy: oy };
+  }
   function lvOverlay(pts, state, rd) {
     const cv = $('#lvOv'), v = $('#lvVideo'), r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
     if (cv.width !== Math.round(r.width * dpr)) { cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); }
     const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, r.width, r.height);
     const vw = v.videoWidth || 1, vh = v.videoHeight || 1, k = Math.max(r.width / vw, r.height / vh);
     const ox = (r.width - vw * k) / 2, oy = (r.height - vh * k) / 2;
+    const G = lvGeom(r, v);
+    /* 4 ô cửa sổ sáng ở bốn góc: chỉ tìm ô vuông định vị trong các ô này */
+    c.fillStyle = pts ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.16)'; c.strokeStyle = 'rgba(255,255,255,0.45)'; c.lineWidth = 1.5;
+    G.corners.forEach(function (q) { c.fillRect(q[0] - G.ws / 2, q[1] - G.ws / 2, G.ws, G.ws); c.strokeRect(q[0] - G.ws / 2, q[1] - G.ws / 2, G.ws, G.ws); });
     if (!pts) {
-      const m = Math.min(r.width, r.height) * 0.08, L = 34; c.strokeStyle = '#fff9'; c.lineWidth = 3; c.lineCap = 'round';
-      const asp = (CORNERS[1][0] - CORNERS[0][0]) / (CORNERS[3][1] - CORNERS[0][1]);
-      const gw = Math.min(r.width * 0.9, r.height * 0.66 * asp), gh = gw / asp, cx = r.width / 2, cy = r.height * 0.47;
-      const x0 = cx - gw / 2, x1 = cx + gw / 2, y0 = cy - gh / 2, y1 = cy + gh / 2;
-      [[x0, y0, 1, 1], [x1, y0, -1, 1], [x1, y1, -1, -1], [x0, y1, 1, -1]].forEach(function (q) {
+      const L = 34; c.strokeStyle = '#fffc'; c.lineWidth = 3; c.lineCap = 'round';
+      [[G.x0, G.y0, 1, 1], [G.x1, G.y0, -1, 1], [G.x1, G.y1, -1, -1], [G.x0, G.y1, 1, -1]].forEach(function (q) {
         c.beginPath(); c.moveTo(q[0], q[1] + q[3] * L); c.lineTo(q[0], q[1]); c.lineTo(q[0] + q[2] * L, q[1]); c.stroke();
       });
       return;
     }
     if (rd) {
       const sc = rd.scan, kk = k / rd.k;
-      c.save(); c.translate(ox, oy); c.scale(kk, kk);
+      c.save(); c.translate(ox + rd.rx * k, oy + rd.ry * k); c.scale(kk, kk);
       try { paintMarks(c, sc, rd.g, cfg.versions[sc.ver], Math.max(1.6, sc.ppm * 0.26)); } catch (e) {}
       c.restore();
     }
-    const col = state === 'ok' ? '#3ddc84' : '#ffd23f', P = pts.map(function (p) { return [p[0] * LV.sx * k + ox, p[1] * LV.sy * k + oy]; });
+    const col = state === 'ok' ? '#3ddc84' : '#ffd23f', P = pts.map(function (p) { return [(p[0] * LV.sx + LV.rx) * k + ox, (p[1] * LV.sy + LV.ry) * k + oy]; });
     const sd = Math.max(14, (LV.side || 8) * LV.sx * k * 1.6);
     c.lineWidth = 4; c.lineCap = 'round'; c.lineJoin = 'round';
     for (let i = 0; i < 4; i++) {
@@ -1291,14 +1335,14 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     return true;
   }
   function lvRead(v) {
-    const k = Math.min(1, (SHEET.id === 'kt' ? 1300 : 900) / Math.max(v.videoWidth, v.videoHeight)), w = Math.round(v.videoWidth * k), h = Math.round(v.videoHeight * k);
+    const RG = lvRegion(v, SHEET.id === 'kt' ? 1300 : 1000), w = RG.w, h = RG.h;
     const cv = LV.rdc || (LV.rdc = document.createElement('canvas')); if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
-    const c = cv.getContext('2d', { willReadFrequently: true }); c.drawImage(v, 0, 0, w, h);
+    const c = cv.getContext('2d', { willReadFrequently: true }); c.drawImage(v, RG.rx, RG.ry, RG.rw, RG.rh, 0, 0, w, h);
     const r = analyzeImage(c.getImageData(0, 0, w, h), w, h, cfg, cfg.thr);
     if (r.error) return null;
     r.sbdStr = r.sbd.join(''); r.mdStr = r.md.join(''); pickVersionFor(r);
     const g = gradeAll({ p1: r.p1, p2: r.p2, p3: r.p3 }, cfg, cfg.versions[r.ver]);
-    return { scan: r, g: g, k: k };
+    return { scan: r, g: g, k: RG.ka, rx: RG.rx, ry: RG.ry };
   }
   function lvShowScore(rd) {
     const e = $('#lvScore');
@@ -1313,11 +1357,15 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     if (!LV.stream) return;
     const v = $('#lvVideo');
     if (LV.busy || v.readyState < 2 || !v.videoWidth) { LV.timer = setTimeout(lvTick, 120); return; }
-    const W = 560, k = Math.min(1, W / Math.max(v.videoWidth, v.videoHeight)), w = Math.round(v.videoWidth * k), h = Math.round(v.videoHeight * k);
-    const cv = LV.work; if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; } LV.sx = v.videoWidth / w * 1; LV.sy = v.videoHeight / h * 1;
-    LV.sx = 1 / k; LV.sy = 1 / k;
-    const c = cv.getContext('2d', { willReadFrequently: true }); c.drawImage(v, 0, 0, w, h);
-    let d; try { d = detectFrame(c.getImageData(0, 0, w, h), w, h); } catch (e) { d = { found: 0 }; }
+    const RG = lvRegion(v, 800), w = RG.w, h = RG.h, k = RG.ka;
+    const cv = LV.work; if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    LV.sx = 1 / k; LV.sy = 1 / k; LV.rx = RG.rx; LV.ry = RG.ry;
+    const c = cv.getContext('2d', { willReadFrequently: true }); c.drawImage(v, RG.rx, RG.ry, RG.rw, RG.rh, 0, 0, w, h);
+    const wins = RG.G.corners.map(function (q) {
+      const ax = ((q[0] - RG.ox) / RG.kc - RG.rx) * k, ay = ((q[1] - RG.oy) / RG.kc - RG.ry) * k, hs = RG.G.ws / 2 / RG.kc * k;
+      return [ax - hs, ay - hs, ax + hs, ay + hs];
+    });
+    let d; try { d = detectCorners(c.getImageData(0, 0, w, h), w, h, wins); } catch (e) { d = { found: 0 }; }
     const now = Date.now();
     if (now < LV.cool) { lvOverlay(d.found === 2 ? d.pts : null, 'ok'); LV.timer = setTimeout(lvTick, 120); return; }
     const minArea = SHEET.id === 'kt' ? 0.06 : 0.14;
@@ -1336,7 +1384,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       LV.miss++; if (LV.miss > 2) { LV.stable = 0; LV.t0 = 0; LV.last = null; $('#lvBar').style.width = '0'; }
       if (d.found >= 1 && d.areaFrac < minArea) lvMsg('Đưa máy lại gần hơn để phiếu choán khung');
       else if (d.found === 1) lvMsg('Thấy 4 góc nhưng chưa rõ chiều phiếu, giữ máy thẳng hơn');
-      else lvMsg('Đưa 4 ô vuông đen ở góc phiếu vào khung');
+      else lvMsg('Đặt 4 ô vuông đen của phiếu vào 4 ô sáng ở góc');
       lvOverlay(d.found >= 1 ? d.pts : null, 'wait');
       if (LV.miss > 4) { LV.rd = null; lvShowScore(null); }
     }
@@ -1348,9 +1396,9 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     let s = null, errMsg = '';
     try {
       lvMsg('Đang chấm…');
-      const k = Math.min(1, 1500 / Math.max(v.videoWidth, v.videoHeight)), cv = document.createElement('canvas');
-      cv.width = Math.round(v.videoWidth * k); cv.height = Math.round(v.videoHeight * k);
-      cv.getContext('2d', { willReadFrequently: true }).drawImage(v, 0, 0, cv.width, cv.height);
+      const RG = lvRegion(v, 1600), cv = document.createElement('canvas');
+      cv.width = RG.w; cv.height = RG.h;
+      cv.getContext('2d', { willReadFrequently: true }).drawImage(v, RG.rx, RG.ry, RG.rw, RG.rh, 0, 0, cv.width, cv.height);
       try { v.pause(); } catch (e) {}
       await nextFrame();
       s = buildScan(cv, 'camera');
@@ -1396,7 +1444,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       try { st = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); }
       catch (e1) { if (e1 && (e1.name === 'NotAllowedError' || e1.name === 'SecurityError')) throw e1; st = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); }
       LV.stream = st; const v = $('#lvVideo'); v.srcObject = st; await v.play();
-      lvMsg('Đưa 4 ô vuông đen ở góc phiếu vào khung'); LV.timer = setTimeout(lvTick, 200);
+      lvMsg('Đặt 4 ô vuông đen của phiếu vào 4 ô sáng ở góc'); LV.timer = setTimeout(lvTick, 200);
     } catch (e) {
       lvStop();
       const denied = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError');
