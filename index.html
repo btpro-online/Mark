@@ -332,7 +332,7 @@ const SHEET_PDF_B64="JVBERi0xLjUNJeLjz9MNCjEgMCBvYmoNPDwvTWV0YWRhdGEgMiAwIFIvT0N
 /* Toạ độ tính bằng mm trên trang 208 x 297 mm, đo trực tiếp từ file PDF gốc. */
 /* ---- Phiếu 1: PHIẾU TLTN Nguyễn Huệ (mm, trang 208 x 297) ---- */
 const SHEET_NH = {
-  id: 'nh', name: 'Phiếu TLTN Nguyễn Huệ', PW: 208, PH: 297, RB: 1.45,
+  id: 'nh', name: 'Phiếu 1 · Bộ GD-ĐT', PW: 208, PH: 297, RB: 1.45,
   CORNERS: [[6.69, 5.46], [202.41, 5.38], [202.46, 288.04], [6.65, 288.04]],
   MARK_ROWS: [
     [[6.69, 5.46], [202.41, 5.38]], [[6.98, 96.38], [202.46, 96.38]], [[6.98, 161.23], [202.46, 161.23]], [[6.65, 202.71], [202.46, 202.71]], [[6.65, 288.04], [202.46, 288.04]]
@@ -352,7 +352,7 @@ const SHEET_NH = {
 };
 /* ---- Phiếu 2: BÀI KIỂM TRA 45 phút (đơn vị = điểm ảnh của ảnh mẫu 583 x 309) ---- */
 const SHEET_KT = {
-  id: 'kt', name: 'Phiếu Bài kiểm tra 45 phút', PW: 583, PH: 309, RB: 4.0,
+  id: 'kt', name: 'Phiếu 2 · B&T Pro', PW: 583, PH: 309, RB: 4.0,
   CORNERS: [[12.0, 58.6], [569.5, 58.5], [570.0, 279.0], [13.0, 278.0]],
   BAND_Y: [1e9, 1e9, 1e9], bands: false,
   SPOT: [308.11, 58.34, 4.2],
@@ -956,7 +956,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   function renderSheetSel() {
     const e = $('#sheetSel'); if (!e) return;
     e.innerHTML = '<span class="lbl">Loại phiếu</span><div class="vchips">' +
-      [['nh', 'Phiếu 1 · Bộ GD-ĐT'], ['kt', 'Phiếu 2 · B&T Pro']].map(function (x) { return '<button type="button" class="vchip" data-sh="' + x[0] + '" aria-pressed="' + (cfg.sheet === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
+      [['nh', 'Phiếu 1 · Bộ GD-ĐT'], ['kt', 'Phiếu 2 · B&amp;T Pro']].map(function (x) { return '<button type="button" class="vchip" data-sh="' + x[0] + '" aria-pressed="' + (cfg.sheet === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
     $$('[data-sh]', e).forEach(function (b) { b.onclick = function () { switchSheet(b.dataset.sh); }; });
   }
   function switchSheet(id) {
@@ -1154,14 +1154,14 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   function renderSheet() {
     if (cfg.sheet === 'kt') {
       $('#sheetCard').innerHTML =
-        '<h2>Phiếu bài kiểm tra 45 phút</h2>' +
+        '<h2>Phiếu 2 · B&amp;T Pro</h2>' +
         '<p class="hint">Mẫu phiếu 2: số thứ tự 2 chữ số, mã đề 3 chữ số, Phần I tối đa 10 câu, Phần II tối đa 2 câu, Phần III tối đa 3 câu. Ứng dụng căn ảnh theo 4 ô vuông đen ở góc, ô vuông thứ năm giữa mép trên giúp nhận ra phiếu bị đặt ngược.</p>' +
-        '<img class="sheetimg" alt="Xem trước phiếu bài kiểm tra" src="' + SHEET2_JPG + '">' +
+        '<img class="sheetimg" alt="Xem trước phiếu 2 B&T Pro" src="' + SHEET2_JPG + '">' +
         '<div class="actions"><button type="button" class="btn primary" id="pdfBtn">Tải ảnh phiếu mẫu (JPG)</button></div>' +
         '<p class="hint" id="pdfMsg">Ảnh này là phiếu đã tô sẵn một số đáp án, dùng để tham khảo bố cục. Hãy chụp trọn cả phiếu, thấy đủ 4 ô vuông đen ở góc.</p>';
       $('#pdfBtn').onclick = async function () {
         const msg = $('#pdfMsg'); this.disabled = true;
-        const st = await saveFile('phieu-bai-kiem-tra-45-phut.jpg', b64bytes(SHEET2_JPG.split(',')[1]));
+        const st = await saveFile('phieu-2-bt-pro.jpg', b64bytes(SHEET2_JPG.split(',')[1]));
         if (st === 'saved') msg.textContent = 'Đã lưu ảnh phiếu.';
         else if (st === 'declined') msg.textContent = 'Bạn đã huỷ lưu. Nhấn lại nút để tải.';
         else msg.textContent = 'Chế độ xem này không cho tải file. Nhấn giữ ảnh phiếu ở trên để lưu về máy.';
@@ -1170,14 +1170,14 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       return;
     }
     $('#sheetCard').innerHTML =
-      '<h2>Phiếu trả lời trắc nghiệm</h2>' +
+      '<h2>Phiếu 1 · Bộ GD-ĐT</h2>' +
       '<p class="hint">Ứng dụng chấm đúng trên mẫu phiếu này: số báo danh 8 chữ số, mã đề 4 chữ số, Phần I tối đa 40 câu, Phần II tối đa 8 câu, Phần III tối đa 6 câu. Mỗi tờ có 4 ô vuông đen ở góc để căn ảnh.</p>' +
-      '<img class="sheetimg" alt="Xem trước phiếu trả lời" src="' + SHEET_JPG + '">' +
+      '<img class="sheetimg" alt="Xem trước phiếu 1 Bộ GD-ĐT" src="' + SHEET_JPG + '">' +
       '<div class="actions"><button type="button" class="btn primary" id="pdfBtn">Tải phiếu gốc (PDF)</button></div>' +
       '<p class="hint" id="pdfMsg">Khi in, chọn khổ A4 và tỉ lệ 100% (không chọn “vừa trang”). Học sinh tô kín ô bằng bút chì đen hoặc bút mực đen, xanh. Mực hồng của phiếu không ảnh hưởng đến việc đọc.</p>';
     $('#pdfBtn').onclick = async function () {
       const msg = $('#pdfMsg'); this.disabled = true;
-      const st = await saveFile('phieu-tra-loi-trac-nghiem.pdf', b64bytes(SHEET_PDF_B64));
+      const st = await saveFile('phieu-1-bo-gd-dt.pdf', b64bytes(SHEET_PDF_B64));
       if (st === 'saved') msg.textContent = 'Đã lưu file PDF của phiếu.';
       else if (st === 'declined') msg.textContent = 'Bạn đã huỷ lưu. Nhấn lại nút để tải.';
       else msg.textContent = 'Chế độ xem này không cho tải file. Nhấn giữ ảnh phiếu ở trên để lưu về máy, hoặc mở ứng dụng trong Claude để tải PDF.';
@@ -1373,12 +1373,12 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       LV.side = d.side; const diag = Math.hypot(w, h);
       LV.stable = lvSameQuad(LV.last, d.pts, diag) ? LV.stable + 1 : 1; LV.last = d.pts; LV.miss = 0;
       if (LV.stable < 2) LV.t0 = 0; else if (!LV.t0) LV.t0 = Date.now();
-      const HOLD = 2000, el = LV.t0 ? Date.now() - LV.t0 : 0;
+      const HOLD = 0, el = LV.t0 ? Date.now() - LV.t0 : 0;
       const t = Date.now();
       if (LV.stable >= 1 && t - LV.rdT > 450) { LV.rdT = t; try { LV.rd = lvRead(v); } catch (e) { LV.rd = null; } lvShowScore(LV.rd); }
       lvOverlay(d.pts, LV.stable >= 2 ? 'ok' : 'wait', $('#lvLive').checked ? LV.rd : null);
-      $('#lvBar').style.width = Math.min(100, el / HOLD * 100) + '%';
-      lvMsg(LV.t0 ? 'Giữ yên máy… tự chấm sau ' + Math.max(0.1, (HOLD - el) / 1000).toFixed(1).replace('.', ',') + ' giây' : 'Đã thấy phiếu');
+      $('#lvBar').style.width = LV.t0 ? '100%' : '40%';
+      lvMsg(LV.t0 ? 'Đã nhận 4 góc, đang chấm…' : 'Đã thấy phiếu');
       if (LV.t0 && el >= HOLD) { LV.t0 = 0; lvCapture(false); return; }
     } else {
       LV.miss++; if (LV.miss > 2) { LV.stable = 0; LV.t0 = 0; LV.last = null; $('#lvBar').style.width = '0'; }
@@ -1523,7 +1523,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     const g = grade(), ver = cfg.versions[scan.ver], sample = scan.source === 'sample';
     const parts = [[g.p1, cfg.n1], [g.p2, cfg.n2], [g.p3, cfg.n3]];
     let h = '<div class="card" style="margin-top:14px">';
-    if (sample) h += '<div><span class="tag">Ảnh mẫu</span> <span class="hint">' + (cfg.sheet === 'kt' ? 'Ảnh phiếu bài kiểm tra bạn gửi (đã tô sẵn), chụp nghiêng và lệch sáng. Các ô tô khá mờ nên máy dùng độ nhạy cao hơn.' : 'Phiếu thật của bạn được tô thử bằng đáp án giả, chụp nghiêng và lệch sáng. Chưa phải bài của học sinh.') + '</span></div>';
+    if (sample) h += '<div><span class="tag">Ảnh mẫu</span> <span class="hint">' + (cfg.sheet === 'kt' ? 'Ảnh phiếu B&T Pro (đã tô sẵn), chụp nghiêng và lệch sáng. Các ô tô khá mờ nên máy dùng độ nhạy cao hơn.' : 'Phiếu thật của bạn được tô thử bằng đáp án giả, chụp nghiêng và lệch sáng. Chưa phải bài của học sinh.') + '</span></div>';
     h += '<div class="gradebox"><div class="grade" role="img" aria-label="Điểm ' + fmt(g.total) + ' trên ' + fmt(g.max) + '">' +
       '<svg viewBox="0 0 200 100" preserveAspectRatio="none" aria-hidden="true"><path d="M30 58C22 28 78 6 126 12c46 6 70 30 56 56-14 26-82 32-124 20C22 78 14 54 38 30" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></svg>' +
       '<span class="num">' + fmt(g.total) + '</span><span class="of">/' + fmt(g.max) + '</span></div>' +
@@ -1657,7 +1657,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       rows.push([new Date(r.t).toLocaleString('vi-VN'), r.sbd, r.md, p[0], p[1], p[2], r.total, r.max]);
     });
     const csv = '﻿' + rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
-    const st = await saveFile('bang-diem-trac-nghiem.csv', csv), msg = $('#resMsg');
+    const st = await saveFile('bang-diem-bt-pro-mark.csv', csv), msg = $('#resMsg');
     if (st === 'saved') msg.textContent = 'Đã lưu bảng điểm.';
     else if (st === 'declined') msg.textContent = 'Bạn đã huỷ lưu. Nhấn lại nút để tải.';
     else {
