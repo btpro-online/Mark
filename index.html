@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>B&T Pro Mark</title>
+<title>B&amp;T Pro Mark</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Itim&display=swap">
 <style>
@@ -235,6 +235,21 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
 .lv-score span{font-size:16px;opacity:.85}
 .lv-score small{display:block;font-size:11px;opacity:.8;margin-top:4px}
 .sheetsel{margin-bottom:12px}.sheetsel .vchips{margin-top:6px}
+.lv-flash{position:absolute;inset:0;z-index:6;pointer-events:none;background:#3ddc84;opacity:0}
+.lv-flash.go{animation:lvflash .55s ease-out}
+@keyframes lvflash{0%{opacity:.55}100%{opacity:0}}
+.lv-res{position:absolute;inset:0;z-index:5;background:#000f;display:flex;flex-direction:column;padding:max(12px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));gap:10px}
+.lv-res[hidden]{display:none}
+.lv-res-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.lv-res-score b{font:700 44px/1 'Itim','Be Vietnam Pro',sans-serif;color:#ff7a6b}
+.lv-res-score span{font-size:20px;opacity:.85}
+.lv-res-info{font-size:13px;opacity:.9}
+.lv-res-img{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#111;border-radius:10px;overflow:hidden}
+.lv-res-img canvas{max-width:100%;max-height:100%;object-fit:contain}
+.lv-res-foot{display:flex;flex-direction:column;gap:8px}
+.lv-res-cd{text-align:center;font-size:14px;font-weight:600}
+.live .lv-top{z-index:7}
+.lv-res{padding-top:max(66px,calc(env(safe-area-inset-top) + 56px))}
 
 </style>
 
@@ -247,7 +262,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>B&T Pro Mark</h1>
+      <h1>B&amp;T Pro Mark</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -259,11 +274,11 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
         <div class="actions">
           <button class="btn primary big" type="button" id="btnLive">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-            Chấm ngay
+            Chụp và chấm ngay
           </button>
           <label class="btn" for="cam">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>
-            Chụp và chấm
+            Chụp bằng camera máy
           </label>
           <input class="vh" type="file" id="cam" accept="image/*" capture="environment">
           <label class="btn" for="pick">Chọn ảnh có sẵn</label>
@@ -277,6 +292,12 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
     <div id="live" class="live" hidden role="dialog" aria-label="Chấm trực tiếp">
       <video id="lvVideo" playsinline muted autoplay></video>
       <canvas id="lvOv"></canvas>
+      <div class="lv-flash" id="lvFlash"></div>
+      <div class="lv-res" id="lvRes" hidden>
+        <div class="lv-res-head"><div class="lv-res-score" id="lvResScore"></div><div class="lv-res-info" id="lvResInfo"></div></div>
+        <div class="lv-res-img"><canvas id="lvResCv"></canvas></div>
+        <div class="lv-res-foot"><div id="lvResCd" class="lv-res-cd"></div><button class="lv-btn wide" type="button" id="lvResNext">Chấm bài tiếp ngay</button></div>
+      </div>
       <div class="lv-top">
         <button class="lv-btn" type="button" id="lvClose" aria-label="Đóng">✕</button>
         <div class="lv-chip" id="lvChip">Chưa chấm tờ nào</div>
@@ -1279,26 +1300,63 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   function camSupported() { return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); }
   function lvMsg(t) { $('#lvMsg').textContent = t; }
   /* ---------- Âm báo và tuỳ chọn chấm trực tiếp ---------- */
-  const SND = { ctx: null };
+  const SND = { ctx: null, a: null, n: 0 };
+  function chimeWav() {
+    const sr = 22050, n = Math.floor(sr * 0.8), buf = new ArrayBuffer(44 + n * 2), dv = new DataView(buf);
+    const w4 = function (o, t) { for (let i = 0; i < 4; i++) dv.setUint8(o + i, t.charCodeAt(i)); };
+    w4(0, 'RIFF'); dv.setUint32(4, 36 + n * 2, true); w4(8, 'WAVE'); w4(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+    dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true); w4(36, 'data'); dv.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) {
+      const t = i / sr, t2 = t - 0.22;
+      let v = Math.sin(2 * Math.PI * 988 * t) * Math.exp(-5 * t) * Math.min(1, t * 400);
+      if (t2 > 0) v += Math.sin(2 * Math.PI * 1480 * t2) * Math.exp(-4.5 * t2) * Math.min(1, t2 * 400) * 1.1;
+      v = Math.max(-1, Math.min(1, v * 0.95));
+      dv.setInt16(44 + i * 2, v * 32767, true);
+    }
+    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  }
   function sndInit() {
+    try {
+      if (!SND.a) { SND.a = new Audio(chimeWav()); SND.a.preload = 'auto'; SND.a.volume = 1; }
+      /* mở khoá phát âm trong lúc bấm nút (iPhone bắt buộc) */
+      SND.a.muted = true;
+      const pr = SND.a.play();
+      const back = function () { try { SND.a.pause(); SND.a.currentTime = 0; SND.a.muted = false; } catch (e) {} };
+      if (pr && pr.then) pr.then(back).catch(function () { SND.a.muted = false; }); else back();
+    } catch (e) { /* bỏ qua */ }
     try {
       if (!SND.ctx) { const A = window.AudioContext || window.webkitAudioContext; if (A) SND.ctx = new A(); }
       if (SND.ctx && SND.ctx.state === 'suspended') SND.ctx.resume();
     } catch (e) { /* bỏ qua */ }
   }
+  function beepWeb() {
+    if (!SND.ctx) return;
+    const t = SND.ctx.currentTime;
+    [[988, 0], [1480, 0.22]].forEach(function (nt) {
+      const o = SND.ctx.createOscillator(), g = SND.ctx.createGain();
+      o.type = 'triangle'; o.frequency.value = nt[0];
+      g.gain.setValueAtTime(0.0001, t + nt[1]); g.gain.exponentialRampToValueAtTime(0.9, t + nt[1] + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + nt[1] + 0.4);
+      o.connect(g); g.connect(SND.ctx.destination); o.start(t + nt[1]); o.stop(t + nt[1] + 0.45);
+    });
+  }
+  function flashDone() {
+    const f = $('#lvFlash'); if (!f) return;
+    f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+  }
   function beepDone() {
-    try { if (navigator.vibrate) navigator.vibrate(50); } catch (e) {}
-    const on = $('#lvSnd'); if (!SND.ctx || (on && !on.checked)) return;
+    SND.n++;
+    flashDone();
+    try { if (navigator.vibrate) navigator.vibrate([80, 60, 80]); } catch (e) {}
+    const on = $('#lvSnd'); if (on && !on.checked) return;
     try {
-      const t = SND.ctx.currentTime;
-      [[880, 0], [1318.5, 0.13]].forEach(function (n) {
-        const o = SND.ctx.createOscillator(), g = SND.ctx.createGain();
-        o.type = 'sine'; o.frequency.value = n[0];
-        g.gain.setValueAtTime(0.0001, t + n[1]); g.gain.exponentialRampToValueAtTime(0.4, t + n[1] + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + n[1] + 0.22);
-        o.connect(g); g.connect(SND.ctx.destination); o.start(t + n[1]); o.stop(t + n[1] + 0.25);
-        SND.n = (SND.n || 0) + 1;
-      });
-    } catch (e) { /* bỏ qua */ }
+      if (SND.a) {
+        SND.a.muted = false; SND.a.volume = 1; SND.a.currentTime = 0;
+        const pr = SND.a.play();
+        if (pr && pr.catch) pr.catch(function () { try { beepWeb(); } catch (e) {} });
+        return;
+      }
+      beepWeb();
+    } catch (e) { try { beepWeb(); } catch (e2) { /* bỏ qua */ } }
   }
   const LVO = Object.assign({ cont: true, snd: true }, LS.get('omr.live', {}));
   function lvSaveOpts() { LVO.cont = $('#lvCont').checked; LVO.snd = $('#lvSnd').checked; LS.set('omr.live', LVO); }
@@ -1450,7 +1508,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       } catch (e) { lvMsg('Lỗi: ' + ((e && e.message) || e)); }
       try { v.play(); } catch (e) {}
       beepDone();
-      lvMsg('Đã chấm xong ✓ ' + fmt(g.total) + '/' + fmt(g.max) + ' điểm'); LV.cool = Date.now() + 2000; LV.needLeave = true; LV.leaveMiss = 0; LV.timer = setTimeout(lvTick, 200);
+      try { lvShowResult(s, g); } catch (e) {}
+      lvMsg('Đã chấm xong ✓ ' + fmt(g.total) + '/' + fmt(g.max) + ' điểm'); LV.cool = Date.now() + 5200; LV.needLeave = true; LV.leaveMiss = 0; LV.timer = setTimeout(lvTick, 200);
       return;
     }
     beepDone();
@@ -1458,7 +1517,33 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     try { renderScan(); } catch (e) { $('#scanOut').innerHTML = '<div class="card" style="margin-top:14px"><div class="note err"><b>Lỗi hiển thị kết quả.</b><br>' + esc((e && e.message) || e) + '</div></div>'; }
     try { window.scrollTo(0, 0); document.querySelector('#v-scan').scrollIntoView({ block: 'start' }); } catch (e) {}
   }
+  function lvShowResult(s, g) {
+    const box = $('#lvRes'), cvs = $('#lvResCv'), ver = cfg.versions[s.ver];
+    const ph = s.photo, k = Math.min(1, 1500 / Math.max(ph.width, ph.height));
+    cvs.width = Math.round(ph.width * k); cvs.height = Math.round(ph.height * k);
+    const c = cvs.getContext('2d'); c.save(); c.scale(k, k); c.drawImage(ph, 0, 0);
+    c.strokeStyle = 'rgba(60,130,255,0.9)'; c.lineWidth = Math.max(2, s.ppm * 0.28);
+    c.beginPath(); s.P.forEach(function (p, i) { if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath(); c.stroke();
+    try { paintMarks(c, s, g, ver, Math.max(1.8, s.ppm * 0.28)); } catch (e) {}
+    c.restore();
+    $('#lvResScore').innerHTML = '<b>' + fmt(g.total) + '</b><span>/' + fmt(g.max) + '</span>';
+    $('#lvResInfo').textContent = 'SBD ' + (s.sbdStr || '—') + ' · Mã đề ' + (s.mdStr || '—') + ' · Phần I ' + fmt(g.p1.pts) + ' · II ' + fmt(g.p2.pts) + ' · III ' + fmt(g.p3.pts);
+    box.hidden = false;
+    let left = 5; const cd = $('#lvResCd');
+    clearInterval(LV.resTimer); cd.textContent = 'Tự chuyển sang bài tiếp theo sau ' + left + ' giây';
+    LV.resTimer = setInterval(function () {
+      left--; if (left <= 0) { lvHideResult(); return; }
+      cd.textContent = 'Tự chuyển sang bài tiếp theo sau ' + left + ' giây';
+    }, 1000);
+  }
+  function lvHideResult() {
+    clearInterval(LV.resTimer); LV.resTimer = 0;
+    const box = $('#lvRes'); if (box) box.hidden = true;
+    LV.cool = Math.min(LV.cool, Date.now() + 200);
+    if (LV.stream) { try { $('#lvVideo').play(); } catch (e) {} }
+  }
   function lvStop() {
+    try { clearInterval(LV.resTimer); LV.resTimer = 0; const rb = $('#lvRes'); if (rb) rb.hidden = true; } catch (e) {}
     clearTimeout(LV.timer); LV.timer = 0;
     if (LV.stream) { LV.stream.getTracks().forEach(function (t) { t.stop(); }); LV.stream = null; }
     const v = $('#lvVideo'); try { v.srcObject = null; } catch (e) {}
@@ -1486,6 +1571,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   }
   $('#btnLive').addEventListener('click', startLive);
   $('#lvClose').addEventListener('click', lvStop);
+  $('#lvResNext').addEventListener('click', lvHideResult);
   $('#lvCont').addEventListener('change', lvSaveOpts); $('#lvSnd').addEventListener('change', lvSaveOpts);
   $('#lvShot').addEventListener('click', function () { lvCapture(true); });
   document.addEventListener('visibilitychange', function () { if (document.hidden && LV.stream) lvStop(); });
