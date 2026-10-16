@@ -1891,4 +1891,44 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     if (isUntouchedDefault()) { cfg.versions = r.versions.slice(0, 20); added = cfg.versions.length; first = 0; }
     else {
       r.versions.forEach(function (nv) {
-        const k = nv.code ? cfg.versions.findIndex(function (v) { return v.code === nv.code; }) 
+        const k = nv.code ? cfg.versions.findIndex(function (v) { return v.code === nv.code; }) : -1;
+        if (k >= 0) { cfg.versions[k] = nv; updated++; if (first < 0) first = k; }
+        else if (cfg.versions.length < 20) { cfg.versions.push(nv); added++; if (first < 0) first = cfg.versions.length - 1; }
+      });
+    }
+    cfg.active = Math.max(0, first);
+    qrState = { kind: 'done', text: (added ? 'Thêm ' + added + ' mã đề mới' : '') + (added && updated ? ', ' : '') + (updated ? 'cập nhật ' + updated + ' mã đề trùng' : '') + '. Hiện có ' + cfg.versions.length + ' mã đề: ' + cfg.versions.map(function (v) { return v.code || '—'; }).join(' · ') + '. Cấu trúc ' + r.n1 + ' · ' + r.n2 + ' · ' + r.n3 + ' câu.' };
+    saveCfg(); scan = null; renderScan(); renderChip(); renderKey();
+  }
+  function undoQr() {
+    if (!qrUndo) return;
+    const c = sanitizeCfg(qrUndo); qrUndo = null;
+    if (c) cfg = c;
+    qrState = { kind: 'idle' };
+    saveCfg(); scan = null; renderScan(); renderChip(); renderKey();
+  }
+
+  /* ---------- Khởi động ---------- */
+  renderSheetSel();
+  renderChip();
+  renderScan();
+  const first = function () { if (!scan) runPhoto(function () { return makeSample().then(function (s) { return s.canvas; }); }, 'sample'); };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { setTimeout(first, 30); }); else setTimeout(first, 200);
+  window.__omr = {
+    makeSample: makeSample,
+    analyze: analyze,
+    getScan: function () { return scan; },
+    cfg: function () { return cfg; },
+    grade: function () { return scan && !scan.error ? grade() : null; },
+    renderPhoto: function (marks, o) { return curSheetImg().then(function (img) { return renderPhoto(img, cfg, marks, o); }); },
+    setSheet: function (id) { return switchSheet(id); }, SHEET: function () { return SHEET; },
+    buildMarks: function () { return buildMarks(curVer()); },
+    parseQrKey: parseQrKey,
+    decodeQrCanvas: decodeQrCanvas,
+    startLive: startLive, lvStop: lvStop, LV: LV, SND: SND
+  };
+})();
+
+</script>
+
+</body></html>
