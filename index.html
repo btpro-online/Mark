@@ -258,6 +258,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
 .iv-body img{max-width:100%;height:auto}
 .viewimg{border:1px solid var(--line);background:var(--card,transparent);color:inherit;border-radius:999px;padding:4px 10px;font:600 12px/1 inherit;font-family:inherit;cursor:pointer;margin-right:6px;white-space:nowrap}
 .item .viewimg{grid-column:1/-1;width:100%;height:38px;margin:0;border-radius:10px;font:600 13px/1 inherit;font-family:inherit;color:var(--ink,inherit);background:rgba(60,100,180,.08)}
+.numq{grid-template-columns:auto 1fr}.numbad{grid-column:1/-1;display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted);padding-top:2px}.numbad input{width:18px;height:18px;margin:0}
 
 </style>
 
@@ -782,16 +783,19 @@ function numEq(a, b) {
   const x = parseFloat(a.replace(',', '.')), y = parseFloat(b.replace(',', '.'));
   return isFinite(x) && isFinite(y) && Math.abs(x - y) < 1e-9;
 }
+/* Đáp án có thể có nhiều lựa chọn: Phần I là số hoặc mảng số, Phần II là 'D', 'S' hoặc 'DS' (đúng sai đều được). */
+function keyArr(x) { return x === null || x === undefined ? [] : (Array.isArray(x) ? x : [x]); }
+function tfHas(kv, v) { return kv !== null && kv !== undefined && typeof kv === 'string' && kv.indexOf(v) >= 0; }
 const TF_LADDER = [0, 0.1, 0.25, 0.5, 1];
 function gradeAll(st, cfg, ver) {
   const out = { p1: { ok: 0, wrong: 0, blank: 0, multi: 0, st: [], pts: 0, max: 0 }, p2: { st: [], per: [], pts: 0, max: 0 }, p3: { ok: 0, st: [], pts: 0, max: 0 } };
   for (let q = 0; q < cfg.n1; q++) {
-    const kq = ver.mcq[q], m = st.p1[q];
-    if (kq === null || kq === undefined) { out.p1.st.push('skip'); continue; }
+    const kq = keyArr(ver.mcq[q]), m = st.p1[q];
+    if (!kq.length) { out.p1.st.push('skip'); continue; }
     out.p1.max += cfg.p1;
     if (m.length === 0) { out.p1.st.push('blank'); out.p1.blank++; }
     else if (m.length > 1) { out.p1.st.push('multi'); out.p1.multi++; }
-    else if (m[0] === kq) { out.p1.st.push('ok'); out.p1.ok++; }
+    else if (kq.indexOf(m[0]) >= 0) { out.p1.st.push('ok'); out.p1.ok++; }
     else { out.p1.st.push('wrong'); out.p1.wrong++; }
   }
   out.p1.pts = out.p1.ok * cfg.p1;
@@ -802,7 +806,7 @@ function gradeAll(st, cfg, ver) {
       const kv = kk[r], sv = st.p2[q][r];
       if (kv === null || kv === undefined) { items.push('skip'); continue; }
       graded++;
-      if (sv === kv) { cnt++; items.push('ok'); } else items.push(sv === '' ? 'blank' : 'wrong');
+      if (sv && sv !== 'X' && tfHas(kv, sv)) { cnt++; items.push('ok'); } else items.push(sv === '' ? 'blank' : 'wrong');
     }
     const frac = graded === 4 ? TF_LADDER[cnt] : (graded ? cnt / graded : 0);
     out.p2.per.push({ cnt: cnt, graded: graded, items: items, pts: frac * cfg.p2 });
@@ -814,6 +818,7 @@ function gradeAll(st, cfg, ver) {
     const kq = ver.num[q], s = st.p3[q];
     if (!kq) { out.p3.st.push('skip'); continue; }
     out.p3.max += cfg.p3;
+    if (kq === '*') { out.p3.st.push('ok'); out.p3.ok++; out.p3.pts += cfg.p3; continue; } /* câu lỗi đề: ai cũng được điểm */
     if (!s) out.p3.st.push('blank');
     else if (numEq(s, kq)) { out.p3.st.push('ok'); out.p3.ok++; out.p3.pts += cfg.p3; }
     else out.p3.st.push('wrong');
@@ -966,8 +971,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       if (!c || c.v !== 2 || !c.versions || !c.versions.length) return null;
       const vs = c.versions.slice(0, 20).map(function (v) {
         const e = emptyVer(String(v.code || '').replace(/\D/g, '').slice(0, 4));
-        for (let i = 0; i < 40; i++) { const x = v.mcq && v.mcq[i]; e.mcq[i] = (x === 0 || x === 1 || x === 2 || x === 3) ? x : null; }
-        for (let q = 0; q < 8; q++) for (let r = 0; r < 4; r++) { const x = v.tf && v.tf[q] && v.tf[q][r]; e.tf[q][r] = (x === 'D' || x === 'S') ? x : null; }
+        for (let i = 0; i < 40; i++) { const x = v.mcq && v.mcq[i]; const a = (Array.isArray(x) ? x : [x]).filter(function (y, k, ar) { return (y === 0 || y === 1 || y === 2 || y === 3) && ar.indexOf(y) === k; }).sort(); e.mcq[i] = a.length === 0 ? null : (a.length === 1 ? a[0] : a); }
+        for (let q = 0; q < 8; q++) for (let r = 0; r < 4; r++) { const x = v.tf && v.tf[q] && v.tf[q][r]; e.tf[q][r] = (x === 'D' || x === 'S') ? x : ((x === 'DS' || x === 'SD') ? 'DS' : null); }
         for (let q = 0; q < 6; q++) e.num[q] = String((v.num && v.num[q]) || '').slice(0, 5);
         return e;
       });
@@ -1117,32 +1122,41 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     const lb = ['', 'Dán nhanh chuỗi đáp án, ví dụ ABCD…', 'Dán nhanh đúng/sai theo từng câu (Đ hoặc D = đúng, S = sai)', 'Dán nhanh đáp án, cách nhau bằng dấu cách hoặc xuống dòng'][keyPart];
     if (!n) { host.innerHTML = '<p class="empty">Đề này không có Phần ' + ['', 'I', 'II', 'III'][keyPart] + '. Tăng số câu ở trên nếu cần.</p>'; return; }
     let h = '<div class="field"><label class="lbl" for="pasteIn">' + lb + '</label><textarea id="pasteIn" spellcheck="false" placeholder="' + ph + '"></textarea></div>' +
+      (keyPart === 1 ? '<p class="hint">Câu có nhiều đáp án đúng: chạm nhiều ô (ví dụ A và B), học sinh tô một trong các ô đó đều được tính đúng.</p>' : (keyPart === 2 ? '<p class="hint">Ý bị lỗi đề: chạm cả Đ và S, học sinh tô Đ hay S đều được tính đúng.</p>' : '')) +
       '<div class="actions"><button type="button" class="btn small" id="pasteGo">Điền đáp án</button><button type="button" class="btn small ghost" id="keyClear">Xoá phần này</button><span class="hint" id="setCount">' + countSet(ver) + '</span></div><div id="keyGrid"></div>';
     host.innerHTML = h;
     const grid = $('#keyGrid');
     if (keyPart === 1) {
-      grid.innerHTML = mcqGridHTML(cfg.n1, function (q, o) { return ver.mcq[q] === o ? 'sel' : ''; });
+      grid.innerHTML = mcqGridHTML(cfg.n1, function (q, o) { return keyArr(ver.mcq[q]).indexOf(o) >= 0 ? 'sel' : ''; });
       grid.onclick = function (e) {
         const b = e.target.closest('.o'); if (!b) return;
         const q = +b.dataset.q, o = +b.dataset.o;
-        ver.mcq[q] = ver.mcq[q] === o ? null : o; saveCfg();
-        $$('.o', b.parentNode).forEach(function (x) { const on = +x.dataset.o === ver.mcq[q]; x.classList.toggle('sel', on); x.setAttribute('aria-pressed', on); });
+        const set = keyArr(ver.mcq[q]).slice(), at = set.indexOf(o);
+        if (at >= 0) set.splice(at, 1); else set.push(o);
+        set.sort(); ver.mcq[q] = set.length === 0 ? null : (set.length === 1 ? set[0] : set); saveCfg();
+        $$('.o', b.parentNode).forEach(function (x) { const on = keyArr(ver.mcq[q]).indexOf(+x.dataset.o) >= 0; x.classList.toggle('sel', on); x.setAttribute('aria-pressed', on); });
         $('#setCount').textContent = countSet(ver);
       };
     } else if (keyPart === 2) {
-      grid.innerHTML = tfRowsHTML(cfg.n2, function (q, r, v) { return ver.tf[q][r] === v ? 'sel' : ''; });
+      grid.innerHTML = tfRowsHTML(cfg.n2, function (q, r, v) { return tfHas(ver.tf[q][r], v) ? 'sel' : ''; });
       grid.onclick = function (e) {
         const b = e.target.closest('.o'); if (!b) return;
         const q = +b.dataset.q, r = +b.dataset.r, v = b.dataset.v;
-        ver.tf[q][r] = ver.tf[q][r] === v ? null : v; saveCfg();
-        $$('.o', b.parentNode).forEach(function (x) { const on = x.dataset.v === ver.tf[q][r]; x.classList.toggle('sel', on); x.setAttribute('aria-pressed', on); });
+        let d = tfHas(ver.tf[q][r], 'D'), t = tfHas(ver.tf[q][r], 'S');
+        if (v === 'D') d = !d; else t = !t;
+        ver.tf[q][r] = d && t ? 'DS' : (d ? 'D' : (t ? 'S' : null)); saveCfg();
+        $$('.o', b.parentNode).forEach(function (x) { const on = tfHas(ver.tf[q][r], x.dataset.v); x.classList.toggle('sel', on); x.setAttribute('aria-pressed', on); });
         $('#setCount').textContent = countSet(ver);
       };
     } else {
       let g = '<div class="numlist">';
-      for (let q = 0; q < cfg.n3; q++) g += '<label class="numq"><span class="tqn">Câu ' + (q + 1) + '</span><input class="numin mono" data-q="' + q + '" maxlength="5" inputmode="text" value="' + esc(ver.num[q]) + '" placeholder="vd: -1,5"></label>';
-      grid.innerHTML = g + '</div><p class="hint">Gõ đáp án tối đa 4 ký tự, gồm chữ số, dấu trừ và dấu phẩy, đúng như học sinh phải tô trên phiếu.</p>';
+      for (let q = 0; q < cfg.n3; q++) { const bad = ver.num[q] === '*';
+        g += '<div class="numq' + (bad ? ' good' : '') + '"><span class="tqn">Câu ' + (q + 1) + '</span><input class="numin mono" data-q="' + q + '" maxlength="5" inputmode="text" value="' + (bad ? '' : esc(ver.num[q])) + '" placeholder="' + (bad ? 'câu lỗi' : 'vd: -1,5') + '"' + (bad ? ' disabled' : '') + '>' +
+          '<label class="numbad"><input type="checkbox" data-bad="' + q + '"' + (bad ? ' checked' : '') + '> Câu lỗi, ai cũng được điểm</label></div>'; }
+      grid.innerHTML = g + '</div><p class="hint">Gõ đáp án tối đa 4 ký tự, gồm chữ số, dấu trừ và dấu phẩy, đúng như học sinh phải tô trên phiếu. Câu bị lỗi đề: tích “Câu lỗi”, mọi học sinh đều được điểm câu đó, kể cả khi bỏ trống.</p>';
       grid.onchange = function (e) {
+        const bx = e.target.closest('[data-bad]');
+        if (bx) { ver.num[+bx.dataset.bad] = bx.checked ? '*' : ''; saveCfg(); renderKey(); return; }
         const i = e.target.closest('.numin'); if (!i) return;
         ver.num[+i.dataset.q] = cleanNum(i.value); i.value = ver.num[+i.dataset.q]; saveCfg();
         $('#setCount').textContent = countSet(ver);
@@ -1156,7 +1170,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         const ch = (s.replace(/[đ]/g, 'Đ').toUpperCase().match(/[ĐDTSF]/g) || []).map(function (c) { return (c === 'S' || c === 'F') ? 'S' : 'D'; });
         ch.slice(0, cfg.n2 * 4).forEach(function (v, i) { ver.tf[Math.floor(i / 4)][i % 4] = v; });
       } else {
-        s.split(/[\s;|]+/).filter(Boolean).slice(0, cfg.n3).forEach(function (t, i) { ver.num[i] = cleanNum(t); });
+        s.split(/[\s;|]+/).filter(Boolean).slice(0, cfg.n3).forEach(function (t, i) { ver.num[i] = t === '*' ? '*' : cleanNum(t); });
       }
       saveCfg(); renderKey();
     };
@@ -1225,7 +1239,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   function buildMarks(ver) {
     const rng = mulberry32(5), m = { p1: [], p2: [], p3: [] };
     for (let q = 0; q < cfg.n1; q++) {
-      const kq = ver.mcq[q], right = kq === null ? Math.floor(rng() * 4) : kq;
+      const kq = keyArr(ver.mcq[q])[0], right = kq === undefined ? Math.floor(rng() * 4) : kq;
       const other = function () { let x; do { x = Math.floor(rng() * 4); } while (x === right); return x; };
       if (q === 4 || q === 13) m.p1.push([other()]);
       else if (q === 9) m.p1.push([]);
@@ -1235,13 +1249,13 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     for (let q = 0; q < cfg.n2; q++) {
       const flip = [[], [1], [0, 2], [0, 1, 2]][q % 4], row = [];
       for (let r = 0; r < 4; r++) {
-        const kv = ver.tf[q][r] || 'D', wrong = flip.indexOf(r) >= 0;
+        const kv = (ver.tf[q][r] || 'D').charAt(0), wrong = flip.indexOf(r) >= 0;
         row.push(wrong ? (kv === 'D' ? 'S' : 'D') : kv);
       }
       m.p2.push(row);
     }
     for (let q = 0; q < cfg.n3; q++) {
-      const key = ver.num[q] || '';
+      const key = (ver.num[q] === '*' ? '1' : ver.num[q]) || '';
       m.p3.push(q === 2 ? '13' : (q === 4 ? '' : key));
     }
     m.sbd = '24011234'.split('');
@@ -1597,15 +1611,15 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     }
     const GOOD = '#1fb86a', BAD = '#ff4b3e', NEU = '#9aa3b5', KEY = '#1fb86a';
     sc.L.p1.forEach(function (b) {
-      const st = g.p1.st[b.q], isSel = sc.p1[b.q].indexOf(b.o) >= 0, isKey = ver.mcq[b.q] === b.o;
+      const st = g.p1.st[b.q], isSel = sc.p1[b.q].indexOf(b.o) >= 0, isKey = keyArr(ver.mcq[b.q]).indexOf(b.o) >= 0;
       if (isSel) poly(ringPts(sc, b, 1.4), st === 'ok' ? GOOD : (st === 'skip' ? NEU : BAD), false);
       else if (isKey && st !== 'ok') poly(ringPts(sc, b, 1.4), KEY, true, lw * 0.9);
     });
     sc.L.p2.forEach(function (b) {
       const sv = sc.p2[b.q][b.r], kv = ver.tf[b.q][b.r], mine = b.s === 0 ? 'D' : 'S';
       const isSel = sv === mine || sv === 'X';
-      if (isSel) poly(ringPts(sc, b, 1.4), kv === null ? NEU : (kv === mine && sv !== 'X' ? GOOD : BAD), false);
-      else if (kv === mine && sv !== kv) poly(ringPts(sc, b, 1.4), KEY, true, lw * 0.9);
+      if (isSel) poly(ringPts(sc, b, 1.4), kv === null ? NEU : (tfHas(kv, mine) && sv !== 'X' ? GOOD : BAD), false);
+      else if (tfHas(kv, mine) && !(sv && sv !== 'X' && tfHas(kv, sv))) poly(ringPts(sc, b, 1.4), KEY, true, lw * 0.9);
     });
     sc.L.p3.forEach(function (b) {
       const cells = numToCells(sc.p3[b.q]), st = g.p3.st[b.q];
@@ -1690,7 +1704,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         const sel = scan.p1[q].indexOf(o) >= 0, st = g.p1.st[q];
         let c = sel ? 'sel' : '';
         if (sel && st === 'ok') c += ' ok'; else if (sel && st !== 'skip') c += ' bad';
-        if (!sel && ver.mcq[q] === o && st !== 'ok') c += ' key';
+        if (!sel && keyArr(ver.mcq[q]).indexOf(o) >= 0 && st !== 'ok') c += ' key';
         return c;
       }, function (q) { const st = g.p1.st[q]; return st === 'wrong' || st === 'multi' ? 'bad' : (st === 'blank' ? 'mid' : ''); });
       host.onclick = function (e) {
@@ -1705,8 +1719,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       host.innerHTML = tfRowsHTML(cfg.n2, function (q, r, v) {
         const sv = scan.p2[q][r], kv = ver.tf[q][r], sel = sv === v || sv === 'X';
         let c = sel ? 'sel' : '';
-        if (sel && kv !== null) c += (kv === v && sv !== 'X') ? ' ok' : ' bad';
-        if (!sel && kv === v && sv !== kv) c += ' key';
+        if (sel && kv !== null) c += (tfHas(kv, v) && sv !== 'X') ? ' ok' : ' bad';
+        if (!sel && tfHas(kv, v) && !(sv && sv !== 'X' && tfHas(kv, sv))) c += ' key';
         return c;
       }, function (q) { const p = g.p2.per[q]; return p.graded && p.cnt < p.graded ? (p.cnt === 0 ? 'bad' : 'mid') : ''; },
       function (q) { const p = g.p2.per[q]; return p.graded ? '<b class="mono">' + fmt(p.pts) + '</b>' : ''; });
@@ -1723,7 +1737,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       for (let q = 0; q < cfg.n3; q++) {
         const st = g.p3.st[q];
         s += '<label class="numq ' + (st === 'wrong' ? 'bad' : (st === 'blank' ? 'mid' : (st === 'ok' ? 'good' : ''))) + '"><span class="tqn">Câu ' + (q + 1) + '</span><input class="numin mono" data-q="' + q + '" maxlength="5" value="' + esc(scan.p3[q]) + '" placeholder="bỏ trống">' +
-          '<span class="keyv">' + (ver.num[q] ? 'Đáp án <b class="mono">' + esc(ver.num[q]) + '</b>' : 'chưa có đáp án') + '</span></label>';
+          '<span class="keyv">' + (ver.num[q] === '*' ? 'Câu lỗi, được điểm' : (ver.num[q] ? 'Đáp án <b class="mono">' + esc(ver.num[q]) + '</b>' : 'chưa có đáp án')) + '</span></label>';
       }
       host.innerHTML = s + '</div>';
       host.onchange = function (e) {
