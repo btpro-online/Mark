@@ -257,6 +257,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
 .iv-body{flex:1;min-height:0;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:0 8px 16px}
 .iv-body img{max-width:100%;height:auto}
 .viewimg{border:1px solid var(--line);background:var(--card,transparent);color:inherit;border-radius:999px;padding:4px 10px;font:600 12px/1 inherit;font-family:inherit;cursor:pointer;margin-right:6px;white-space:nowrap}
+.item .viewimg{grid-column:1/-1;width:100%;height:38px;margin:0;border-radius:10px;font:600 13px/1 inherit;font-family:inherit;color:var(--ink,inherit);background:rgba(60,100,180,.08)}
 
 </style>
 
@@ -1818,7 +1819,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     results.forEach(function (r) {
       const d = new Date(r.t), tm = d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
       const pt = r.parts ? ' · I ' + fmt(r.parts[0]) + ' · II ' + fmt(r.parts[1]) + ' · III ' + fmt(r.parts[2]) : '';
-      h += '<div class="item"><div><div class="who">SBD ' + esc(r.sbd || '—') + ' · Mã đề ' + esc(r.md || '—') + '</div><div class="meta">' + tm + pt + '</div></div><span class="sc">' + fmt(r.total) + '</span>' + (r.img ? '<button type="button" class="viewimg" data-view="' + r.id + '" aria-label="Xem ảnh bài đã chấm">Xem bài</button>' : '') + '<button type="button" data-del="' + r.id + '" aria-label="Xoá bài này">×</button></div>';
+      h += '<div class="item"><div><div class="who">SBD ' + esc(r.sbd || '—') + ' · Mã đề ' + esc(r.md || '—') + '</div><div class="meta">' + tm + pt + '</div></div><span class="sc">' + fmt(r.total) + '</span>' + '<button type="button" data-del="' + r.id + '" aria-label="Xoá bài này">×</button>' + (r.img ? '<button type="button" class="viewimg" data-view="' + r.id + '">Xem ảnh bài đã chấm</button>' : '') + '</div>';
     });
     h += '</div><div class="actions"><button type="button" class="btn primary" id="csvBtn">Tải bảng điểm CSV</button><button type="button" class="btn ghost danger" id="clrBtn">Xoá tất cả</button></div><p class="hint" id="resMsg">Kết quả được giữ trong trình duyệt này. Tải CSV để lưu lại hoặc mở bằng Excel, Google Sheets.</p>';
     host.innerHTML = h;
