@@ -1529,7 +1529,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     $('#lvResScore').innerHTML = '<b>' + fmt(g.total) + '</b><span>/' + fmt(g.max) + '</span>';
     $('#lvResInfo').textContent = 'SBD ' + (s.sbdStr || '—') + ' · Mã đề ' + (s.mdStr || '—') + ' · Phần I ' + fmt(g.p1.pts) + ' · II ' + fmt(g.p2.pts) + ' · III ' + fmt(g.p3.pts);
     box.hidden = false;
-    let left = 5; const cd = $('#lvResCd');
+    let left = 2; const cd = $('#lvResCd');
     clearInterval(LV.resTimer); cd.textContent = 'Tự chuyển sang bài tiếp theo sau ' + left + ' giây';
     LV.resTimer = setInterval(function () {
       left--; if (left <= 0) { lvHideResult(); return; }
