@@ -957,7 +957,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     'CADBBACDABDCADBCAB'.split('').forEach(function (c, i) { v.mcq[i] = LET.indexOf(c); });
     v.tf[0] = ['D', 'S', 'D', 'S']; v.tf[1] = ['S', 'S', 'D', 'D']; v.tf[2] = ['D', 'D', 'S', 'D']; v.tf[3] = ['S', 'D', 'S', 'S'];
     v.num = ['2,5', '-1', '12', '0,75', '3', '-4,2'];
-    return { v: 2, sheet: 'nh', n1: 18, n2: 4, n3: 6, p1: 0.25, p2: 1, p3: 0.25, thr: 0.3, active: 0, versions: [v] };
+    return { v: 2, sheet: 'nh', n1: 18, n2: 4, n3: 6, p1: 0.25, p2: 1, p3: 0.25, thr: 0.08, td: 1, active: 0, versions: [v] };
   }
   const clampN = function (x, lo, hi) { x = x | 0; return Math.max(lo, Math.min(hi, x)); };
   const clampP = function (x, d) { x = +String(x).replace(',', '.'); return isFinite(x) && x >= 0 && x <= 100 ? x : d; };
@@ -972,7 +972,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         return e;
       });
       const sh = SHEETS[c.sheet] ? c.sheet : 'nh', mx = SHEETS[sh];
-      return { v: 2, sheet: sh, n1: clampN(c.n1, 0, mx.MAX1), n2: clampN(c.n2, 0, mx.MAX2), n3: clampN(c.n3, 0, mx.MAX3), p1: clampP(c.p1, 0.25), p2: clampP(c.p2, 1), p3: clampP(c.p3, 0.25), thr: Math.max(0.08, Math.min(0.7, +c.thr || 0.3)), thrs: (c.thrs && typeof c.thrs === 'object') ? c.thrs : {}, structs: (c.structs && typeof c.structs === 'object') ? c.structs : {}, active: Math.min(Math.max(c.active | 0, 0), vs.length - 1), versions: vs };
+      return { v: 2, sheet: sh, n1: clampN(c.n1, 0, mx.MAX1), n2: clampN(c.n2, 0, mx.MAX2), n3: clampN(c.n3, 0, mx.MAX3), p1: clampP(c.p1, 0.25), p2: clampP(c.p2, 1), p3: clampP(c.p3, 0.25), thr: c.td ? Math.max(0.08, Math.min(0.7, +c.thr || 0.08)) : 0.08, td: 1, thrs: (c.td && c.thrs && typeof c.thrs === 'object') ? c.thrs : {}, structs: (c.structs && typeof c.structs === 'object') ? c.structs : {}, active: Math.min(Math.max(c.active | 0, 0), vs.length - 1), versions: vs };
     } catch (e) { return null; }
   }
   let cfg = sanitizeCfg(LS.get('omr.cfg2', null)) || defaultCfg();
@@ -997,7 +997,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     cfg.thrs = cfg.thrs || {}; cfg.thrs[cfg.sheet] = cfg.thr;
     const prevId = cfg.sheet;
     cfg.sheet = id; setSheet(id);
-    cfg.thr = cfg.thrs[id] || (id === 'kt' ? 0.15 : 0.3);
+    cfg.thr = cfg.thrs[id] || 0.08;
     cfg.structs = cfg.structs || {};
     cfg.structs[prevId] = { n1: cfg.n1, n2: cfg.n2, n3: cfg.n3, p1: cfg.p1, p2: cfg.p2, p3: cfg.p3 };
     const st = cfg.structs[id] || (id === 'kt' ? PRESETS_KT[0] : PRESETS[1]);
@@ -1535,7 +1535,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     $('#lvResScore').innerHTML = '<b>' + fmt(g.total) + '</b><span>/' + fmt(g.max) + '</span>';
     $('#lvResInfo').textContent = 'SBD ' + (s.sbdStr || '—') + ' · Mã đề ' + (s.mdStr || '—') + ' · Phần I ' + fmt(g.p1.pts) + ' · II ' + fmt(g.p2.pts) + ' · III ' + fmt(g.p3.pts);
     box.hidden = false;
-    let left = 1; const cd = $('#lvResCd');
+    let left = 5; const cd = $('#lvResCd');
     clearInterval(LV.resTimer); cd.textContent = 'Tự chuyển sang bài tiếp theo sau ' + left + ' giây';
     LV.resTimer = setInterval(function () {
       left--; if (left <= 0) { lvHideResult(); return; }
