@@ -250,6 +250,13 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
 .lv-res-cd{text-align:center;font-size:14px;font-weight:600}
 .live .lv-top{z-index:7}
 .lv-res{padding-top:max(66px,calc(env(safe-area-inset-top) + 56px))}
+.imgview{position:fixed;inset:0;z-index:70;background:#000;color:#fff;display:flex;flex-direction:column}
+.imgview[hidden]{display:none}
+.iv-top{display:flex;align-items:center;gap:10px;padding:max(12px,env(safe-area-inset-top)) 16px 10px}
+.iv-msg{flex:1;text-align:center;font-size:13px}
+.iv-body{flex:1;min-height:0;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:0 8px 16px}
+.iv-body img{max-width:100%;height:auto}
+.viewimg{border:1px solid var(--line);background:var(--card,transparent);color:inherit;border-radius:999px;padding:4px 10px;font:600 12px/1 inherit;font-family:inherit;cursor:pointer;margin-right:6px;white-space:nowrap}
 
 </style>
 
@@ -274,11 +281,11 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
         <div class="actions">
           <button class="btn primary big" type="button" id="btnLive">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-            Chấm ngay
+            Chụp và chấm ngay
           </button>
           <label class="btn" for="cam">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>
-            Chụp và chấm
+            Chụp bằng camera máy
           </label>
           <input class="vh" type="file" id="cam" accept="image/*" capture="environment">
           <label class="btn" for="pick">Chọn ảnh có sẵn</label>
@@ -289,6 +296,10 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
       </div>
       <div id="scanOut" aria-live="polite"></div>
     </section>
+    <div id="imgView" class="imgview" hidden role="dialog" aria-label="Ảnh bài đã chấm">
+      <div class="iv-top"><button class="lv-btn" type="button" id="ivClose" aria-label="Đóng">✕</button><div class="iv-msg" id="ivMsg"></div><button class="lv-btn" type="button" id="ivSave">Lưu ảnh</button></div>
+      <div class="iv-body"><img id="ivImg" alt="Bài làm đã chấm"></div>
+    </div>
     <div id="live" class="live" hidden role="dialog" aria-label="Chấm trực tiếp">
       <video id="lvVideo" playsinline muted autoplay></video>
       <canvas id="lvOv"></canvas>
@@ -1518,18 +1529,12 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     try { window.scrollTo(0, 0); document.querySelector('#v-scan').scrollIntoView({ block: 'start' }); } catch (e) {}
   }
   function lvShowResult(s, g) {
-    const box = $('#lvRes'), cvs = $('#lvResCv'), ver = cfg.versions[s.ver];
-    const ph = s.photo, k = Math.min(1, 1500 / Math.max(ph.width, ph.height));
-    cvs.width = Math.round(ph.width * k); cvs.height = Math.round(ph.height * k);
-    const c = cvs.getContext('2d'); c.save(); c.scale(k, k); c.drawImage(ph, 0, 0);
-    c.strokeStyle = 'rgba(60,130,255,0.9)'; c.lineWidth = Math.max(2, s.ppm * 0.28);
-    c.beginPath(); s.P.forEach(function (p, i) { if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath(); c.stroke();
-    try { paintMarks(c, s, g, ver, Math.max(1.8, s.ppm * 0.28)); } catch (e) {}
-    c.restore();
+    const box = $('#lvRes'), cvs = $('#lvResCv'), src = annotatedCanvas(s, g);
+    cvs.width = src.width; cvs.height = src.height; cvs.getContext('2d').drawImage(src, 0, 0);
     $('#lvResScore').innerHTML = '<b>' + fmt(g.total) + '</b><span>/' + fmt(g.max) + '</span>';
     $('#lvResInfo').textContent = 'SBD ' + (s.sbdStr || '—') + ' · Mã đề ' + (s.mdStr || '—') + ' · Phần I ' + fmt(g.p1.pts) + ' · II ' + fmt(g.p2.pts) + ' · III ' + fmt(g.p3.pts);
     box.hidden = false;
-    let left = 1; const cd = $('#lvResCd');
+    let left = 5; const cd = $('#lvResCd');
     clearInterval(LV.resTimer); cd.textContent = 'Tự chuyển sang bài tiếp theo sau ' + left + ' giây';
     LV.resTimer = setInterval(function () {
       left--; if (left <= 0) { lvHideResult(); return; }
@@ -1727,14 +1732,69 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       };
     }
   }
+  /* ---------- Lưu ảnh bài đã chấm (IndexedDB, có vòng xanh/đỏ) ---------- */
+  const IMG = {
+    db: null,
+    open: function () {
+      if (IMG.db) return Promise.resolve(IMG.db);
+      return new Promise(function (res, rej) {
+        try {
+          const rq = indexedDB.open('btpm-images', 1);
+          rq.onupgradeneeded = function () { rq.result.createObjectStore('img'); };
+          rq.onsuccess = function () { IMG.db = rq.result; res(IMG.db); };
+          rq.onerror = function () { rej(rq.error); };
+        } catch (e) { rej(e); }
+      });
+    },
+    tx: function (mode, fn) {
+      return IMG.open().then(function (db) {
+        return new Promise(function (res, rej) {
+          const t = db.transaction('img', mode), st = t.objectStore('img'), r = fn(st);
+          t.oncomplete = function () { res(r && r.result); }; t.onerror = function () { rej(t.error); }; t.onabort = function () { rej(t.error); };
+        });
+      });
+    },
+    put: function (id, blob) { return IMG.tx('readwrite', function (st) { return st.put(blob, String(id)); }); },
+    get: function (id) { return IMG.tx('readonly', function (st) { return st.get(String(id)); }); },
+    del: function (id) { return IMG.tx('readwrite', function (st) { return st.delete(String(id)); }).catch(function () {}); },
+    clear: function () { return IMG.tx('readwrite', function (st) { return st.clear(); }).catch(function () {}); }
+  };
+  function annotatedCanvas(s, g) {
+    const ph = s.photo, k = Math.min(1, 1300 / Math.max(ph.width, ph.height)), cvs = document.createElement('canvas');
+    cvs.width = Math.round(ph.width * k); cvs.height = Math.round(ph.height * k);
+    const c = cvs.getContext('2d'); c.save(); c.scale(k, k); c.drawImage(ph, 0, 0);
+    c.strokeStyle = 'rgba(60,130,255,0.9)'; c.lineWidth = Math.max(2, s.ppm * 0.28);
+    c.beginPath(); s.P.forEach(function (p, i) { if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath(); c.stroke();
+    try { paintMarks(c, s, g, cfg.versions[s.ver], Math.max(1.8, s.ppm * 0.28)); } catch (e) {}
+    c.restore();
+    /* dải điểm ở đầu ảnh */
+    const bh = Math.max(34, Math.round(cvs.height * 0.055));
+    c.fillStyle = 'rgba(0,0,0,0.72)'; c.fillRect(0, 0, cvs.width, bh);
+    c.fillStyle = '#fff'; c.font = '600 ' + Math.round(bh * 0.55) + 'px sans-serif'; c.textBaseline = 'middle';
+    c.fillText('SBD ' + (s.sbdStr || '—') + '  ·  Mã đề ' + (s.mdStr || '—') + '  ·  Điểm ' + fmt(g.total) + '/' + fmt(g.max), 12, bh / 2);
+    return cvs;
+  }
+  function storeImage(s, g) {
+    try {
+      const id = s.resId, cvs = annotatedCanvas(s, g);
+      cvs.toBlob(function (b) {
+        if (!b) return;
+        IMG.put(id, b).then(function () {
+          const r = results.find(function (x) { return x.id === id; });
+          if (r && !r.img) { r.img = true; saveResults(); }
+        }).catch(function () { /* trình duyệt không cho lưu ảnh */ });
+      }, 'image/jpeg', 0.72);
+    } catch (e) { /* bỏ qua */ }
+  }
   function pushResult(s) {
     const g = gradeAll({ p1: s.p1, p2: s.p2, p3: s.p3 }, cfg, cfg.versions[s.ver]);
     const e = { t: Date.now(), sbd: s.sbdStr, md: s.mdStr, total: Math.round(g.total * 100) / 100, max: Math.round(g.max * 100) / 100, parts: [g.p1.pts, g.p2.pts, g.p3.pts].map(function (x) { return Math.round(x * 100) / 100; }) };
     const k = s.resId ? results.findIndex(function (r) { return r.id === s.resId; }) : -1;
-    if (k >= 0) { e.id = s.resId; e.t = results[k].t; results[k] = e; }
+    if (k >= 0) { e.id = s.resId; e.t = results[k].t; e.img = results[k].img; results[k] = e; }
     else { e.id = s.resId = Date.now() + Math.floor(Math.random() * 1000); results.unshift(e); }
-    if (results.length > 500) results.length = 500;
+    if (results.length > 500) { results.slice(500).forEach(function (r) { IMG.del(r.id); }); results.length = 500; }
     saveResults(); s.saved = true; renderChip();
+    storeImage(s, g);
     return g;
   }
   function autoSave(s) { if (s && !s.error && s.source !== 'sample') { try { pushResult(s); } catch (e) {} } }
@@ -1758,17 +1818,36 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     results.forEach(function (r) {
       const d = new Date(r.t), tm = d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
       const pt = r.parts ? ' · I ' + fmt(r.parts[0]) + ' · II ' + fmt(r.parts[1]) + ' · III ' + fmt(r.parts[2]) : '';
-      h += '<div class="item"><div><div class="who">SBD ' + esc(r.sbd || '—') + ' · Mã đề ' + esc(r.md || '—') + '</div><div class="meta">' + tm + pt + '</div></div><span class="sc">' + fmt(r.total) + '</span><button type="button" data-del="' + r.id + '" aria-label="Xoá bài này">×</button></div>';
+      h += '<div class="item"><div><div class="who">SBD ' + esc(r.sbd || '—') + ' · Mã đề ' + esc(r.md || '—') + '</div><div class="meta">' + tm + pt + '</div></div><span class="sc">' + fmt(r.total) + '</span>' + (r.img ? '<button type="button" class="viewimg" data-view="' + r.id + '" aria-label="Xem ảnh bài đã chấm">Xem bài</button>' : '') + '<button type="button" data-del="' + r.id + '" aria-label="Xoá bài này">×</button></div>';
     });
     h += '</div><div class="actions"><button type="button" class="btn primary" id="csvBtn">Tải bảng điểm CSV</button><button type="button" class="btn ghost danger" id="clrBtn">Xoá tất cả</button></div><p class="hint" id="resMsg">Kết quả được giữ trong trình duyệt này. Tải CSV để lưu lại hoặc mở bằng Excel, Google Sheets.</p>';
     host.innerHTML = h;
-    $$('[data-del]', host).forEach(function (b) { b.onclick = function () { results = results.filter(function (r) { return String(r.id) !== b.dataset.del; }); saveResults(); renderChip(); renderRes(); }; });
+    $$('[data-del]', host).forEach(function (b) { b.onclick = function () { IMG.del(b.dataset.del); results = results.filter(function (r) { return String(r.id) !== b.dataset.del; }); saveResults(); renderChip(); renderRes(); }; });
+    $$('[data-view]', host).forEach(function (b) { b.onclick = function () { viewImage(b.dataset.view); }; });
     $('#csvBtn').onclick = exportCsv;
     $('#clrBtn').onclick = function () {
       this.textContent = 'Chạm lần nữa để xoá hết';
-      this.onclick = function () { results = []; saveResults(); renderChip(); renderRes(); };
+      this.onclick = function () { results = []; IMG.clear(); saveResults(); renderChip(); renderRes(); };
     };
   }
+  let viewUrl = null, viewBlob = null, viewName = '';
+  async function viewImage(id) {
+    const r = results.find(function (x) { return String(x.id) === String(id); }); if (!r) return;
+    const box = $('#imgView'); box.hidden = false; $('#ivMsg').textContent = 'Đang mở ảnh…'; $('#ivImg').removeAttribute('src');
+    try {
+      const b = await IMG.get(id);
+      if (!b) { $('#ivMsg').textContent = 'Không tìm thấy ảnh của bài này (có thể đã bị trình duyệt dọn bớt).'; return; }
+      if (viewUrl) URL.revokeObjectURL(viewUrl);
+      viewBlob = b; viewUrl = URL.createObjectURL(b); viewName = 'bai-' + (r.sbd || 'khong-sbd') + '-' + (r.md || 'khong-ma-de') + '.jpg';
+      $('#ivImg').src = viewUrl; $('#ivMsg').textContent = 'SBD ' + (r.sbd || '—') + ' · Mã đề ' + (r.md || '—') + ' · ' + fmt(r.total) + '/' + fmt(r.max) + ' điểm';
+    } catch (e) { $('#ivMsg').textContent = 'Không mở được ảnh.'; }
+  }
+  $('#ivClose').addEventListener('click', function () { $('#imgView').hidden = true; });
+  $('#ivSave').addEventListener('click', async function () {
+    if (!viewBlob) return;
+    const st = await saveFile(viewName, viewBlob);
+    $('#ivMsg').textContent = st === 'saved' ? 'Đã lưu ảnh.' : (st === 'declined' ? 'Bạn đã huỷ lưu.' : 'Chế độ xem này không cho tải file. Nhấn giữ vào ảnh để lưu về máy.');
+  });
   async function exportCsv() {
     const rows = [['Thời gian', 'Số báo danh', 'Mã đề', 'Phần I', 'Phần II', 'Phần III', 'Tổng điểm', 'Điểm tối đa']];
     results.slice().reverse().forEach(function (r) {
