@@ -1205,7 +1205,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         '<p class="hint">Mẫu phiếu 2: số thứ tự 2 chữ số, mã đề 3 chữ số, Phần I tối đa 10 câu, Phần II tối đa 2 câu, Phần III tối đa 3 câu. Ứng dụng căn ảnh theo 4 ô vuông đen ở góc, ô vuông thứ năm giữa mép trên giúp nhận ra phiếu bị đặt ngược.</p>' +
         '<img class="sheetimg" alt="Xem trước phiếu 2 B&T Pro" src="' + SHEET2_JPG + '">' +
         '<div class="actions"><button type="button" class="btn primary" id="pdfBtn">Tải ảnh phiếu mẫu (JPG)</button></div>' +
-        '<p class="hint" id="pdfMsg">Ảnh này là phiếu đã tô sẵn một số đáp án, dùng để tham khảo bố cục. Hãy chụp trọn cả phiếu, thấy đủ 4 ô vuông đen ở góc.</p>';
+        '<p class="hint" id="pdfMsg">Ảnh này là phiếu đã tô sẵn một số đáp án, dùng để tham khảo bố cục. Hãy chụp trọn cả phiếu, thấy đủ 4 ô vuông đen ở góc. Muốn có phiếu chuẩn hãy liên hệ: Lê Hoài Sơn - Huế (0914114008).</p>';
       $('#pdfBtn').onclick = async function () {
         const msg = $('#pdfMsg'); this.disabled = true;
         const st = await saveFile('phieu-2-bt-pro.jpg', b64bytes(SHEET2_JPG.split(',')[1]));
