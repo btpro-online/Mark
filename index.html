@@ -1191,7 +1191,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         '<p class="hint">Mẫu phiếu 2: số thứ tự 2 chữ số, mã đề 3 chữ số, Phần I tối đa 10 câu, Phần II tối đa 2 câu, Phần III tối đa 3 câu. Ứng dụng căn ảnh theo 4 ô vuông đen ở góc, ô vuông thứ năm giữa mép trên giúp nhận ra phiếu bị đặt ngược.</p>' +
         '<img class="sheetimg" alt="Xem trước phiếu 2 B&T Pro" src="' + SHEET2_JPG + '">' +
         '<div class="actions"><button type="button" class="btn primary" id="pdfBtn">Tải ảnh phiếu mẫu (JPG)</button></div>' +
-        '<p class="hint" id="pdfMsg">Ảnh này là phiếu đã tô sẵn một số đáp án, dùng để tham khảo bố cục. Liên hệ: Lê Hoài Sơn - Huế - 0914114008 - để lấy phiếu gốc nhé!</p>';
+        '<p class="hint" id="pdfMsg">Ảnh này là phiếu đã tô sẵn một số đáp án, dùng để tham khảo bố cục. Hãy chụp trọn cả phiếu, thấy đủ 4 ô vuông đen ở góc.</p>';
       $('#pdfBtn').onclick = async function () {
         const msg = $('#pdfMsg'); this.disabled = true;
         const st = await saveFile('phieu-2-bt-pro.jpg', b64bytes(SHEET2_JPG.split(',')[1]));
@@ -1207,13 +1207,13 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       '<p class="hint">Ứng dụng chấm đúng trên mẫu phiếu này: số báo danh 8 chữ số, mã đề 4 chữ số, Phần I tối đa 40 câu, Phần II tối đa 8 câu, Phần III tối đa 6 câu. Mỗi tờ có 4 ô vuông đen ở góc để căn ảnh.</p>' +
       '<img class="sheetimg" alt="Xem trước phiếu 1 Bộ GD-ĐT" src="' + SHEET_JPG + '">' +
       '<div class="actions"><button type="button" class="btn primary" id="pdfBtn">Tải phiếu gốc (PDF)</button></div>' +
-      '<p class="hint" id="pdfMsg">Khi in, chọn khổ A4 và tỉ lệ 100% (không chọn “vừa trang”). Học sinh tô kín ô bằng bút chì đen hoặc bút mực đen, xanh. Mực hồng của phiếu không ảnh hưởng đến việc đọc. Lê Hoài Sơn - Huế.</p>';
+      '<p class="hint" id="pdfMsg">Khi in, chọn khổ A4 và tỉ lệ 100% (không chọn “vừa trang”). Học sinh tô kín ô bằng bút chì đen hoặc bút mực đen, xanh. Mực hồng của phiếu không ảnh hưởng đến việc đọc.</p>';
     $('#pdfBtn').onclick = async function () {
       const msg = $('#pdfMsg'); this.disabled = true;
       const st = await saveFile('phieu-1-bo-gd-dt.pdf', b64bytes(SHEET_PDF_B64));
       if (st === 'saved') msg.textContent = 'Đã lưu file PDF của phiếu.';
       else if (st === 'declined') msg.textContent = 'Bạn đã huỷ lưu. Nhấn lại nút để tải.';
-      else msg.textContent = 'Chế độ xem này không cho tải file. Nhấn giữ ảnh phiếu ở trên để lưu về máy.';
+      else msg.textContent = 'Chế độ xem này không cho tải file. Nhấn giữ ảnh phiếu ở trên để lưu về máy, hoặc mở ứng dụng trong Claude để tải PDF.';
       this.disabled = false;
     };
   }
@@ -1992,8 +1992,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   let qrState = { kind: 'idle' }, qrUndo = null;
   function renderQr() {
     const host = $('#qrCard');
-    let h = '<h2>Nhập đáp án bằng mã QR</h2><p class="hint">Chụp hoặc chọn ảnh mã QR chứa đáp án các mã đề. App đọc mã, cho bạn xem lại rồi mới áp dụng.</p>' +
-      '<div class="actions"><label class="btn primary" for="qrCam">Chụp mã QR</label><label class="btn" for="qrPick">Chọn ảnh QR</label></div>' +
+    let h = '<h2>Nhập đáp án bằng mã QR</h2><p class="hint">Chụp hoặc chọn ảnh mã QR chứa đáp án các mã đề. App đọc xong là nhập luôn, các mã đề cũ vẫn được giữ lại.</p>' +
+      '<div class="actions"><label class="btn primary" for="qrCam">Chụp mã QR</label><label class="btn" for="qrPick">Chọn ảnh QR</label><button type="button" class="btn ghost" id="qrClearAll">Xoá tất cả mã đề</button></div>' +
       '<input class="vh" type="file" id="qrCam" accept="image/*" capture="environment"><input class="vh" type="file" id="qrPick" accept="image/*">' +
       '<details class="qrpaste"' + (qrState.kind === 'paste' ? ' open' : '') + '><summary>Hoặc dán nội dung mã QR</summary><div class="field"><textarea id="qrText" spellcheck="false" placeholder=\'[["0101","A","B",…],["0102",…]]\'></textarea></div>' +
       '<div class="actions"><button type="button" class="btn small" id="qrParse">Đọc nội dung</button></div></details>';
@@ -2007,7 +2007,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         r.warnings.map(function (w) { return '<div class="note">' + esc(w) + '</div>'; }).join('') +
         '<div class="actions"><button type="button" class="btn primary" id="qrApply">Dùng đáp án này</button><button type="button" class="btn ghost" id="qrCancel">Bỏ qua</button></div></div>';
     } else if (qrState.kind === 'done') {
-      h += '<div class="note ok"><b>Đã nhập đáp án từ mã QR.</b> ' + esc(qrState.text) + '</div>' + (qrUndo ? '<div class="actions"><button type="button" class="btn small" id="qrUndoBtn">Hoàn tác</button></div>' : '');
+      h += '<div class="note ok"><b>' + (qrState.head || 'Đã nhập đáp án từ mã QR.') + '</b> ' + esc(qrState.text) + '</div>' + (qrUndo ? '<div class="actions"><button type="button" class="btn small" id="qrUndoBtn">Hoàn tác</button></div>' : '');
     }
     host.innerHTML = h;
     ['qrCam', 'qrPick'].forEach(function (id) {
@@ -2017,6 +2017,12 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     const ap = $('#qrApply'); if (ap) ap.onclick = applyQr;
     const ca = $('#qrCancel'); if (ca) ca.onclick = function () { qrState = { kind: 'idle' }; renderQr(); };
     const un = $('#qrUndoBtn'); if (un) un.onclick = undoQr;
+    $('#qrClearAll').onclick = function () {
+      qrUndo = JSON.parse(JSON.stringify(cfg));
+      cfg.versions = [emptyVer('')]; cfg.active = 0;
+      qrState = { kind: 'done', head: 'Đã xoá tất cả mã đề.', text: 'Quét mã QR để nhập đáp án mới.' };
+      saveCfg(); scan = null; renderScan(); renderChip(); renderKey();
+    };
   }
   const QR_ERR = {
     nocode: ['Không đọc được mã QR trong ảnh.', 'Chụp gần hơn để mã chiếm gần hết khung hình, đủ sáng, giữ máy thẳng và không để mã bị chói. Hoặc quét bằng ứng dụng khác rồi dán nội dung vào ô bên dưới.'],
@@ -2029,7 +2035,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   function qrFromText(text, fromPaste) {
     const r = parseQrKey(text);
     if (r.error) { const m = QR_ERR[r.error] || QR_ERR.shape; qrState = { kind: 'error', title: m[0], body: m[1] }; }
-    else qrState = { kind: 'preview', res: r };
+    else { qrState = { kind: 'preview', res: r }; applyQr(); return; }
     renderQr();
     if (fromPaste) { const d = $('#qrCard .qrpaste'); if (d) d.open = true; }
   }
@@ -2043,8 +2049,12 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       qrFromText(text, false);
     } catch (e) { qrState = { kind: 'error', title: 'Không mở được ảnh này.', body: 'Thử chụp lại hoặc chọn ảnh JPG hoặc PNG khác.' }; renderQr(); }
   }
+  function isBlankVer(v) {
+    return !v.code && v.mcq.every(function (x) { return x == null; }) && v.tf.every(function (r) { return r.every(function (x) { return x == null; }); }) && v.num.every(function (x) { return !x; });
+  }
   function isUntouchedDefault() {
     if (cfg.versions.length !== 1) return false;
+    if (isBlankVer(cfg.versions[0])) return true;
     try { return JSON.stringify(cfg.versions[0]) === JSON.stringify(defaultCfg().versions[0]); } catch (e) { return false; }
   }
   function applyQr() {
