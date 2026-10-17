@@ -1218,7 +1218,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         '<p class="hint">Mẫu phiếu 2: số thứ tự 2 chữ số, mã đề 3 chữ số, Phần I tối đa 10 câu, Phần II tối đa 2 câu, Phần III tối đa 3 câu. Ứng dụng căn ảnh theo 4 ô vuông đen ở góc, ô vuông thứ năm giữa mép trên giúp nhận ra phiếu bị đặt ngược.</p>' +
         '<img class="sheetimg" alt="Xem trước phiếu 2 B&T Pro" src="' + SHEET2_JPG + '">' +
         '<div class="actions"><button type="button" class="btn primary" id="pdfBtn">Tải ảnh phiếu mẫu (JPG)</button></div>' +
-        '<p class="hint" id="pdfMsg">Ảnh này là phiếu đã tô sẵn một số đáp án, dùng để tham khảo bố cục. Hãy chụp trọn cả phiếu, thấy đủ 4 ô vuông đen ở góc.</p>';
+        '<p class="hint" id="pdfMsg">Ảnh này là phiếu đã tô sẵn một số đáp án, dùng để tham khảo bố cục. Nếu cần phiếu gốc xin liên hệ: Lê Hoài Sơn (0914114008).</p>';
       $('#pdfBtn').onclick = async function () {
         const msg = $('#pdfMsg'); this.disabled = true;
         const st = await saveFile('phieu-2-bt-pro.jpg', b64bytes(SHEET2_JPG.split(',')[1]));
@@ -1234,7 +1234,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       '<p class="hint">Ứng dụng chấm đúng trên mẫu phiếu này: số báo danh 8 chữ số, mã đề 4 chữ số, Phần I tối đa 40 câu, Phần II tối đa 8 câu, Phần III tối đa 6 câu. Mỗi tờ có 4 ô vuông đen ở góc để căn ảnh.</p>' +
       '<img class="sheetimg" alt="Xem trước phiếu 1 Bộ GD-ĐT" src="' + SHEET_JPG + '">' +
       '<div class="actions"><button type="button" class="btn primary" id="pdfBtn">Tải phiếu gốc (PDF)</button></div>' +
-      '<p class="hint" id="pdfMsg">Khi in, chọn khổ A4 và tỉ lệ 100% (không chọn “vừa trang”). Học sinh tô kín ô bằng bút chì đen hoặc bút mực đen, xanh. Mực hồng của phiếu không ảnh hưởng đến việc đọc.</p>';
+      '<p class="hint" id="pdfMsg">Khi in, chọn khổ A4 và tỉ lệ 100%. Nếu cần phiếu gốc xin liên hệ: Lê Hoài Sơn (0914114008).</p>';
     $('#pdfBtn').onclick = async function () {
       const msg = $('#pdfMsg'); this.disabled = true;
       const st = await saveFile('phieu-1-bo-gd-dt.pdf', b64bytes(SHEET_PDF_B64));
