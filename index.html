@@ -260,6 +260,15 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
 .item .viewimg{grid-column:1/-1;width:100%;height:38px;margin:0;border-radius:10px;font:600 13px/1 inherit;font-family:inherit;color:var(--ink,inherit);background:rgba(60,100,180,.08)}
 .numq{grid-template-columns:auto 1fr}.numbad{grid-column:1/-1;display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted);padding-top:2px}.numbad input{width:18px;height:18px;margin:0}
 
+.resedit{background:var(--bg,#fff);color:var(--ink,#111)}
+.resedit .iv-top{background:#111;color:#fff}
+.re-body{flex:1;min-height:0;overflow:auto;padding:14px 16px 40px;max-width:640px;width:100%;margin:0 auto}
+.re-h{margin:16px 0 8px;font-size:15px}
+.re-score{display:flex;align-items:baseline;gap:6px;margin:12px 0}.re-score b{font-size:28px}.re-score span{color:var(--muted)}
+.rowbtns{grid-column:1/-1;display:flex;gap:8px}
+.item .rowbtns button{width:auto;flex:1;height:38px;border-radius:10px;font:600 13px/1 inherit;font-family:inherit;color:var(--ink,inherit);background:rgba(60,100,180,.08);border:1px solid var(--line);cursor:pointer}
+.item .rowbtns .viewimg{grid-column:auto;width:auto;margin:0}
+
 </style>
 
 <div class="wrap">
@@ -298,6 +307,10 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
       </div>
       <div id="scanOut" aria-live="polite"></div>
     </section>
+    <div id="resEdit" class="imgview resedit" hidden role="dialog" aria-label="Sửa bài đã chấm">
+      <div class="iv-top"><button class="lv-btn" type="button" id="reClose" aria-label="Đóng">✕</button><div class="iv-msg">Sửa thông tin bài đã chấm</div><button class="lv-btn" type="button" id="reSave">Lưu</button></div>
+      <div class="re-body" id="reBody"></div>
+    </div>
     <div id="imgView" class="imgview" hidden role="dialog" aria-label="Ảnh bài đã chấm">
       <div class="iv-top"><button class="lv-btn" type="button" id="ivClose" aria-label="Đóng">✕</button><div class="iv-msg" id="ivMsg"></div><button class="lv-btn" type="button" id="ivSave">Lưu ảnh</button></div>
       <div class="iv-body"><img id="ivImg" alt="Bài làm đã chấm"></div>
@@ -1205,7 +1218,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         '<p class="hint">Mẫu phiếu 2: số thứ tự 2 chữ số, mã đề 3 chữ số, Phần I tối đa 10 câu, Phần II tối đa 2 câu, Phần III tối đa 3 câu. Ứng dụng căn ảnh theo 4 ô vuông đen ở góc, ô vuông thứ năm giữa mép trên giúp nhận ra phiếu bị đặt ngược.</p>' +
         '<img class="sheetimg" alt="Xem trước phiếu 2 B&T Pro" src="' + SHEET2_JPG + '">' +
         '<div class="actions"><button type="button" class="btn primary" id="pdfBtn">Tải ảnh phiếu mẫu (JPG)</button></div>' +
-        '<p class="hint" id="pdfMsg">Ảnh này là phiếu đã tô sẵn một số đáp án, dùng để tham khảo bố cục. Hãy chụp trọn cả phiếu, thấy đủ 4 ô vuông đen ở góc. Muốn có phiếu gốc hãy liên hệ tác giả : Lê Hoài Sơn (0914114008).</p>';
+        '<p class="hint" id="pdfMsg">Ảnh này là phiếu đã tô sẵn một số đáp án, dùng để tham khảo bố cục. Hãy chụp trọn cả phiếu, thấy đủ 4 ô vuông đen ở góc.</p>';
       $('#pdfBtn').onclick = async function () {
         const msg = $('#pdfMsg'); this.disabled = true;
         const st = await saveFile('phieu-2-bt-pro.jpg', b64bytes(SHEET2_JPG.split(',')[1]));
@@ -1577,7 +1590,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     $('#lvResScore').innerHTML = '<b>' + fmt(g.total) + '</b><span>/' + fmt(g.max) + '</span>';
     $('#lvResInfo').textContent = 'SBD ' + (s.sbdStr || '—') + ' · Mã đề ' + (s.mdStr || '—') + ' · Phần I ' + fmt(g.p1.pts) + ' · II ' + fmt(g.p2.pts) + ' · III ' + fmt(g.p3.pts);
     box.hidden = false;
-    let left = 5; const cd = $('#lvResCd');
+    let left = 1; const cd = $('#lvResCd');
     clearInterval(LV.resTimer); cd.textContent = 'Tự chuyển sang bài tiếp theo sau ' + left + ' giây';
     LV.resTimer = setInterval(function () {
       left--; if (left <= 0) { lvHideResult(); return; }
@@ -1831,7 +1844,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   }
   function pushResult(s) {
     const g = gradeAll({ p1: s.p1, p2: s.p2, p3: s.p3 }, cfg, cfg.versions[s.ver]);
-    const e = { t: Date.now(), sbd: s.sbdStr, md: s.mdStr, total: Math.round(g.total * 100) / 100, max: Math.round(g.max * 100) / 100, parts: [g.p1.pts, g.p2.pts, g.p3.pts].map(function (x) { return Math.round(x * 100) / 100; }) };
+    const e = { t: Date.now(), sbd: s.sbdStr, md: s.mdStr, total: Math.round(g.total * 100) / 100, max: Math.round(g.max * 100) / 100, parts: [g.p1.pts, g.p2.pts, g.p3.pts].map(function (x) { return Math.round(x * 100) / 100; }), ans: { p1: s.p1, p2: s.p2, p3: s.p3 } };
     const k = s.resId ? results.findIndex(function (r) { return r.id === s.resId; }) : -1;
     if (k >= 0) { e.id = s.resId; e.t = results[k].t; e.img = results[k].img; results[k] = e; }
     else { e.id = s.resId = Date.now() + Math.floor(Math.random() * 1000); results.unshift(e); }
@@ -1861,11 +1874,12 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     results.forEach(function (r) {
       const d = new Date(r.t), tm = d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
       const pt = r.parts ? ' · I ' + fmt(r.parts[0]) + ' · II ' + fmt(r.parts[1]) + ' · III ' + fmt(r.parts[2]) : '';
-      h += '<div class="item"><div><div class="who">SBD ' + esc(r.sbd || '—') + ' · Mã đề ' + esc(r.md || '—') + '</div><div class="meta">' + tm + pt + '</div></div><span class="sc">' + fmt(r.total) + '</span>' + '<button type="button" data-del="' + r.id + '" aria-label="Xoá bài này">×</button>' + (r.img ? '<button type="button" class="viewimg" data-view="' + r.id + '">Xem ảnh bài đã chấm</button>' : '') + '</div>';
+      h += '<div class="item"><div><div class="who">SBD ' + esc(r.sbd || '—') + ' · Mã đề ' + esc(r.md || '—') + '</div><div class="meta">' + tm + pt + (r.edited ? ' · đã sửa' : '') + '</div></div><span class="sc">' + fmt(r.total) + '</span>' + '<button type="button" data-del="' + r.id + '" aria-label="Xoá bài này">×</button>' + '<div class="rowbtns"><button type="button" class="editres" data-edit="' + r.id + '">Sửa bài</button>' + (r.img ? '<button type="button" class="viewimg" data-view="' + r.id + '">Xem ảnh bài đã chấm</button>' : '') + '</div></div>';
     });
     h += '</div><div class="actions"><button type="button" class="btn primary" id="csvBtn">Tải bảng điểm CSV</button><button type="button" class="btn ghost danger" id="clrBtn">Xoá tất cả</button></div><p class="hint" id="resMsg">Kết quả được giữ trong trình duyệt này. Tải CSV để lưu lại hoặc mở bằng Excel, Google Sheets.</p>';
     host.innerHTML = h;
     $$('[data-del]', host).forEach(function (b) { b.onclick = function () { IMG.del(b.dataset.del); results = results.filter(function (r) { return String(r.id) !== b.dataset.del; }); saveResults(); renderChip(); renderRes(); }; });
+    $$('[data-edit]', host).forEach(function (b) { b.onclick = function () { openEdit(b.dataset.edit); }; });
     $$('[data-view]', host).forEach(function (b) { b.onclick = function () { viewImage(b.dataset.view); }; });
     $('#csvBtn').onclick = exportCsv;
     $('#clrBtn').onclick = function () {
@@ -1873,6 +1887,82 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       this.onclick = function () { results = []; IMG.clear(); saveResults(); renderChip(); renderRes(); };
     };
   }
+  /* ---------- Sửa lại thông tin bài đã chấm ---------- */
+  let ed = null;
+  function verForCode(code) {
+    const nz = function (c) { return String(c).replace(/^0+(?=\d)/, ''); };
+    const i = cfg.versions.findIndex(function (v) { return v.code && nz(v.code) === nz(code); });
+    return cfg.versions[i >= 0 ? i : Math.min(cfg.active, cfg.versions.length - 1)];
+  }
+  function edGrade() { return gradeAll({ p1: ed.p1, p2: ed.p2, p3: ed.p3 }, cfg, verForCode(ed.md)); }
+  function openEdit(id) {
+    const r = results.find(function (x) { return String(x.id) === String(id); }); if (!r) return;
+    const a = r.ans;
+    ed = { id: r.id, sbd: r.sbd || '', md: r.md || '', hasAns: !!a, total: r.total, max: r.max,
+      p1: a ? a.p1.map(function (m) { return m.slice(); }) : null, p2: a ? a.p2.map(function (x) { return x.slice(); }) : null, p3: a ? a.p3.slice() : null };
+    $('#resEdit').hidden = false; drawEdit();
+  }
+  function drawEdit() {
+    const body = $('#reBody');
+    let h = '<div class="fields"><div class="field"><label class="lbl" for="reSbd">Số báo danh</label><input id="reSbd" class="mono" inputmode="numeric" maxlength="8" value="' + esc(ed.sbd) + '"></div>' +
+      '<div class="field"><label class="lbl" for="reMd">Mã đề</label><input id="reMd" class="mono" inputmode="numeric" maxlength="4" value="' + esc(ed.md) + '"></div></div>';
+    if (ed.hasAns) {
+      const g = edGrade(), ver = verForCode(ed.md);
+      h += '<div class="re-score"><b>' + fmt(g.total) + '</b><span>/' + fmt(g.max) + ' điểm</span></div>';
+      if (cfg.n1) h += '<h3 class="re-h">Phần I</h3><div id="reP1"></div>';
+      if (cfg.n2) h += '<h3 class="re-h">Phần II</h3><div id="reP2"></div>';
+      if (cfg.n3) h += '<h3 class="re-h">Phần III</h3><div id="reP3"></div>';
+      body.innerHTML = h;
+      if (cfg.n1) {
+        const host = $('#reP1');
+        host.innerHTML = mcqGridHTML(cfg.n1, function (q, o) {
+          const sel = (ed.p1[q] || []).indexOf(o) >= 0, st = g.p1.st[q];
+          let c = sel ? 'sel' : ''; if (sel && st === 'ok') c += ' ok'; else if (sel && st !== 'skip') c += ' bad';
+          return c;
+        });
+        host.onclick = function (e) { const b = e.target.closest('.o'); if (!b) return; const q = +b.dataset.q, o = +b.dataset.o, m = ed.p1[q] || []; ed.p1[q] = (m.length === 1 && m[0] === o) ? [] : [o]; keepEdit(); };
+      }
+      if (cfg.n2) {
+        const host = $('#reP2');
+        host.innerHTML = tfRowsHTML(cfg.n2, function (q, r, v) {
+          const sv = ed.p2[q][r], kv = ver.tf[q][r], sel = sv === v;
+          let c = sel ? 'sel' : ''; if (sel && kv !== null) c += tfHas(kv, v) ? ' ok' : ' bad'; return c;
+        });
+        host.onclick = function (e) { const b = e.target.closest('.o'); if (!b) return; const q = +b.dataset.q, r = +b.dataset.r, v = b.dataset.v; ed.p2[q][r] = ed.p2[q][r] === v ? '' : v; keepEdit(); };
+      }
+      if (cfg.n3) {
+        let t = '<div class="numlist">';
+        for (let q = 0; q < cfg.n3; q++) t += '<label class="numq ' + (g.p3.st[q] === 'ok' ? 'good' : (g.p3.st[q] === 'wrong' ? 'bad' : '')) + '"><span class="tqn">Câu ' + (q + 1) + '</span><input class="numin mono" data-q="' + q + '" maxlength="5" value="' + esc(ed.p3[q] || '') + '" placeholder="bỏ trống"></label>';
+        $('#reP3').innerHTML = t + '</div>';
+        $('#reP3').onchange = function (e) { const i = e.target.closest('.numin'); if (!i) return; ed.p3[+i.dataset.q] = cleanNum(i.value); keepEdit(); };
+      }
+    } else {
+      h += '<div class="field"><label class="lbl" for="reTot">Điểm</label><input id="reTot" class="mono" inputmode="decimal" value="' + String(ed.total).replace('.', ',') + '"></div>' +
+        '<p class="hint">Bài này chấm từ bản cũ nên không lưu chi tiết từng câu. Bạn sửa được số báo danh, mã đề và điểm tổng.</p>';
+      body.innerHTML = h;
+    }
+    $('#reSbd').oninput = function () { ed.sbd = this.value.replace(/\D/g, ''); this.value = ed.sbd; };
+    $('#reMd').onchange = function () { ed.md = this.value.replace(/\D/g, ''); drawEdit(); };
+  }
+  function keepEdit() { const sc = $('#reBody').scrollTop, bd = $('#resEdit .re-body'); const y = bd ? bd.scrollTop : 0; drawEdit(); if (bd) bd.scrollTop = y; }
+  $('#reClose').addEventListener('click', function () { $('#resEdit').hidden = true; ed = null; });
+  $('#reSave').addEventListener('click', function () {
+    if (!ed) return;
+    const r = results.find(function (x) { return x.id === ed.id; });
+    if (r) {
+      r.sbd = ed.sbd; r.md = ed.md;
+      if (ed.hasAns) {
+        const g = edGrade();
+        r.total = Math.round(g.total * 100) / 100; r.max = Math.round(g.max * 100) / 100;
+        r.parts = [g.p1.pts, g.p2.pts, g.p3.pts].map(function (x) { return Math.round(x * 100) / 100; });
+        r.ans = { p1: ed.p1, p2: ed.p2, p3: ed.p3 };
+      } else {
+        const t = parseFloat(String($('#reTot').value).replace(',', '.')); if (isFinite(t) && t >= 0) r.total = Math.round(t * 100) / 100;
+      }
+      r.edited = true; saveResults();
+    }
+    $('#resEdit').hidden = true; ed = null; renderChip(); renderRes();
+  });
   let viewUrl = null, viewBlob = null, viewName = '';
   async function viewImage(id) {
     const r = results.find(function (x) { return String(x.id) === String(id); }); if (!r) return;
