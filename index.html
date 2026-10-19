@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>B&amp;T Pro Mark - LHS</title>
+<title>B&amp;T Pro Mark</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Itim&display=swap">
 <style>
@@ -269,6 +269,10 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
 .item .rowbtns button{width:auto;flex:1;height:38px;border-radius:10px;font:600 13px/1 inherit;font-family:inherit;color:var(--ink,inherit);background:rgba(60,100,180,.08);border:1px solid var(--line);cursor:pointer}
 .item .rowbtns .viewimg{grid-column:auto;width:auto;margin:0}
 
+.listbar{margin:10px 0 14px}.listrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.listrow select,.listrow input{flex:1;min-width:140px;min-height:40px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:inherit;font:inherit}
+.listcopy{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-top:8px}.listcopy input{width:18px;height:18px;margin:0}
+
 </style>
 
 <div class="wrap">
@@ -280,7 +284,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>B&amp;T Pro Mark - 1.0</h1>
+      <h1>B&amp;T Pro Mark</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -292,14 +296,14 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
         <div class="actions">
           <button class="btn primary big" type="button" id="btnLive">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-            Chấm ngay
+            Chụp và chấm ngay
           </button>
           <label class="btn" for="cam">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>
-            Chụp và chấm
+            Chụp bằng camera máy
           </label>
           <input class="vh" type="file" id="cam" accept="image/*" capture="environment">
-          <label class="btn" for="pick">Chọn ảnh có sẵn</label>
+          <label class="btn" for="pick">Chọn ảnh có sẵn (nhiều ảnh)</label>
           <input class="vh" type="file" id="pick" accept="image/*" multiple>
           <button class="btn ghost" type="button" id="btnSample">Chấm ảnh mẫu</button>
         </div>
@@ -998,7 +1002,25 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   if (!Array.isArray(results)) results = [];
   setSheet(cfg.sheet || 'nh');
   const IDN = function () { return { sbd: SBD_X.length, md: MD_X.length }; };
-  function saveCfg() { LS.set('omr.cfg2', cfg); }
+  function saveCfg() { LS.set('omr.cfg2', cfg); try { const l = curList(); if (l) { l.cfg = JSON.parse(JSON.stringify(cfg)); saveLists(); } } catch (e) { /* bỏ qua */ } }
+  /* ---------- Danh sách chấm (các đợt) ---------- */
+  let lists = LS.get('omr.lists', null);
+  if (!lists || !Array.isArray(lists.items) || !lists.items.length) lists = { items: [{ id: 'l1', name: 'Đợt 1' }], active: 'l1' };
+  if (!lists.items.some(function (l) { return l.id === lists.active; })) lists.active = lists.items[0].id;
+  function saveLists() { LS.set('omr.lists', lists); }
+  function lidOf(r) { return r.lid || lists.items[0].id; }
+  function listRes(id) { id = id || lists.active; return results.filter(function (r) { return lidOf(r) === id; }); }
+  function curList() { return lists.items.find(function (l) { return l.id === lists.active; }); }
+  let listUI = null;
+  if (!curList().cfg) { curList().cfg = JSON.parse(JSON.stringify(cfg)); saveLists(); }
+  /* Mỗi đợt có bộ đáp án và cấu trúc đề riêng; chuyển đợt là chuyển luôn đáp án */
+  function applyList(id) {
+    lists.active = id;
+    const c = sanitizeCfg(curList().cfg) || defaultCfg();
+    cfg = c; setSheet(cfg.sheet || 'nh');
+    LS.set('omr.cfg2', cfg); saveLists();
+    scan = null; renderSheetSel(); renderScan(); renderChip(); renderKey(); if (tab === 'sheet') renderSheet();
+  }
   function saveResults() { LS.set('omr.results2', results); }
   function curVer() { return cfg.versions[cfg.active]; }
   function maxTotal() { return cfg.n1 * cfg.p1 + cfg.n2 * cfg.p2 + cfg.n3 * cfg.p3; }
@@ -1039,7 +1061,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   function renderChip() {
     $('#cfgChip').textContent = cfg.n1 + ' · ' + cfg.n2 + ' · ' + cfg.n3 + ' câu';
     const bd = $('#resBadge');
-    bd.hidden = !results.length; bd.textContent = results.length > 99 ? '99+' : results.length;
+    const n = listRes().length; bd.hidden = !n; bd.textContent = n > 99 ? '99+' : n;
   }
 
   /* ---------- Thành phần dùng chung ---------- */
@@ -1218,7 +1240,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         '<p class="hint">Mẫu phiếu 2: số thứ tự 2 chữ số, mã đề 3 chữ số, Phần I tối đa 10 câu, Phần II tối đa 2 câu, Phần III tối đa 3 câu. Ứng dụng căn ảnh theo 4 ô vuông đen ở góc, ô vuông thứ năm giữa mép trên giúp nhận ra phiếu bị đặt ngược.</p>' +
         '<img class="sheetimg" alt="Xem trước phiếu 2 B&T Pro" src="' + SHEET2_JPG + '">' +
         '<div class="actions"><button type="button" class="btn primary" id="pdfBtn">Tải ảnh phiếu mẫu (JPG)</button></div>' +
-        '<p class="hint" id="pdfMsg">Ảnh này là phiếu đã tô sẵn một số đáp án, dùng để tham khảo bố cục. Nếu cần phiếu gốc xin liên hệ: Lê Hoài Sơn (0914114008).</p>';
+        '<p class="hint" id="pdfMsg">Ảnh này là phiếu đã tô sẵn một số đáp án, dùng để tham khảo bố cục. Hãy chụp trọn cả phiếu, thấy đủ 4 ô vuông đen ở góc.</p>';
       $('#pdfBtn').onclick = async function () {
         const msg = $('#pdfMsg'); this.disabled = true;
         const st = await saveFile('phieu-2-bt-pro.jpg', b64bytes(SHEET2_JPG.split(',')[1]));
@@ -1234,7 +1256,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       '<p class="hint">Ứng dụng chấm đúng trên mẫu phiếu này: số báo danh 8 chữ số, mã đề 4 chữ số, Phần I tối đa 40 câu, Phần II tối đa 8 câu, Phần III tối đa 6 câu. Mỗi tờ có 4 ô vuông đen ở góc để căn ảnh.</p>' +
       '<img class="sheetimg" alt="Xem trước phiếu 1 Bộ GD-ĐT" src="' + SHEET_JPG + '">' +
       '<div class="actions"><button type="button" class="btn primary" id="pdfBtn">Tải phiếu gốc (PDF)</button></div>' +
-      '<p class="hint" id="pdfMsg">Khi in, chọn khổ A4 và tỉ lệ 100%. Nếu cần phiếu gốc xin liên hệ: Lê Hoài Sơn (0914114008).</p>';
+      '<p class="hint" id="pdfMsg">Khi in, chọn khổ A4 và tỉ lệ 100% (không chọn “vừa trang”). Học sinh tô kín ô bằng bút chì đen hoặc bút mực đen, xanh. Mực hồng của phiếu không ảnh hưởng đến việc đọc.</p>';
     $('#pdfBtn').onclick = async function () {
       const msg = $('#pdfMsg'); this.disabled = true;
       const st = await saveFile('phieu-1-bo-gd-dt.pdf', b64bytes(SHEET_PDF_B64));
@@ -1590,7 +1612,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     $('#lvResScore').innerHTML = '<b>' + fmt(g.total) + '</b><span>/' + fmt(g.max) + '</span>';
     $('#lvResInfo').textContent = 'SBD ' + (s.sbdStr || '—') + ' · Mã đề ' + (s.mdStr || '—') + ' · Phần I ' + fmt(g.p1.pts) + ' · II ' + fmt(g.p2.pts) + ' · III ' + fmt(g.p3.pts);
     box.hidden = false;
-    let left = 1; const cd = $('#lvResCd');
+    let left = 5; const cd = $('#lvResCd');
     clearInterval(LV.resTimer); cd.textContent = 'Tự chuyển sang bài tiếp theo sau ' + left + ' giây';
     LV.resTimer = setInterval(function () {
       left--; if (left <= 0) { lvHideResult(); return; }
@@ -1847,7 +1869,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     const e = { t: Date.now(), sbd: s.sbdStr, md: s.mdStr, total: Math.round(g.total * 100) / 100, max: Math.round(g.max * 100) / 100, parts: [g.p1.pts, g.p2.pts, g.p3.pts].map(function (x) { return Math.round(x * 100) / 100; }), ans: { p1: s.p1, p2: s.p2, p3: s.p3 } };
     const k = s.resId ? results.findIndex(function (r) { return r.id === s.resId; }) : -1;
     if (k >= 0) { e.id = s.resId; e.t = results[k].t; e.img = results[k].img; results[k] = e; }
-    else { e.id = s.resId = Date.now() + Math.floor(Math.random() * 1000); results.unshift(e); }
+    else { e.id = s.resId = Date.now() + Math.floor(Math.random() * 1000); e.lid = lists.active; results.unshift(e); }
     if (results.length > 500) { results.slice(500).forEach(function (r) { IMG.del(r.id); }); results.length = 500; }
     saveResults(); s.saved = true; renderChip();
     storeImage(s, g);
@@ -1856,35 +1878,76 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   function autoSave(s) { if (s && !s.error && s.source !== 'sample') { try { pushResult(s); } catch (e) {} } }
 
   /* ---------- Tab Kết quả ---------- */
+  function listBar() {
+    const L = lists.items;
+    let h = '<div class="listbar"><label class="lbl" for="listSel">Danh sách chấm</label><div class="listrow"><select id="listSel">' +
+      L.map(function (l) { return '<option value="' + l.id + '"' + (l.id === lists.active ? ' selected' : '') + '>' + esc(l.name) + ' (' + listRes(l.id).length + ' bài)</option>'; }).join('') + '</select>' +
+      '<button type="button" class="btn small" id="listNew">＋ Đợt mới</button><button type="button" class="btn small ghost" id="listRen">Đổi tên</button>' +
+      (L.length > 1 ? '<button type="button" class="btn small ghost danger" id="listDel">Xoá đợt</button>' : '') + '</div>';
+    if (listUI === 'new') h += '<label class="listcopy"><input type="checkbox" id="listCopy"> Sao chép đáp án và cấu trúc từ đợt đang chọn</label>';
+    if (listUI === 'new' || listUI === 'ren') h += '<div class="listrow"><input id="listName" maxlength="40" placeholder="Tên đợt, ví dụ: 10A1 · 45 phút" value="' + (listUI === 'ren' ? esc(curList().name) : '') + '"><button type="button" class="btn small primary" id="listOk">Lưu</button><button type="button" class="btn small ghost" id="listNo">Huỷ</button></div>';
+    return h + '</div>';
+  }
+  function bindListBar(host) {
+    $('#listSel').onchange = function () { listUI = null; applyList(this.value); renderRes(); };
+    $('#listNew').onclick = function () { listUI = 'new'; renderRes(); const i = $('#listName'); if (i) i.focus(); };
+    $('#listRen').onclick = function () { listUI = 'ren'; renderRes(); const i = $('#listName'); if (i) { i.focus(); i.select(); } };
+    const dl = $('#listDel');
+    if (dl) dl.onclick = function () {
+      this.textContent = 'Chạm lần nữa để xoá đợt này';
+      this.onclick = function () {
+        const id = lists.active; listRes(id).forEach(function (r) { IMG.del(r.id); });
+        results = results.filter(function (r) { return lidOf(r) !== id; });
+        lists.items = lists.items.filter(function (l) { return l.id !== id; });
+        saveResults(); applyList(lists.items[0].id); renderRes();
+      };
+    };
+    const ok = $('#listOk');
+    if (ok) {
+      const go = function () {
+        const name = ($('#listName').value || '').trim().slice(0, 40) || (listUI === 'new' ? 'Đợt ' + (lists.items.length + 1) : curList().name);
+        if (listUI === 'new') {
+          const id = 'l' + Date.now().toString(36), cp = $('#listCopy') && $('#listCopy').checked, nc = JSON.parse(JSON.stringify(cfg));
+          if (!cp) { nc.versions = [emptyVer('')]; nc.active = 0; }
+          lists.items.push({ id: id, name: name, cfg: nc }); listUI = null; applyList(id); renderRes(); return;
+        }
+        else curList().name = name;
+        listUI = null; saveLists(); renderChip(); renderRes();
+      };
+      ok.onclick = go; $('#listName').onkeydown = function (e) { if (e.key === 'Enter') go(); };
+      $('#listNo').onclick = function () { listUI = null; renderRes(); };
+    }
+  }
   function renderRes() {
-    const host = $('#resCard');
-    if (!results.length) {
-      host.innerHTML = '<h2>Kết quả đã lưu</h2><div class="empty">Chưa có bài nào. Chấm một phiếu, điểm sẽ tự lưu và hiện ở đây.</div>';
+    const host = $('#resCard'), view = listRes();
+    if (!view.length) {
+      host.innerHTML = '<h2>Kết quả đã lưu</h2>' + listBar() + '<div class="empty">Đợt này chưa có bài nào. Chấm một phiếu, điểm sẽ tự lưu vào đợt “' + esc(curList().name) + '”.</div>';
+      bindListBar(host);
       return;
     }
-    const pcts = results.map(function (r) { return r.max ? r.total / r.max : 0; });
+    const pcts = view.map(function (r) { return r.max ? r.total / r.max : 0; });
     const avg = pcts.reduce(function (a, b) { return a + b; }, 0) / pcts.length;
     const bins = new Array(10).fill(0);
     pcts.forEach(function (p) { bins[Math.min(9, Math.floor(p * 10))]++; });
     const mx = Math.max.apply(null, bins), sc = 10;
-    let h = '<div class="row"><h2>Kết quả đã lưu</h2><span class="hint">' + results.length + ' bài</span></div>' +
+    let h = '<div class="row"><h2>Kết quả đã lưu</h2><span class="hint">' + view.length + ' bài</span></div>' + listBar() +
       '<div class="stats"><span>Trung bình <b>' + fmt(avg * sc) + '</b></span><span>Cao nhất <b>' + fmt(Math.max.apply(null, pcts) * sc) + '</b></span><span>Thấp nhất <b>' + fmt(Math.min.apply(null, pcts) * sc) + '</b></span><span class="hint">quy về thang 10</span></div>' +
       '<div class="hist" role="img" aria-label="Phân bố điểm">' + bins.map(function (n) { return '<i style="height:' + Math.max(3, n / mx * 100) + '%" title="' + n + ' bài"></i>'; }).join('') + '</div>' +
       '<div class="hist-ax"><span>0</span><span>5</span><span>10</span></div><div class="list">';
-    results.forEach(function (r) {
+    view.forEach(function (r) {
       const d = new Date(r.t), tm = d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
       const pt = r.parts ? ' · I ' + fmt(r.parts[0]) + ' · II ' + fmt(r.parts[1]) + ' · III ' + fmt(r.parts[2]) : '';
       h += '<div class="item"><div><div class="who">SBD ' + esc(r.sbd || '—') + ' · Mã đề ' + esc(r.md || '—') + '</div><div class="meta">' + tm + pt + (r.edited ? ' · đã sửa' : '') + '</div></div><span class="sc">' + fmt(r.total) + '</span>' + '<button type="button" data-del="' + r.id + '" aria-label="Xoá bài này">×</button>' + '<div class="rowbtns"><button type="button" class="editres" data-edit="' + r.id + '">Sửa bài</button>' + (r.img ? '<button type="button" class="viewimg" data-view="' + r.id + '">Xem ảnh bài đã chấm</button>' : '') + '</div></div>';
     });
     h += '</div><div class="actions"><button type="button" class="btn primary" id="csvBtn">Tải bảng điểm CSV</button><button type="button" class="btn ghost danger" id="clrBtn">Xoá tất cả</button></div><p class="hint" id="resMsg">Kết quả được giữ trong trình duyệt này. Tải CSV để lưu lại hoặc mở bằng Excel, Google Sheets.</p>';
-    host.innerHTML = h;
+    host.innerHTML = h; bindListBar(host);
     $$('[data-del]', host).forEach(function (b) { b.onclick = function () { IMG.del(b.dataset.del); results = results.filter(function (r) { return String(r.id) !== b.dataset.del; }); saveResults(); renderChip(); renderRes(); }; });
     $$('[data-edit]', host).forEach(function (b) { b.onclick = function () { openEdit(b.dataset.edit); }; });
     $$('[data-view]', host).forEach(function (b) { b.onclick = function () { viewImage(b.dataset.view); }; });
     $('#csvBtn').onclick = exportCsv;
     $('#clrBtn').onclick = function () {
       this.textContent = 'Chạm lần nữa để xoá hết';
-      this.onclick = function () { results = []; IMG.clear(); saveResults(); renderChip(); renderRes(); };
+      this.onclick = function () { const id = lists.active; view.forEach(function (r) { IMG.del(r.id); }); results = results.filter(function (r) { return lidOf(r) !== id; }); saveResults(); renderChip(); renderRes(); };
     };
   }
   /* ---------- Sửa lại thông tin bài đã chấm ---------- */
@@ -1983,12 +2046,12 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   });
   async function exportCsv() {
     const rows = [['Thời gian', 'Số báo danh', 'Mã đề', 'Phần I', 'Phần II', 'Phần III', 'Tổng điểm', 'Điểm tối đa']];
-    results.slice().reverse().forEach(function (r) {
+    listRes().slice().reverse().forEach(function (r) {
       const p = r.parts || ['', '', ''];
       rows.push([new Date(r.t).toLocaleString('vi-VN'), r.sbd, r.md, p[0], p[1], p[2], r.total, r.max]);
     });
     const csv = '﻿' + rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
-    const st = await saveFile('bang-diem-bt-pro-mark.csv', csv), msg = $('#resMsg');
+    const st = await saveFile('bang-diem-' + (curList().name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'dot') + '.csv', csv), msg = $('#resMsg');
     if (st === 'saved') msg.textContent = 'Đã lưu bảng điểm.';
     else if (st === 'declined') msg.textContent = 'Bạn đã huỷ lưu. Nhấn lại nút để tải.';
     else {
