@@ -284,7 +284,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>B&amp;T Pro Mark</h1>
+      <h1>B&amp;T Pro Mark - 1.0</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -296,18 +296,18 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
         <div class="actions">
           <button class="btn primary big" type="button" id="btnLive">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-            Chụp và chấm ngay
+            Chấm ngay
           </button>
           <label class="btn" for="cam">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>
-            Chụp bằng camera máy
+            Chụp và chấm
           </label>
           <input class="vh" type="file" id="cam" accept="image/*" capture="environment">
-          <label class="btn" for="pick">Chọn ảnh có sẵn (nhiều ảnh)</label>
+          <label class="btn" for="pick">Chọn ảnh có sẵn</label>
           <input class="vh" type="file" id="pick" accept="image/*" multiple>
           <button class="btn ghost" type="button" id="btnSample">Chấm ảnh mẫu</button>
         </div>
-        <p class="hint">Đặt phiếu phẳng trên mặt bàn, chụp trọn cả tờ để thấy đủ 4 ô vuông đen ở góc. Nghiêng nhẹ hoặc hơi lệch sáng vẫn nhận được.</p>
+        <p class="hint">Đặt phiếu phẳng trên mặt bàn, chụp trọn cả tờ để thấy đủ 4 ô vuông đen ở góc. Nghiêng nhẹ hoặc hơi lệch sáng vẫn nhận được. Một ứng dụng của Lê Hoài Sơn - Huế</p>
       </div>
       <div id="scanOut" aria-live="polite"></div>
     </section>
@@ -1612,7 +1612,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     $('#lvResScore').innerHTML = '<b>' + fmt(g.total) + '</b><span>/' + fmt(g.max) + '</span>';
     $('#lvResInfo').textContent = 'SBD ' + (s.sbdStr || '—') + ' · Mã đề ' + (s.mdStr || '—') + ' · Phần I ' + fmt(g.p1.pts) + ' · II ' + fmt(g.p2.pts) + ' · III ' + fmt(g.p3.pts);
     box.hidden = false;
-    let left = 5; const cd = $('#lvResCd');
+    let left = 1; const cd = $('#lvResCd');
     clearInterval(LV.resTimer); cd.textContent = 'Tự chuyển sang bài tiếp theo sau ' + left + ' giây';
     LV.resTimer = setInterval(function () {
       left--; if (left <= 0) { lvHideResult(); return; }
