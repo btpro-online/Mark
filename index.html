@@ -1295,7 +1295,24 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   if (!Array.isArray(results)) results = [];
   setSheet(cfg.sheet || 'nh');
   const IDN = function () { return { sbd: SBD_X.length, md: MD_X.length }; };
-  function saveCfg() { LS.set('omr.cfg2', cfg); try { const l = curList(); if (l) { l.cfg = JSON.parse(JSON.stringify(cfg)); saveLists(); } } catch (e) { /* bỏ qua */ } }
+  function saveCfg() { LS.set('omr.cfg2', cfg); try { const l = curList(); if (l) { l.cfg = JSON.parse(JSON.stringify(cfg)); saveLists(); } } catch (e) { /* bỏ qua */ } try { regradeList(); } catch (e) { /* bỏ qua */ } }
+  /* Đổi đáp án / thang điểm → chấm lại toàn bộ bài trong đợt đang chọn */
+  function regradeList() {
+    const id = lists.active, r2 = function (x) { return Math.round(x * 100) / 100; };
+    let ch = false;
+    results.forEach(function (r) {
+      if (lidOf(r) !== id || !r.ans) return;
+      const code = r.md || '', nz = function (c) { return String(c).replace(/^0+(?=\d)/, ''); };
+      const i = cfg.versions.findIndex(function (v) { return v.code && nz(v.code) === nz(code); });
+      const ver = cfg.versions[i >= 0 ? i : Math.min(cfg.active, cfg.versions.length - 1)];
+      const cs = { n1: cfg.n1, n2: cfg.n2, n3: cfg.n3, p1: cfg.p1, p2: cfg.p2, p3: cfg.p3 };
+      const g = gradeAll({ p1: r.ans.p1, p2: r.ans.p2, p3: r.ans.p3 }, cs, ver);
+      const parts = [g.p1.pts, g.p2.pts, g.p3.pts].map(r2), t = r2(g.total), m = r2(g.max);
+      if (t !== r.total || m !== r.max || parts.join() !== (r.parts || []).join()) ch = true;
+      r.total = t; r.max = m; r.parts = parts; r.cs = cs;
+    });
+    if (ch) { saveResults(); try { renderChip(); const v = document.getElementById('v-res'); if (v && !v.hidden) renderRes(); } catch (e) { /* bỏ qua */ } }
+  }
   /* ---------- Danh sách chấm (các đợt) ---------- */
   let lists = LS.get('omr.lists', null);
   if (!lists || !Array.isArray(lists.items) || !lists.items.length) lists = { items: [{ id: 'l1', name: 'Đợt 1' }], active: 'l1' };
