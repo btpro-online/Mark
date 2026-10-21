@@ -317,7 +317,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
           <input class="vh" type="file" id="pick" accept="image/*" multiple>
           <button class="btn ghost" type="button" id="btnSample">Chấm ảnh mẫu</button>
         </div>
-        <p class="hint">Đặt phiếu phẳng trên mặt bàn, chụp trọn cả tờ để thấy đủ 4 ô vuông đen ở góc. Nghiêng nhẹ hoặc hơi lệch sáng vẫn nhận được. Một ứng dụng của Lê Hoài Sơn - Huế</p>
+        <p class="hint">Đặt phiếu phẳng trên mặt bàn, chụp trọn cả tờ để thấy đủ 4 ô vuông đen ở góc. Nghiêng nhẹ hoặc hơi lệch sáng vẫn nhận được.</p>
       </div>
       <div id="scanOut" aria-live="polite"></div>
     </section>
@@ -2330,7 +2330,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       const pt = r.parts ? ' · I ' + fmt(r.parts[0]) + ' · II ' + fmt(r.parts[1]) + ' · III ' + fmt(r.parts[2]) : '';
       h += '<div class="item"><div><div class="who">SBD ' + esc(r.sbd || '—') + ' · Mã đề ' + esc(r.md || '—') + '</div><div class="meta">' + tm + pt + (r.edited ? ' · đã sửa' : '') + '</div></div><span class="sc">' + fmt(r.total) + '</span>' + '<button type="button" data-del="' + r.id + '" aria-label="Xoá bài này">×</button>' + '<div class="rowbtns">' + (r.nm ? '<img class="nmthumb" data-nm="' + r.id + '" data-edit="' + r.id + '" alt="Họ tên học sinh">' : '') + '<button type="button" class="viewimg" data-edit="' + r.id + '">Xem và sửa bài</button></div></div>';
     });
-    h += '</div><div class="actions"><button type="button" class="btn primary" id="csvBtn">Tải bảng điểm CSV</button><button type="button" class="btn ghost danger" id="clrBtn">Xoá tất cả</button></div><p class="hint" id="resMsg">Kết quả được giữ trong trình duyệt này. Tải CSV để lưu lại hoặc mở bằng Excel, Google Sheets.</p>';
+    h += '</div><div class="actions"><button type="button" class="btn primary" id="csvBtn">Tải bảng điểm CSV</button><button type="button" class="btn" id="pdfBtn">Xuất PDF tất cả bài</button><button type="button" class="btn ghost danger" id="clrBtn">Xoá tất cả</button></div><p class="hint" id="resMsg">Kết quả được giữ trong trình duyệt này. Tải CSV để lưu lại hoặc mở bằng Excel, Google Sheets.</p>';
     host.innerHTML = h; bindListBar(host);
     $$('[data-del]', host).forEach(function (b) { b.onclick = function () { IMG.del(b.dataset.del); IMG.del(b.dataset.del + 'n'); results = results.filter(function (r) { return String(r.id) !== b.dataset.del; }); saveResults(); renderChip(); renderRes(); }; });
     $$('[data-edit]', host).forEach(function (b) { b.onclick = function () { openEdit(b.dataset.edit); }; });
@@ -2338,6 +2338,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       IMG.get(im.dataset.nm + 'n').then(function (bl) { if (bl) { im.src = URL.createObjectURL(bl); im.onload = function () { URL.revokeObjectURL(im.src); }; } else im.remove(); }).catch(function () { im.remove(); });
     });
     $('#csvBtn').onclick = exportCsv;
+    $('#pdfBtn').onclick = exportPdf;
     $('#clrBtn').onclick = function () {
       this.textContent = 'Chạm lần nữa để xoá hết';
       this.onclick = function () { const id = lists.active; view.forEach(function (r) { IMG.del(r.id); IMG.del(r.id + 'n'); }); results = results.filter(function (r) { return lidOf(r) !== id; }); saveResults(); renderChip(); renderRes(); };
@@ -2467,6 +2468,121 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       const ta = document.createElement('textarea'); ta.readOnly = true; ta.value = csv.slice(1); ta.style.cssText = 'width:100%;min-height:120px;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:8px';
       msg.parentNode.appendChild(ta); ta.focus(); ta.select();
     }
+  }
+
+  /* ---------- Xuất PDF tất cả bài ---------- */
+  function blobToImg(b) { return loadBlobImage(b); }
+  function canvasJpeg(cv, q) { return new Promise(function (res) { cv.toBlob(function (b) { b.arrayBuffer().then(function (ab) { res(new Uint8Array(ab)); }); }, 'image/jpeg', q); }); }
+  function buildPdf(pages) { /* pages: [{w,h,jpg:Uint8Array}] ảnh JPEG toàn trang */
+    const enc = new TextEncoder(), chunks = [], offs = []; let len = 0;
+    const put = function (x) { const u = typeof x === 'string' ? enc.encode(x) : x; chunks.push(u); len += u.length; };
+    const obj = function (n, body) { offs[n] = len; put(n + ' 0 obj\n'); if (typeof body === 'string') put(body); else body.forEach(put); put('\nendobj\n'); };
+    put('%PDF-1.4\n');
+    const N = pages.length, kids = [];
+    for (let i = 0; i < N; i++) kids.push((3 + i * 3) + ' 0 R');
+    obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+    obj(2, '<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + N + ' >>');
+    pages.forEach(function (p, i) {
+      const pn = 3 + i * 3, cn = pn + 1, im = pn + 2, W = 595.28, H = 841.89, cont = 'q ' + W + ' 0 0 ' + H + ' 0 0 cm /Im0 Do Q';
+      obj(pn, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /XObject << /Im0 ' + im + ' 0 R >> >> /Contents ' + cn + ' 0 R >>');
+      obj(cn, '<< /Length ' + cont.length + ' >>\nstream\n' + cont + '\nendstream');
+      obj(im, ['<< /Type /XObject /Subtype /Image /Width ' + p.w + ' /Height ' + p.h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + p.jpg.length + ' >>\nstream\n', p.jpg, '\nendstream']);
+    });
+    const xr = len, total = 3 + N * 3;
+    put('xref\n0 ' + total + '\n0000000000 65535 f \n');
+    for (let i = 1; i < total; i++) put(String(offs[i]).padStart(10, '0') + ' 00000 n \n');
+    put('trailer\n<< /Size ' + total + ' /Root 1 0 R >>\nstartxref\n' + xr + '\n%%EOF');
+    return new Blob(chunks, { type: 'application/pdf' });
+  }
+  async function pdfStudentPage(r, idx, n, listName) {
+    const W = 1240, H = 1754, M = 70, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const c = cv.getContext('2d'); c.fillStyle = '#fff'; c.fillRect(0, 0, W, H);
+    const F = '"Be Vietnam Pro","Segoe UI",Arial,sans-serif';
+    const cs = r.cs || csOf(), sheet = r.sheet || cfg.sheet;
+    let g = null, ver = verForCode(r.md || '');
+    if (r.ans) g = withSheet(sheet, function () { return gradeAll({ p1: r.ans.p1, p2: r.ans.p2, p3: r.ans.p3 }, cs, ver); });
+    c.fillStyle = '#6b7280'; c.font = '500 26px ' + F; c.textAlign = 'left'; c.fillText('B&T Pro Mark · ' + listName, M, 72);
+    c.textAlign = 'right'; c.fillText('Bài ' + idx + '/' + n, W - M, 72);
+    c.fillStyle = '#111827'; c.font = '700 46px ' + F; c.textAlign = 'left';
+    c.fillText('SBD ' + (r.sbd || '—') + ' · Mã đề ' + (r.md || '—'), M, 140);
+    c.fillStyle = '#6b7280'; c.font = '400 24px ' + F; c.fillText(new Date(r.t).toLocaleString('vi-VN') + (r.edited ? ' · đã sửa' : ''), M, 178);
+    c.textAlign = 'right'; c.fillStyle = '#1d3a8a'; c.font = '800 96px ' + F; c.fillText(fmt(r.total), W - M - 150, 160);
+    c.fillStyle = '#6b7280'; c.font = '500 34px ' + F; c.textAlign = 'left'; c.fillText('/ ' + fmt(r.max) + ' điểm', W - M - 140, 160);
+    let y = 215;
+    const parts = r.parts || [], mx = g ? [g.p1.max, g.p2.max, g.p3.max] : null, ns = [cs.n1, cs.n2, cs.n3];
+    const act = [0, 1, 2].filter(function (i) { return parts[i] != null && ns[i]; });
+    if (act.length) {
+      const bw = (W - 2 * M - 20 * (act.length - 1)) / act.length;
+      act.forEach(function (i, k) {
+        const x = M + k * (bw + 20);
+        c.fillStyle = '#eef2ff'; c.strokeStyle = '#c7d2fe'; c.lineWidth = 2; c.beginPath(); c.roundRect(x, y, bw, 84, 14); c.fill(); c.stroke();
+        c.fillStyle = '#374151'; c.font = '500 24px ' + F; c.textAlign = 'left'; c.fillText('Phần ' + PN[i], x + 20, y + 34);
+        c.fillStyle = '#111827'; c.font = '700 34px ' + F; c.fillText(fmt(parts[i]) + (mx ? ' / ' + fmt(mx[i]) : ''), x + 20, y + 70);
+      });
+      y += 84 + 24;
+    }
+    let nm = null;
+    try { const nb = await IMG.get(r.id + 'n'); if (nb) nm = await blobToImg(nb); } catch (e) { /* bỏ qua */ }
+    if (nm) {
+      c.fillStyle = '#6b7280'; c.font = '500 22px ' + F; c.textAlign = 'left'; c.fillText('Họ tên học sinh', M, y + 22);
+      const nh = Math.min(100, nm.height * 400 / nm.width * 1.0), nw = nh * nm.width / nm.height;
+      c.strokeStyle = '#d1d5db'; c.lineWidth = 2; c.strokeRect(M, y + 34, Math.min(nw, 520), nh); c.drawImage(nm, M, y + 34, Math.min(nw, 520), nh);
+      y += 34 + nh + 24;
+    }
+    let base = null;
+    try { const b = await IMG.get(r.id); if (b) base = await blobToImg(b); } catch (e) { /* bỏ qua */ }
+    if (base) {
+      const t = document.createElement('canvas'); t.width = base.naturalWidth || base.width; t.height = base.naturalHeight || base.height;
+      t.getContext('2d').drawImage(base, 0, 0);
+      if (r.rect && r.ans) withSheet(sheet, function () { paintRect(t, { L: makeLayout(cs), p1: r.ans.p1, p2: r.ans.p2, p3: r.ans.p3, sbd: String(r.sbd || '').split(''), md: String(r.md || '').split('') }, cs, ver); });
+      const aw = W - 2 * M, ah = H - y - 60, k = Math.min(aw / t.width, ah / t.height), dw = t.width * k, dh = t.height * k;
+      c.drawImage(t, M + (aw - dw) / 2, y, dw, dh);
+    } else {
+      c.fillStyle = '#9ca3af'; c.font = '400 26px ' + F; c.textAlign = 'left'; c.fillText('Bài này không có ảnh lưu kèm.', M, y + 40);
+    }
+    return { w: W, h: H, jpg: await canvasJpeg(cv, 0.82) };
+  }
+  async function pdfSummaryPages(view, listName) {
+    const W = 1240, H = 1754, M = 70, F = '"Be Vietnam Pro","Segoe UI",Arial,sans-serif', per = 34, out = [];
+    const rows = view.slice().reverse(), np = Math.max(1, Math.ceil(rows.length / per));
+    const pcts = rows.map(function (r) { return r.max ? r.total / r.max * 10 : 0; });
+    const avg = pcts.reduce(function (a, b) { return a + b; }, 0) / (pcts.length || 1);
+    const colx = [M, M + 80, M + 260, M + 380, M + 560, M + 740, M + 920], hd = ['STT', 'Số báo danh', 'Mã đề', 'Phần I', 'Phần II', 'Phần III', 'Tổng điểm'];
+    for (let p = 0; p < np; p++) {
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d');
+      c.fillStyle = '#fff'; c.fillRect(0, 0, W, H); c.textAlign = 'left';
+      c.fillStyle = '#111827'; c.font = '800 48px ' + F; c.fillText('Bảng điểm · ' + listName, M, 100);
+      c.fillStyle = '#6b7280'; c.font = '400 26px ' + F; c.fillText(rows.length + ' bài · điểm trung bình ' + fmt(avg) + ' (thang 10) · ' + new Date().toLocaleDateString('vi-VN'), M, 142);
+      let y = 200; c.fillStyle = '#eef2ff'; c.fillRect(M - 10, y - 38, W - 2 * M + 20, 56);
+      c.fillStyle = '#1f2937'; c.font = '700 26px ' + F; hd.forEach(function (t, i) { c.fillText(t, colx[i], y); });
+      y += 58;
+      rows.slice(p * per, (p + 1) * per).forEach(function (r, j) {
+        const pt = r.parts || ['', '', ''];
+        if (j % 2) { c.fillStyle = '#f9fafb'; c.fillRect(M - 10, y - 34, W - 2 * M + 20, 44); }
+        c.fillStyle = '#111827'; c.font = '400 26px ' + F;
+        [p * per + j + 1, r.sbd || '—', r.md || '—', pt[0] === '' ? '' : fmt(pt[0]), pt[1] === '' ? '' : fmt(pt[1]), pt[2] === '' ? '' : fmt(pt[2])].forEach(function (t, i) { c.fillText(String(t), colx[i], y); });
+        c.font = '700 28px ' + F; c.fillText(fmt(r.total) + ' / ' + fmt(r.max), colx[6], y);
+        y += 44;
+      });
+      out.push({ w: W, h: H, jpg: await canvasJpeg(cv, 0.85) });
+    }
+    return out;
+  }
+  async function exportPdf() {
+    const btn = $('#pdfBtn'), msg = $('#resMsg'), view = listRes().slice().reverse(), ln = curList().name;
+    if (!view.length) return;
+    btn.disabled = true; const t0 = btn.textContent;
+    try {
+      const pages = await pdfSummaryPages(view.slice().reverse(), ln);
+      for (let i = 0; i < view.length; i++) {
+        btn.textContent = 'Đang tạo PDF… ' + (i + 1) + '/' + view.length;
+        pages.push(await pdfStudentPage(view[i], i + 1, view.length, ln));
+      }
+      const blob = buildPdf(pages);
+      const st = await saveFile('bai-thi-' + (ln.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'dot') + '.pdf', blob);
+      msg.textContent = st === 'saved' ? 'Đã lưu file PDF.' : (st === 'declined' ? 'Bạn đã huỷ lưu. Nhấn lại nút để tải.' : 'Chế độ xem này không cho tải file PDF.');
+    } catch (e) { msg.textContent = 'Không tạo được PDF: ' + ((e && e.message) || e); }
+    btn.disabled = false; btn.textContent = t0;
   }
 
   /* ---------- Nhập đáp án bằng mã QR ---------- */
