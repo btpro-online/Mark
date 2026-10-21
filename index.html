@@ -122,7 +122,7 @@ input[type="range"] { width: 100%; accent-color: var(--ink); }
 .range-lbls { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
 
 /* Lưới đáp án */
-.qgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 8px 12px; --chip: 28px; }
+.qgrid { display: flex; flex-wrap: wrap; gap: 10px 14px; --chip: 28px; }
 .qgrid.k5 { --chip: 25px; }
 .q { display: flex; align-items: center; gap: 6px; padding: 2px 6px 2px 0; border-radius: 8px; min-width: 0; }
 .q.bad { background: var(--red-soft); }
@@ -273,6 +273,13 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
 .listrow select,.listrow input{flex:1;min-width:140px;min-height:40px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:inherit;font:inherit}
 .listcopy{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-top:8px}.listcopy input{width:18px;height:18px;margin:0}
 
+.re-img{margin:0 0 12px}.re-img canvas{width:100%;height:auto;display:block;border-radius:10px;border:1px solid var(--line);background:#fff}
+.re-imgbar{display:flex;gap:10px;align-items:center;margin-top:8px}
+
+.qblk{flex:1 1 150px;min-width:150px;max-width:230px;display:flex;flex-direction:column;gap:4px}
+.qblk-h{font-size:11px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;padding:0 2px}
+.numlist{display:grid!important;grid-auto-flow:column;grid-template-rows:repeat(3,auto);grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
+
 </style>
 
 <div class="wrap">
@@ -284,7 +291,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>B&amp;T Pro Mark - 1.0</h1>
+      <h1>B&amp;T Pro Mark</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -296,28 +303,24 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
         <div class="actions">
           <button class="btn primary big" type="button" id="btnLive">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-            Chấm ngay
+            Chụp và chấm ngay
           </button>
           <label class="btn" for="cam">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>
-            Chụp và chấm
+            Chụp bằng camera máy
           </label>
           <input class="vh" type="file" id="cam" accept="image/*" capture="environment">
-          <label class="btn" for="pick">Chọn ảnh có sẵn</label>
+          <label class="btn" for="pick">Chọn ảnh có sẵn (nhiều ảnh)</label>
           <input class="vh" type="file" id="pick" accept="image/*" multiple>
           <button class="btn ghost" type="button" id="btnSample">Chấm ảnh mẫu</button>
         </div>
-        <p class="hint">Đặt phiếu phẳng trên mặt bàn, chụp trọn cả tờ để thấy đủ 4 ô vuông đen ở góc. Nghiêng nhẹ hoặc hơi lệch sáng vẫn nhận được. Một ứng dụng của Lê Hoài Sơn - Huế</p>
+        <p class="hint">Đặt phiếu phẳng trên mặt bàn, chụp trọn cả tờ để thấy đủ 4 ô vuông đen ở góc. Nghiêng nhẹ hoặc hơi lệch sáng vẫn nhận được.</p>
       </div>
       <div id="scanOut" aria-live="polite"></div>
     </section>
     <div id="resEdit" class="imgview resedit" hidden role="dialog" aria-label="Sửa bài đã chấm">
       <div class="iv-top"><button class="lv-btn" type="button" id="reClose" aria-label="Đóng">✕</button><div class="iv-msg">Sửa thông tin bài đã chấm</div><button class="lv-btn" type="button" id="reSave">Lưu</button></div>
       <div class="re-body" id="reBody"></div>
-    </div>
-    <div id="imgView" class="imgview" hidden role="dialog" aria-label="Ảnh bài đã chấm">
-      <div class="iv-top"><button class="lv-btn" type="button" id="ivClose" aria-label="Đóng">✕</button><div class="iv-msg" id="ivMsg"></div><button class="lv-btn" type="button" id="ivSave">Lưu ảnh</button></div>
-      <div class="iv-body"><img id="ivImg" alt="Bài làm đã chấm"></div>
     </div>
     <div id="live" class="live" hidden role="dialog" aria-label="Chấm trực tiếp">
       <video id="lvVideo" playsinline muted autoplay></video>
@@ -427,17 +430,17 @@ setSheet('nh');
 
 function makeLayout(cfg) {
   const L = { p1: [], p2: [], p3: [], sbd: [], md: [] };
-  for (let q = 0; q < cfg.n1; q++) for (let o = 0; o < 4; o++) L.p1.push({ q: q, o: o, x: P1_X[Math.floor(q / 10)][o], y: P1_Y[q % 10] });
-  for (let q = 0; q < cfg.n2; q++) for (let r = 0; r < 4; r++) for (let s = 0; s < 2; s++) L.p2.push({ q: q, r: r, s: s, x: P2_X[q][s], y: (Array.isArray(P2_Y[0]) ? P2_Y[q][r] : P2_Y[r]) });
+  for (let q = 0; q < cfg.n1; q++) for (let o = 0; o < 4; o++) L.p1.push({ blk: 'p1-' + Math.floor(q / 10), q: q, o: o, x: P1_X[Math.floor(q / 10)][o], y: P1_Y[q % 10] });
+  for (let q = 0; q < cfg.n2; q++) for (let r = 0; r < 4; r++) for (let s = 0; s < 2; s++) L.p2.push({ blk: 'p2-' + q, q: q, r: r, s: s, x: P2_X[q][s], y: (Array.isArray(P2_Y[0]) ? P2_Y[q][r] : P2_Y[r]) });
   for (let q = 0; q < cfg.n3; q++) {
-    L.p3.push({ q: q, c: 0, k: '-', x: P3_X[q][0], y: P3_DASH });
-    L.p3.push({ q: q, c: 1, k: ',', x: P3_X[q][1], y: P3_COMMA });
-    L.p3.push({ q: q, c: 2, k: ',', x: P3_X[q][2], y: P3_COMMA });
-    for (let c = 0; c < 4; c++) for (let d = 0; d < 10; d++) L.p3.push({ q: q, c: c, k: String(d), x: P3_X[q][c], y: P3_D[d] });
+    L.p3.push({ blk: 'p3-' + q, q: q, c: 0, k: '-', x: P3_X[q][0], y: P3_DASH });
+    L.p3.push({ blk: 'p3-' + q, q: q, c: 1, k: ',', x: P3_X[q][1], y: P3_COMMA });
+    L.p3.push({ blk: 'p3-' + q, q: q, c: 2, k: ',', x: P3_X[q][2], y: P3_COMMA });
+    for (let c = 0; c < 4; c++) for (let d = 0; d < 10; d++) L.p3.push({ blk: 'p3-' + q, q: q, c: c, k: String(d), x: P3_X[q][c], y: P3_D[d] });
   }
   L.sbdN = SBD_X.length; L.mdN = MD_X.length;
-  for (let c = 0; c < SBD_X.length; c++) for (let d = 0; d < 10; d++) L.sbd.push({ c: c, d: d, x: SBD_X[c], y: ID_Y[d] });
-  for (let c = 0; c < MD_X.length; c++) for (let d = 0; d < 10; d++) L.md.push({ c: c, d: d, x: MD_X[c], y: ID_Y[d] });
+  for (let c = 0; c < SBD_X.length; c++) for (let d = 0; d < 10; d++) L.sbd.push({ blk: 'sbd', c: c, d: d, x: SBD_X[c], y: ID_Y[d] });
+  for (let c = 0; c < MD_X.length; c++) for (let d = 0; d < 10; d++) L.md.push({ blk: 'md', c: c, d: d, x: MD_X[c], y: ID_Y[d] });
   return L;
 }
 
@@ -529,6 +532,46 @@ function redOf(d, n) {
   for (let i = 0, p = 0; i < n; i++, p += 4) g[i] = d[p];
   return g;
 }
+/* Xám trung bình ba kênh, dùng để so độ tối của vạch/ô định hướng. */
+function markGray(d, n) {
+  const g = new Float32Array(n);
+  for (let i = 0, p = 0; i < n; i++, p += 4) g[i] = (d[p] + d[p + 1] + d[p + 2]) / 3;
+  return g;
+}
+/* Ảnh chụp dưới đèn ám màu (nửa xanh, nửa vàng) thì mỗi vùng chỉ rõ ở một kênh màu. Tìm ô neo trên cả kênh đỏ và kênh xanh dương rồi gộp lại. */
+function chanOf(d, w, x0, y0, cw, ch, off) {
+  const g = new Float32Array(cw * ch);
+  for (let y = 0; y < ch; y++) { let p = ((y0 + y) * w + x0) * 4 + off; for (let x = 0; x < cw; x++, p += 4) g[y * cw + x] = d[p]; }
+  return g;
+}
+/* Danh sách ô vuông ứng viên trong vùng (x0, y0, cw, ch): tìm riêng trên kênh đỏ và kênh xanh dương rồi gộp, bỏ trùng. */
+function findMarkers(d, w, x0, y0, cw, ch) {
+  const out = [];
+  [0, 2].forEach(function (off) {
+    const g = chanOf(d, w, x0, y0, cw, ch, off);
+    const mk = adaptiveMask(g, cw, ch);
+    findBlobs(mk, cw, ch).forEach(function (px) {
+      const sh = blobShape(px, cw);
+      if (sh.fill < 0.68 || sh.ratio > 1.5 || sh.side < 4) return;
+      /* Ô vuông neo nằm trong vùng lề trắng: vành ngay quanh nó gần như không có nét tối. Bong bóng, chữ in thì có. */
+      let dark = 0, tot = 0;
+      const r0 = sh.side * 0.85, r1 = sh.side * 1.45, lcx = sh.cx, lcy = sh.cy;
+      for (let k = 0; k < 24; k++) {
+        const ang = k * Math.PI / 12;
+        for (let rr = r0; rr <= r1; rr += Math.max(1, (r1 - r0) / 3)) {
+          const xx = Math.round(lcx + Math.cos(ang) * rr), yy = Math.round(lcy + Math.sin(ang) * rr);
+          if (xx < 0 || yy < 0 || xx >= cw || yy >= ch) continue;
+          tot++; if (mk[yy * cw + xx]) dark++;
+        }
+      }
+      sh.iso = tot ? 1 - dark / tot : 0;
+      sh.cx += x0; sh.cy += y0;
+      for (let i = 0; i < out.length; i++) if (Math.hypot(out[i].cx - sh.cx, out[i].cy - sh.cy) < Math.max(out[i].side, sh.side) * 0.7) { if (sh.fill > out[i].fill) out[i] = sh; return; }
+      out.push(sh);
+    });
+  });
+  return out;
+}
 function adaptiveMask(g, w, h) {
   const R = Math.max(12, Math.round(Math.min(w, h) / 12));
   const W1 = w + 1, I = new Float64Array(W1 * (h + 1));
@@ -544,7 +587,7 @@ function adaptiveMask(g, w, h) {
       const sum = I[y1 * W1 + x1] - I[y0 * W1 + x1] - I[y1 * W1 + x0] + I[y0 * W1 + x0];
       const mean = sum / ((x1 - x0) * (y1 - y0));
       const v = g[y * w + x];
-      if (v < mean * 0.62 && mean - v > 45) m[y * w + x] = 1;
+      if (v < mean * 0.62 && mean - v > Math.max(18, Math.min(45, mean * 0.4))) m[y * w + x] = 1;
     }
   }
   return m;
@@ -585,29 +628,163 @@ function blobShape(px, w) {
   }
   return { cx: sx / n, cy: sy / n, n: n, fill: n / best, ratio: ratio, side: Math.sqrt(best) };
 }
-function pickQuad(cands, w, h) {
-  const list = cands.slice().sort(function (a, b) { return b.n - a.n; }).slice(0, 16);
+/* Đếm các ô vuông giữa mép khớp vị trí dự kiến của một giả thuyết 4 góc (thử cả 4 cách quay). */
+function midCount(H, ppm, list, skip) {
+  let k = 0;
+  const tol = Math.max(8, 2.4 * ppm * RB);
+  for (let i = 1; i < 4; i++) for (let s = 0; s < 2; s++) {
+    const m = MARK_ROWS[i][s], pr = applyH(H, m[0], m[1]);
+    for (let j = 0; j < list.length; j++) { const e = list[j]; if (skip.indexOf(e) < 0 && Math.hypot(e.cx - pr[0], e.cy - pr[1]) < tol) { k++; break; } }
+  }
+  return k;
+}
+function midInliers(o, area, list, skip) {
+  const mids = [];
+  for (let i = 1; i < 4; i++) { mids.push(MARK_ROWS[i][0]); mids.push(MARK_ROWS[i][1]); }
+  const ppm = Math.sqrt(area / ((CORNERS[1][0] - CORNERS[0][0]) * (CORNERS[3][1] - CORNERS[0][1])));
+  let inl = 0;
+  for (let r = 0; r < 4; r++) {
+    const P = [o[r], o[(r + 1) % 4], o[(r + 2) % 4], o[(r + 3) % 4]].map(function (p) { return [p.cx, p.cy]; }), H = solveHomography(CORNERS, P);
+    if (!H) continue;
+    let k = 0;
+    mids.forEach(function (m) {
+      const pr = applyH(H, m[0], m[1]), tol = Math.max(8, 2.4 * ppm * RB);
+      for (let i = 0; i < list.length; i++) { const s = list[i]; if (skip.indexOf(s) < 0 && Math.hypot(s.cx - pr[0], s.cy - pr[1]) < tol) { k++; break; } }
+    });
+    if (k > inl) inl = k;
+  }
+  return inl;
+}
+/* Kiểm tra hình 4 điểm (đã sắp theo chiều kim đồng hồ) có giống tờ phiếu không: lồi, góc gần vuông, tỉ lệ cạnh đúng. */
+function quadShape(o, w, h, asp) {
+  let area = 0, sign = 0;
+  const lo = asp * 0.65, hi = asp * 1.4;
+  for (let i = 0; i < 4; i++) {
+    const p = o[i], p2 = o[(i + 1) % 4], p3 = o[(i + 2) % 4];
+    area += p.cx * p2.cy - p2.cx * p.cy;
+    const v1x = p2.cx - p.cx, v1y = p2.cy - p.cy, v2x = p3.cx - p2.cx, v2y = p3.cy - p2.cy;
+    const cr = v1x * v2y - v1y * v2x;
+    if (sign === 0) sign = cr > 0 ? 1 : -1; else if ((cr > 0 ? 1 : -1) !== sign) return null;
+    /* góc trong từ 50° đến 130° (phiếu chụp nghiêng vẫn nằm trong khoảng này) */
+    const cs = (v1x * v2x + v1y * v2y) / ((Math.hypot(v1x, v1y) * Math.hypot(v2x, v2y)) || 1);
+    if (cs > 0.65 || cs < -0.65) return null;
+  }
+  area = Math.abs(area) / 2;
+  if (area < 0.02 * w * h) return null;
+  const e = [0, 1, 2, 3].map(function (i) { return Math.hypot(o[(i + 1) % 4].cx - o[i].cx, o[(i + 1) % 4].cy - o[i].cy); });
+  const rw = (e[0] + e[2]) / 2, rh = (e[1] + e[3]) / 2, xr = rw / rh;
+  if (!((xr >= lo && xr <= hi) || (1 / xr >= lo && 1 / xr <= hi))) return null;
+  if (e[0] / e[2] > 1.8 || e[2] / e[0] > 1.8 || e[1] / e[3] > 1.8 || e[3] / e[1] > 1.8) return null;
+  const dev = Math.min(Math.abs(Math.log(xr / asp)), Math.abs(Math.log(1 / xr / asp)));
+  return { area: area, dev: dev };
+}
+function orderQuad(q) {
+  const mxc = (q[0].cx + q[1].cx + q[2].cx + q[3].cx) / 4, myc = (q[0].cy + q[1].cy + q[2].cy + q[3].cy) / 4;
+  return q.slice().sort(function (p1, p2) { return Math.atan2(p1.cy - myc, p1.cx - mxc) - Math.atan2(p2.cy - myc, p2.cx - mxc); });
+}
+/* Dựng góc thứ tư từ ba góc A, B, C và một ô vuông giữa mép cùng phía với góc thiếu (thử cả 4 cách gán vị trí trên phiếu). */
+function completeCorner(A, B, C, cands, w, h, asp) {
+  const D0 = { cx: A.cx + C.cx - B.cx, cy: A.cy + C.cy - B.cy, n: (A.n + B.n + C.n) / 3, side: B.side, fill: 1, ratio: 1 };
+  const m = 0.08 * Math.max(w, h);
+  if (D0.cx < -m || D0.cx > w + m || D0.cy < -m || D0.cy > h + m) return null;
+  const o0 = orderQuad([A, B, C, D0]), sh0 = quadShape(o0, w, h, asp);
+  if (!sh0) return null;
+  const di = o0.indexOf(D0);
+  let bestRes = null;
+  for (let r = 0; r < 4; r++) {
+    const P = [o0[r], o0[(r + 1) % 4], o0[(r + 2) % 4], o0[(r + 3) % 4]].map(function (p) { return [p.cx, p.cy]; });
+    const jIdx = (di - r + 4) % 4, side = (jIdx === 0 || jIdx === 3) ? 0 : 1;
+    const e01 = Math.hypot(P[1][0] - P[0][0], P[1][1] - P[0][1]), e12 = Math.hypot(P[2][0] - P[1][0], P[2][1] - P[1][1]), er = e01 / (e12 || 1);
+    if (er < asp * 0.6 || er > asp * 1.6) continue;
+    const H0 = solveHomography(CORNERS, P);
+    if (!H0) continue;
+    const tol = 0.09 * Math.max(w, h);
+    for (let i = 1; i < 4; i++) {
+      const pr = applyH(H0, MARK_ROWS[i][side][0], MARK_ROWS[i][side][1]);
+      for (let k = 0; k < cands.length; k++) {
+        const bc = cands[k];
+        if (bc === A || bc === B || bc === C || Math.hypot(bc.cx - pr[0], bc.cy - pr[1]) > tol) continue;
+        if (bc.side < 0.7 * B.side || bc.side > 1.45 * B.side || bc.fill < 0.78) continue;
+        const S = [], D = [];
+        for (let q = 0; q < 4; q++) if (q !== jIdx) { S.push(CORNERS[q]); D.push(P[q]); }
+        S.push(MARK_ROWS[i][side]); D.push([bc.cx, bc.cy]);
+        const H1 = solveHomography(S, D);
+        if (!H1) continue;
+        const nd = applyH(H1, CORNERS[jIdx][0], CORNERS[jIdx][1]);
+        const D1 = { cx: nd[0], cy: nd[1], n: D0.n, side: B.side, fill: 1, ratio: 1 };
+        if (D1.cx < -m || D1.cx > w + m || D1.cy < -m || D1.cy > h + m) continue;
+        const o1 = orderQuad([A, B, C, D1]), sh1 = quadShape(o1, w, h, asp);
+        if (!sh1) continue;
+        const inl = midCount(H1, Math.sqrt(sh1.area / ((CORNERS[1][0] - CORNERS[0][0]) * (CORNERS[3][1] - CORNERS[0][1]))), cands, [A, B, C]);
+        if (!bestRes || inl > bestRes.inl) bestRes = { o: o1, sh: sh1, virt: o1.indexOf(D1), inl: inl };
+      }
+    }
+  }
+  return bestRes;
+}
+function pickQuad(cands, w, h, img, live) {
+  const byN = cands.slice().sort(function (a, b) { return b.n - a.n; }), byF = cands.slice().sort(function (a, b) { return (b.fill / b.ratio) * Math.min(1, b.n / 40) - (a.fill / a.ratio) * Math.min(1, a.n / 40); });
+  const list = byN.slice(0, 15);
+  for (let i = 0; i < byF.length && list.length < 26; i++) if (list.indexOf(byF[i]) < 0) list.push(byF[i]);
+  const asp = (CORNERS[1][0] - CORNERS[0][0]) / (CORNERS[3][1] - CORNERS[0][1]);
+  const hasMids = !!SHEET.bands;
   let best = null;
-  for (let a = 0; a < list.length; a++) for (let b = a + 1; b < list.length; b++)
-    for (let c = b + 1; c < list.length; c++) for (let d = c + 1; d < list.length; d++) {
-      const q = [list[a], list[b], list[c], list[d]];
+  function consider(o, sh, mn, mx, skip, pen, virt, minInl) {
+    let score = Math.sqrt(sh.area) * Math.sqrt(mn / mx) * Math.exp(-3 * sh.dev) * pen, inl = 0;
+    if (hasMids && !live) { inl = midInliers(o, sh.area, cands, skip); if (inl < (minInl || 0)) return; score *= (1 + inl) * (1 + inl); }
+    if (!best || score > best.score) best = { score: score, inl: inl, virt: virt, pts: o.map(function (p) { return [p.cx, p.cy]; }) };
+  }
+  /* Duyệt theo ba góc kề nhau (góc gần vuông, tỉ lệ cạnh hợp lý) rồi tìm góc thứ tư quanh vị trí dự đoán: nhanh hơn nhiều so với thử mọi bộ bốn */
+  const seen = {}, alo = asp * 0.6, ahi = asp * 1.6;
+  for (let bI = 0; bI < list.length; bI++) for (let a = 0; a < list.length; a++) for (let cI = a + 1; cI < list.length; cI++) {
+    if (a === bI || cI === bI) continue;
+    const B = list[bI], A = list[a], C = list[cI];
+    const v1x = A.cx - B.cx, v1y = A.cy - B.cy, v2x = C.cx - B.cx, v2y = C.cy - B.cy, l1 = Math.hypot(v1x, v1y), l2 = Math.hypot(v2x, v2y);
+    if (Math.abs((v1x * v2x + v1y * v2y) / ((l1 * l2) || 1)) > 0.55) continue;
+    const rr = l1 / (l2 || 1);
+    if (!((rr >= alo && rr <= ahi) || (1 / rr >= alo && 1 / rr <= ahi))) continue;
+    const dx = A.cx + C.cx - B.cx, dy = A.cy + C.cy - B.cy, rad = 0.3 * Math.max(l1, l2);
+    for (let dI = 0; dI < list.length; dI++) {
+      if (dI === a || dI === bI || dI === cI) continue;
+      const D = list[dI];
+      if (Math.hypot(D.cx - dx, D.cy - dy) > rad) continue;
+      const key = [a, bI, cI, dI].sort(function (x, y) { return x - y; }).join(',');
+      if (seen[key]) continue;
+      seen[key] = 1;
+      const q = [A, B, C, D];
       let mn = 1e12, mx = 0;
       q.forEach(function (p) { mn = Math.min(mn, p.n); mx = Math.max(mx, p.n); });
       if (mx / mn > 10) continue;
-      const mxc = (q[0].cx + q[1].cx + q[2].cx + q[3].cx) / 4, myc = (q[0].cy + q[1].cy + q[2].cy + q[3].cy) / 4;
-      const o = q.slice().sort(function (p1, p2) { return Math.atan2(p1.cy - myc, p1.cx - mxc) - Math.atan2(p2.cy - myc, p2.cx - mxc); });
-      let area = 0, sign = 0, convex = true;
-      for (let i = 0; i < 4; i++) {
-        const p = o[i], p2 = o[(i + 1) % 4], p3 = o[(i + 2) % 4];
-        area += p.cx * p2.cy - p2.cx * p.cy;
-        const cr = (p2.cx - p.cx) * (p3.cy - p2.cy) - (p2.cy - p.cy) * (p3.cx - p2.cx);
-        if (sign === 0) sign = cr > 0 ? 1 : -1; else if ((cr > 0 ? 1 : -1) !== sign) convex = false;
-      }
-      area = Math.abs(area) / 2;
-      if (!convex || area < 0.02 * w * h) continue;
-      const score = area * Math.sqrt(mn / mx);
-      if (!best || score > best.score) best = { score: score, pts: o.map(function (p) { return [p.cx, p.cy]; }) };
+      const o = orderQuad(q), sh = quadShape(o, w, h, asp);
+      if (!sh) continue;
+      consider(o, sh, mn, mx, q, 1, -1, 0);
     }
+  }
+  /* Thiếu một góc (bị che, chói, bóng): dựng góc còn lại từ ba góc đã thấy và một ô vuông giữa mép, chỉ nhận khi nhiều ô vuông giữa mép xác nhận */
+  if (hasMids && !live && (!best || best.inl < 6)) {
+    for (let bI = 0; bI < list.length; bI++) for (let a = 0; a < list.length; a++) for (let cI = a + 1; cI < list.length; cI++) {
+      if (a === bI || cI === bI) continue;
+      const B = list[bI], A = list[a], C = list[cI];
+      const mn = Math.min(A.n, B.n, C.n), mx = Math.max(A.n, B.n, C.n);
+      if (mx / mn > 10) continue;
+      const v1x = A.cx - B.cx, v1y = A.cy - B.cy, v2x = C.cx - B.cx, v2y = C.cy - B.cy;
+      const cs = (v1x * v2x + v1y * v2y) / ((Math.hypot(v1x, v1y) * Math.hypot(v2x, v2y)) || 1);
+      if (Math.abs(cs) > 0.5) continue;
+      const rr = Math.hypot(v1x, v1y) / (Math.hypot(v2x, v2y) || 1), alo = asp * 0.6, ahi = asp * 1.6;
+      if (!((rr >= alo && rr <= ahi) || (1 / rr >= alo && 1 / rr <= ahi))) continue;
+      const rc = completeCorner(A, B, C, cands, w, h, asp);
+      if (rc && rc.sh.dev <= 0.2) consider(rc.o, rc.sh, mn, mx, [A, B, C], 0.9, rc.virt, 4);
+    }
+  }
+  if (best && hasMids && !live && best.inl < 3) return null;
+  if (best && best.virt >= 0) {
+    /* tìm lại ô vuông bị sót ở góc dựng thêm, nếu thấy thì dùng vị trí thật */
+    const vp = best.pts[best.virt];
+    const e0 = Math.hypot(best.pts[1][0] - best.pts[0][0], best.pts[1][1] - best.pts[0][1]), e1 = Math.hypot(best.pts[2][0] - best.pts[1][0], best.pts[2][1] - best.pts[1][1]);
+    const ppm = Math.min(e0, e1) / Math.min(CORNERS[1][0] - CORNERS[0][0], CORNERS[3][1] - CORNERS[0][1]);
+    const rf = img ? refineMarker(img, vp[0], vp[1], ppm) : null;
+    if (rf) best.pts[best.virt] = rf;
+  }
   return best;
 }
 function dist(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }
@@ -641,7 +818,18 @@ function spotScore(g, w, h, H, ref) {
   }
   return c ? 1 - (s / c) / ref : 0;
 }
-function orient(g, w, h, pts) {
+/* Đếm các ô vuông giữa mép (chỉ phiếu 1) nằm đúng vị trí dự kiến: bằng chứng chắc chắn về chiều của phiếu. */
+function midHits(H, P, cands) {
+  if (!SHEET.bands || !cands) return 0;
+  const ppm = dist(P[0], P[1]) / (CORNERS[1][0] - CORNERS[0][0]), tol = 3.5 * ppm;
+  let k = 0;
+  for (let i = 1; i < 4; i++) for (let s = 0; s < 2; s++) {
+    const m = MARK_ROWS[i][s], pr = applyH(H, m[0], m[1]);
+    for (let j = 0; j < cands.length; j++) if (Math.hypot(cands[j].cx - pr[0], cands[j].cy - pr[1]) < tol) { k++; break; }
+  }
+  return k;
+}
+function orient(g, w, h, pts, cands) {
   const found = [];
   for (let r = 0; r < 4; r++) {
     const P = [pts[r % 4], pts[(r + 1) % 4], pts[(r + 2) % 4], pts[(r + 3) % 4]];
@@ -652,21 +840,57 @@ function orient(g, w, h, pts) {
     const H = solveHomography(CORNERS, P);
     if (!H) continue;
     const ref = paperRef(g, w, h, H);
-    found.push({ H: H, P: P, bar: SHEET.SPOT ? spotScore(g, w, h, H, ref) : barScore(g, w, h, H, ref), ref: ref });
+    const mid = midHits(H, P, cands), bs = SHEET.SPOT ? spotScore(g, w, h, H, ref) : barScore(g, w, h, H, ref);
+    found.push({ H: H, P: P, bar: bs + 0.1 * mid, raw: bs, mid: mid, ref: ref });
   }
   if (!found.length) return null;
   found.sort(function (a, b) { return b.bar - a.bar; });
   const best = found[0], second = found[1];
-  if (best.bar < 0.12) return null;
+  if (best.raw < 0.12 && best.mid < 4) return null;
   if (second && best.bar - second.bar < 0.06) return null;
   return best;
 }
 /* Ghép thêm các ô vuông ở giữa mép để mỗi vùng của phiếu có phép biến đổi riêng, bớt lệch khi giấy cong. */
-function buildBands(fit, cands, ppmEst) {
-  if (!SHEET.bands) return { H: [fit.H, fit.H, fit.H, fit.H], foundMid: 4 };
+/* Tìm lại một ô vuông neo bị sót: trong cửa sổ nhỏ quanh vị trí dự kiến, lấy kênh sáng nhất, tách ngưỡng Otsu rồi chọn mảng tối vuông vức gần tâm nhất. */
+function refineMarker(img, cx, cy, ppm) {
+  const half = Math.round(6 * ppm), side = 3.7 * ppm;
+  const x0 = Math.max(0, Math.round(cx) - half), y0 = Math.max(0, Math.round(cy) - half), x1 = Math.min(img.w, Math.round(cx) + half), y1 = Math.min(img.h, Math.round(cy) + half);
+  const cw = x1 - x0, ch = y1 - y0;
+  if (cw < 8 || ch < 8) return null;
+  const g = new Uint8Array(cw * ch), hist = new Float64Array(256), d = img.d;
+  for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
+    const p = ((y0 + y) * img.w + x0 + x) * 4, r = d[p], gg = d[p + 1], b = d[p + 2], v = r > gg ? (r > b ? r : b) : (gg > b ? gg : b);
+    g[y * cw + x] = v; hist[v]++;
+  }
+  let tot = cw * ch, sum = 0; for (let i = 0; i < 256; i++) sum += i * hist[i];
+  let wB = 0, sB = 0, bestV = -1, thr = 128;
+  for (let t = 0; t < 256; t++) { wB += hist[t]; if (!wB) continue; const wF = tot - wB; if (!wF) break; sB += t * hist[t]; const mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) * (mB - mF); if (v > bestV) { bestV = v; thr = t; } }
+  const seen = new Uint8Array(cw * ch), st = [];
+  let best = null;
+  for (let s0 = 0; s0 < cw * ch; s0++) {
+    if (seen[s0] || g[s0] > thr) continue;
+    let sx = 0, sy = 0, n = 0, mnx = 1e9, mxx = -1, mny = 1e9, mxy = -1;
+    st.length = 0; st.push(s0); seen[s0] = 1;
+    while (st.length) {
+      const p = st.pop(), x = p % cw, y = (p - x) / cw; sx += x; sy += y; n++;
+      if (x < mnx) mnx = x; if (x > mxx) mxx = x; if (y < mny) mny = y; if (y > mxy) mxy = y;
+      if (x > 0 && !seen[p - 1] && g[p - 1] <= thr) { seen[p - 1] = 1; st.push(p - 1); }
+      if (x < cw - 1 && !seen[p + 1] && g[p + 1] <= thr) { seen[p + 1] = 1; st.push(p + 1); }
+      if (y > 0 && !seen[p - cw] && g[p - cw] <= thr) { seen[p - cw] = 1; st.push(p - cw); }
+      if (y < ch - 1 && !seen[p + cw] && g[p + cw] <= thr) { seen[p + cw] = 1; st.push(p + cw); }
+    }
+    const bw = mxx - mnx + 1, bh = mxy - mny + 1, fill = n / (bw * bh), rt = Math.max(bw, bh) / Math.min(bw, bh);
+    if (n < 0.3 * side * side || n > 2.4 * side * side || fill < 0.6 || rt > 1.6) continue;
+    const ccx = x0 + sx / n, ccy = y0 + sy / n, dd = Math.hypot(ccx - cx, ccy - cy);
+    if (!best || dd < best.d) best = { d: dd, p: [ccx, ccy] };
+  }
+  return best ? best.p : null;
+}
+function buildBands(fit, cands, ppmEst, img) {
+  if (!SHEET.bands) return { H: [fit.H, fit.H, fit.H, fit.H], foundMid: 4, anchors: fit.P.map(function (p) { return [p[0], p[1], 1]; }) };
   const used = {};
   function find(sx, sy) {
-    const pr = applyH(fit.H, sx, sy), tol = Math.max(8, 2.6 * ppmEst), want = 3.8 * ppmEst;
+    const pr = applyH(fit.H, sx, sy), tol = Math.max(8, 5.5 * ppmEst), want = 3.8 * ppmEst;
     let bd = null, bi = -1;
     cands.forEach(function (c, i) {
       const d = Math.hypot(c.cx - pr[0], c.cy - pr[1]);
@@ -680,6 +904,21 @@ function buildBands(fit, cands, ppmEst) {
     else if (i === 4) rows.push([{ p: fit.P[3], found: true }, { p: fit.P[2], found: true }]);
     else rows.push([find(MARK_ROWS[i][0][0], MARK_ROWS[i][0][1]), find(MARK_ROWS[i][1][0], MARK_ROWS[i][1][1])]);
   }
+  /* Ô vuông giữa mép nào không thấy thì dịch vị trí dự kiến theo độ lệch của các ô vuông đã thấy cùng phía */
+  [0, 1].forEach(function (s) {
+    const offs = [];
+    for (let i = 1; i < 4; i++) {
+      const r = rows[i][s];
+      if (r.found) { const pr = applyH(fit.H, MARK_ROWS[i][s][0], MARK_ROWS[i][s][1]); offs.push([r.p[0] - pr[0], r.p[1] - pr[1]]); }
+    }
+    if (!offs.length) return;
+    const ox = offs.reduce(function (a, o) { return a + o[0]; }, 0) / offs.length, oy = offs.reduce(function (a, o) { return a + o[1]; }, 0) / offs.length;
+    for (let i = 1; i < 4; i++) if (!rows[i][s].found) {
+      const pr = applyH(fit.H, MARK_ROWS[i][s][0], MARK_ROWS[i][s][1]), est = [pr[0] + ox, pr[1] + oy];
+      const rf = img ? refineMarker(img, est[0], est[1], ppmEst) : null;
+      if (rf) { rows[i][s].p = rf; rows[i][s].found = true; } else rows[i][s].p = est;
+    }
+  });
   const HB = [];
   let foundMid = 0;
   for (let i = 0; i < 4; i++) {
@@ -688,7 +927,9 @@ function buildBands(fit, cands, ppmEst) {
     HB.push(solveHomography(S, D) || fit.H);
   }
   for (let i = 1; i < 4; i++) foundMid += (rows[i][0].found ? 1 : 0) + (rows[i][1].found ? 1 : 0);
-  return { H: HB, foundMid: foundMid };
+  const anchors = [];
+  rows.forEach(function (r) { r.forEach(function (e) { anchors.push([e.p[0], e.p[1], e.found ? 1 : 0]); }); });
+  return { H: HB, foundMid: foundMid, anchors: anchors };
 }
 function hOf(HB, y) { return HB[bandOf(y)]; }
 
@@ -726,9 +967,74 @@ function decideMarks(scores, thr) {
   scores.forEach(function (s, i) { if (s >= thr && s >= 0.55 * mx) out.push(i); });
   return out;
 }
-function scanSheet(g, w, h, L, cfg, HB, thr) {
+/* Giấy cong hoặc ống kính méo làm các ô tô lệch khỏi vị trí tính từ ô vuông neo. Mỗi khối ô (một cột câu hỏi, một câu Phần III, số báo danh, mã đề) được dò lại một độ lệch nhỏ sao cho vòng tròn in sẵn khớp nhất rồi mới đọc. */
+function alignBlocks(ga, w, h, L, HB) {
+  const groups = {};
+  [].concat(L.p1, L.p2, L.p3, L.sbd, L.md).forEach(function (b) { (groups[b.blk] = groups[b.blk] || []).push(b); });
+  const rr = RB + 0.1, ro = RB + 0.95, A = [0, 1, 2, 3, 4, 5, 6, 7].map(function (i) { return [Math.cos(i * Math.PI / 4), Math.sin(i * Math.PI / 4)]; });
+  function ring(b, x, y) {
+    const H = hOf(HB, b.y);
+    let sr = 0, so = 0, n = 0;
+    for (let i = 0; i < 8; i++) {
+      const a = sampleMM(ga, w, h, H, x + rr * A[i][0], y + rr * A[i][1]), o = sampleMM(ga, w, h, H, x + ro * A[i][0], y + ro * A[i][1]);
+      if (a === a && o === o) { sr += a; so += o; n++; }
+    }
+    return n ? (so - sr) / Math.max(so, 1) : 0;
+  }
+  Object.keys(groups).forEach(function (k) {
+    const bs = groups[k];
+    let cx = 0, cy = 0; bs.forEach(function (b) { cx += b.x; cy += b.y; }); cx /= bs.length; cy /= bs.length;
+    const T = { dx: 0, dy: 0, sx: 1, sy: 1 };
+    const score = function (t) {
+      let s = 0;
+      for (let i = 0; i < bs.length; i++) { const b = bs[i]; s += ring(b, cx + t.sx * (b.x - cx) + t.dx, cy + t.sy * (b.y - cy) + t.dy); }
+      return s / bs.length - 0.02 * Math.hypot(t.dx, t.dy) - 0.8 * (Math.abs(t.sx - 1) + Math.abs(t.sy - 1));
+    };
+    let best = score(T);
+    const tryT = function (t) { const s = score(t); if (s > best) { best = s; T.dx = t.dx; T.dy = t.dy; T.sx = t.sx; T.sy = t.sy; } };
+    for (let dy = -2; dy <= 2; dy += 0.5) for (let dx = -2; dx <= 2; dx += 0.5) tryT({ dx: dx, dy: dy, sx: 1, sy: 1 });
+    [0.96, 0.98, 1.02, 1.04].forEach(function (sy) { tryT({ dx: T.dx, dy: T.dy, sx: T.sx, sy: sy }); });
+    [0.98, 1.02].forEach(function (sx) { tryT({ dx: T.dx, dy: T.dy, sx: sx, sy: T.sy }); });
+    const c0 = { dx: T.dx, dy: T.dy };
+    for (let dy = -0.5; dy <= 0.5; dy += 0.5) for (let dx = -0.5; dx <= 0.5; dx += 0.5) tryT({ dx: c0.dx + dx, dy: c0.dy + dy, sx: T.sx, sy: T.sy });
+    if (T.dx || T.dy || T.sx !== 1 || T.sy !== 1) bs.forEach(function (b) { const x = cx + T.sx * (b.x - cx) + T.dx, y = cy + T.sy * (b.y - cy) + T.dy; b.x = x; b.y = y; });
+    /* Giấy cong thì các hàng trong cùng khối còn lệch khác nhau chút ít: dò thêm độ lệch riêng cho từng hàng */
+    const rows = {};
+    bs.forEach(function (b) { (rows[Math.round(b.y * 5)] = rows[Math.round(b.y * 5)] || []).push(b); });
+    Object.keys(rows).forEach(function (rk) {
+      const rb = rows[rk];
+      const rs = function (dx, dy) { let s = 0; for (let i = 0; i < rb.length; i++) s += ring(rb[i], rb[i].x + dx, rb[i].y + dy); return s / rb.length - 0.01 * Math.hypot(dx, dy); };
+      let bs0 = rs(0, 0), bx = 0, by = 0;
+      for (let dy = -1.5; dy <= 1.5; dy += 0.5) for (let dx = -1; dx <= 1; dx += 0.5) { const s = rs(dx, dy); if (s > bs0) { bs0 = s; bx = dx; by = dy; } }
+      if (bx || by) rb.forEach(function (b) { b.x += bx; b.y += by; });
+    });
+  });
+}
+function scanSheet(g, w, h, L, cfg, HB, thr, ga) {
+  if (ga) alignBlocks(ga, w, h, L, HB);
   const inOff = discOffsets(RB * 0.62, 0.28), A0 = RB + 0.4, A1 = RB + 0.7;
-  const rd = function (b) { return bubbleScore(g, w, h, hOf(HB, b.y), b, inOff, A0, A1); };
+  const cache = new Map();
+  const raw = function (b) { let v = cache.get(b); if (v === undefined) { v = bubbleScore(g, w, h, hOf(HB, b.y), b, inOff, A0, A1); cache.set(b, v); } return v; };
+  /* Mức "nền": phần lớn ô trên phiếu để trống nhưng vẫn có nét in và nhiễu nên có độ tối nhất định. Lấy trung vị làm nền rồi trừ đi, đỡ đọc nhầm khi ảnh thiếu sáng hoặc ám màu. */
+  const allB = [].concat(L.p1, L.p2, L.p3, L.sbd, L.md), sv = allB.map(raw).sort(function (p, q) { return p - q; });
+  const base = sv.length ? Math.min(sv[Math.floor(sv.length * 0.5)], 0.25) : 0;
+  /* Ô số báo danh và mã đề có in sẵn chữ số bên trong nên mỗi chữ số tối khác nhau (số 8 tối hơn số 1). Lấy mức tối thấp của cùng một chữ số ở các cột làm nền riêng cho chữ số đó. */
+  const idB = [].concat(L.sbd, L.md), dBase = [];
+  for (let d = 0; d < 10; d++) {
+    const v = idB.filter(function (b) { return b.d === d; }).map(raw).sort(function (p, q) { return p - q; });
+    dBase.push(v.length >= 3 ? v[Math.floor(0.3 * (v.length - 1))] : 0);
+  }
+  const rd = function (b) { return Math.max(0, raw(b) - ((b.blk === 'sbd' || b.blk === 'md') ? Math.max(base, dBase[b.d]) : base)); };
+  /* Mức nhiễu: trong mỗi nhóm lựa chọn (một câu Phần I, một cột Phần III, một cột số báo danh hoặc mã đề) chỉ tối đa một ô được tô nên ô cao thứ hai chính là nhiễu. Lấy trung vị làm sàn, ô nào không vượt rõ rệt sàn này thì không tính là đã tô. */
+  const second = [], grp = {};
+  [].concat(L.p1, L.p3, L.sbd, L.md).forEach(function (b) {
+    const k = b.blk.charAt(1) === '1' ? 'p1-' + b.q : (b.blk.charAt(0) === 'p' ? 'p3-' + b.q + '-' + b.c : b.blk + '-' + b.c);
+    (grp[k] = grp[k] || []).push(rd(b));
+  });
+  Object.keys(grp).forEach(function (k) { const a = grp[k].slice().sort(function (p, q) { return q - p; }); if (a.length >= 3) second.push(a[1]); });
+  second.sort(function (p, q) { return p - q; });
+  const noise = second.length ? second[Math.floor(second.length / 2)] : 0;
+  thr = Math.max(thr, 2.2 * noise);
   let marked = 0, seen = 0;
   const p1 = [], p1s = [];
   for (let q = 0; q < cfg.n1; q++) { p1.push([]); p1s.push([]); }
@@ -766,28 +1072,22 @@ function scanSheet(g, w, h, L, cfg, HB, thr) {
     return out;
   }
   const sbd = readId(L.sbd, L.sbdN), md = readId(L.md, L.mdN);
-  return { p1: p1, p2: p2, p3: p3, p1s: p1s, sbd: sbd, md: md, markedRatio: seen ? marked / seen : 0 };
+  return { p1: p1, p2: p2, p3: p3, p1s: p1s, sbd: sbd, md: md, markedRatio: seen ? marked / seen : 0, base: base, noise: noise, thrEff: thr };
 }
 
 function analyzeImage(imgData, w, h, cfg, thr) {
   const L = makeLayout(cfg);
-  const g = redOf(imgData.data, w * h);
-  const mask = adaptiveMask(g, w, h);
-  const blobs = findBlobs(mask, w, h);
-  const cands = [];
-  blobs.forEach(function (px) {
-    const sh = blobShape(px, w);
-    if (sh.fill >= 0.8 && sh.ratio <= 1.5 && sh.side >= 4) cands.push(sh);
-  });
+  const g = redOf(imgData.data, w * h), gm = markGray(imgData.data, w * h);
+  const cands = findMarkers(imgData.data, w, 0, 0, w, h);
   if (cands.length < 4) return { error: 'markers', found: cands.length };
-  const quad = pickQuad(cands, w, h);
+  const quad = pickQuad(cands, w, h, { d: imgData.data, w: w, h: h });
   if (!quad) return { error: 'quad' };
-  const fit = orient(g, w, h, quad.pts);
+  const fit = orient(gm, w, h, quad.pts, cands);
   if (!fit) return { error: 'orient' };
   const ppm = (dist(fit.P[0], fit.P[1]) + dist(fit.P[3], fit.P[2])) / 2 / (CORNERS[1][0] - CORNERS[0][0]);
-  const bands = buildBands(fit, cands, ppm);
-  const res = scanSheet(g, w, h, L, cfg, bands.H, thr);
-  res.L = L; res.HB = bands.H; res.P = fit.P; res.ppm = ppm; res.foundMid = bands.foundMid;
+  const bands = buildBands(fit, cands, ppm, { d: imgData.data, w: w, h: h });
+  const res = scanSheet(g, w, h, L, cfg, bands.H, thr, gm);
+  res.L = L; res.HB = bands.H; res.P = fit.P; res.ppm = ppm; res.foundMid = bands.foundMid; res.anchors = bands.anchors;
   return res;
 }
 
@@ -847,16 +1147,10 @@ function gradeAll(st, cfg, ver) {
 
 /* ---------- Quét trực tiếp: chỉ tìm 4 ô neo + hướng phiếu, đủ nhẹ để chạy mỗi khung hình ---------- */
 function detectFrame(imgData, w, h) {
-  const g = redOf(imgData.data, w * h);
-  const mask = adaptiveMask(g, w, h);
-  const blobs = findBlobs(mask, w, h);
-  const cands = [];
-  blobs.forEach(function (px) {
-    const sh = blobShape(px, w);
-    if (sh.fill >= 0.8 && sh.ratio <= 1.5 && sh.side >= 4) cands.push(sh);
-  });
+  const g = markGray(imgData.data, w * h);
+  const cands = findMarkers(imgData.data, w, 0, 0, w, h);
   if (cands.length < 4) return { found: 0, cands: cands };
-  const quad = pickQuad(cands, w, h);
+  const quad = pickQuad(cands, w, h, null, true);
   if (!quad) return { found: 0, cands: cands };
   const fit = orient(g, w, h, quad.pts);
   let area = 0;
@@ -874,22 +1168,16 @@ function detectFrame(imgData, w, h) {
 /* ---------- Quét trực tiếp, bản nhanh: chỉ tìm ô vuông trong 4 ô cửa sổ ở bốn góc khung ---------- */
 /* wins: 4 hình chữ nhật [x0, y0, x1, y1] theo thứ tự góc trên trái, trên phải, dưới phải, dưới trái. */
 function detectCorners(imgData, w, h, wins) {
-  const g = redOf(imgData.data, w * h), pts = [], sides = [];
+  const g = markGray(imgData.data, w * h), pts = [], sides = [];
   for (let k = 0; k < 4; k++) {
     const x0 = Math.max(0, Math.floor(wins[k][0])), y0 = Math.max(0, Math.floor(wins[k][1]));
     const x1 = Math.min(w, Math.ceil(wins[k][2])), y1 = Math.min(h, Math.ceil(wins[k][3]));
     const cw = x1 - x0, ch = y1 - y0;
     if (cw < 16 || ch < 16) return { found: 0, miss: k };
-    const g2 = new Float32Array(cw * ch);
-    for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) g2[y * cw + x] = g[(y0 + y) * w + x0 + x];
-    const blobs = findBlobs(adaptiveMask(g2, cw, ch), cw, ch);
     let best = null;
-    blobs.forEach(function (px) {
-      const sh = blobShape(px, cw);
-      if (sh.fill >= 0.8 && sh.ratio <= 1.5 && sh.side >= 4 && (!best || sh.n > best.n)) best = sh;
-    });
+    findMarkers(imgData.data, w, x0, y0, cw, ch).forEach(function (sh) { if (!best || sh.n > best.n) best = sh; });
     if (!best) return { found: 0, miss: k };
-    pts.push([x0 + best.cx, y0 + best.cy]); sides.push(best.side);
+    pts.push([best.cx, best.cy]); sides.push(best.side);
   }
   let area = 0;
   for (let i = 0; i < 4; i++) { const p = pts[i], q = pts[(i + 1) % 4]; area += p[0] * q[1] - q[0] * p[1]; }
@@ -1066,14 +1354,17 @@ function renderPhoto(sheetImg, cfg, marks, o) {
 
   /* ---------- Thành phần dùng chung ---------- */
   function mcqGridHTML(n, cell, row) {
+    /* Xếp theo cột dọc như trên phiếu: mỗi khối 10 câu đọc từ trên xuống, các khối nằm cạnh nhau */
     let h = '<div class="qgrid">';
     for (let q = 0; q < n; q++) {
+      if (q % 10 === 0) h += '<div class="qblk"><div class="qblk-h">Câu ' + (q + 1) + '–' + Math.min(n, q + 10) + '</div>';
       h += '<div class="q ' + (row ? row(q) : '') + '"><span class="qn">' + (q + 1) + '</span><span class="opts">';
       for (let o = 0; o < 4; o++) {
         const c = cell(q, o);
         h += '<button type="button" class="o ' + c + '" data-q="' + q + '" data-o="' + o + '" aria-pressed="' + (/\bsel\b/.test(c) ? 'true' : 'false') + '" aria-label="Câu ' + (q + 1) + ', đáp án ' + LET[o] + '">' + LET[o] + '</button>';
       }
       h += '</span></div>';
+      if (q % 10 === 9 || q === n - 1) h += '</div>';
     }
     return h + '</div>';
   }
@@ -1317,7 +1608,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       src = await new Promise(function (res, rej) { const im = new Image(); im.onload = function () { res(im); }; im.onerror = rej; im.src = url; });
       w = src.naturalWidth; h = src.naturalHeight;
     }
-    const k = Math.min(1, (maxEdge || 1800) / Math.max(w, h));
+    const k = Math.min(1, (maxEdge || 1500) / Math.max(w, h));
     const cv = document.createElement('canvas');
     cv.width = Math.round(w * k); cv.height = Math.round(h * k);
     const c = cv.getContext('2d', { willReadFrequently: true });
@@ -1612,7 +1903,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     $('#lvResScore').innerHTML = '<b>' + fmt(g.total) + '</b><span>/' + fmt(g.max) + '</span>';
     $('#lvResInfo').textContent = 'SBD ' + (s.sbdStr || '—') + ' · Mã đề ' + (s.mdStr || '—') + ' · Phần I ' + fmt(g.p1.pts) + ' · II ' + fmt(g.p2.pts) + ' · III ' + fmt(g.p3.pts);
     box.hidden = false;
-    let left = 1; const cd = $('#lvResCd');
+    let left = 5; const cd = $('#lvResCd');
     clearInterval(LV.resTimer); cd.textContent = 'Tự chuyển sang bài tiếp theo sau ' + left + ' giây';
     LV.resTimer = setInterval(function () {
       left--; if (left <= 0) { lvHideResult(); return; }
@@ -1661,13 +1952,14 @@ function renderPhoto(sheetImg, cfg, marks, o) {
 
   /* ---------- Hiển thị kết quả chấm ---------- */
   function grade() { return gradeAll({ p1: scan.p1, p2: scan.p2, p3: scan.p3 }, cfg, cfg.versions[scan.ver]); }
-  function ringPts(sc, b, f) {
+  function ringPtsPhoto(sc, b, f) {
     const H = hOf(sc.HB, b.y), pts = [];
     for (let i = 0; i < 20; i++) { const t = i * Math.PI / 10; pts.push(applyH(H, b.x + RB * f * Math.cos(t), b.y + RB * f * Math.sin(t))); }
     return pts;
   }
-  function paintMarks(c, sc, g, ver, lw) {
+  function paintMarks(c, sc, g, ver, lw, ringFn) {
     c.lineJoin = 'round';
+    const ringPts = ringFn || function (sc2, b, f) { return ringPtsPhoto(sc2, b, f); };
     function poly(pts, col, dash, w) {
       c.beginPath(); pts.forEach(function (p, i) { if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath();
       c.setLineDash(dash ? [lw * 1.4, lw * 1.1] : []); c.strokeStyle = col; c.lineWidth = w || lw; c.stroke(); c.setLineDash([]);
@@ -1699,10 +1991,15 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     c.strokeStyle = 'rgba(60,130,255,0.9)'; c.lineWidth = Math.max(2, lw); c.setLineDash([]);
     c.beginPath(); scan.P.forEach(function (p, i) { if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath(); c.stroke();
     paintMarks(c, scan, g, ver, lw);
+    (scan.anchors || []).forEach(function (a) {
+      c.beginPath(); c.arc(a[0], a[1], Math.max(4, scan.ppm * 1.5), 0, Math.PI * 2);
+      c.lineWidth = Math.max(2, lw); c.strokeStyle = a[2] ? 'rgba(31,184,106,0.95)' : 'rgba(255,160,30,0.95)'; c.stroke();
+    });
   }
   function warnHTML() {
     let h = '';
     if (scan.markedRatio > 0.45) h += '<div class="note"><b>Máy thấy quá nhiều ô được tô.</b> Có thể ảnh bị lệch sáng hoặc cong giấy. Thử chụp lại, hoặc tăng độ nhạy lên mức “Chặt” ở mục Đáp án.</div>';
+    if (SHEET.bands) h += '<p class="hint">Điểm neo nhận được: 4 góc và ' + scan.foundMid + '/6 ô neo giữa mép phiếu' + (scan.foundMid < 6 ? ' (vòng cam là ô neo máy phải ước tính theo vị trí).' : '.') + '</p>';
     if (scan.foundMid < 3) h += '<div class="note"><b>Một số ô vuông giữa mép phiếu bị che hoặc mờ.</b> Kết quả vẫn đọc được, nhưng nên kiểm tra kỹ các câu ở vùng giữa phiếu.</div>';
     if ((scan.sbdStr + scan.mdStr).indexOf('?') >= 0) h += '<div class="note"><b>Số báo danh hoặc mã đề có cột bị tô nhiều ô.</b> Sửa lại trong các ô bên dưới.</div>';
     return h;
@@ -1743,7 +2040,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     }
     if (!sample) autoSave(scan);
     h += (sample ? '' : '<div class="note ok" style="margin-top:12px"><b>Đã tự động lưu</b> vào tab Kết quả. Sửa số báo danh, mã đề hoặc đáp án ở dưới thì điểm đã lưu tự cập nhật theo.</div>') + '<div class="actions"><button type="button" class="btn primary" id="nextBtn">Chấm phiếu tiếp</button></div></div>';
-    h += '<div class="card" style="margin-top:14px"><h2>Ảnh đã nhận diện</h2><div id="cvHost"></div><p class="hint">Vòng xanh lá là ý đúng, vòng đỏ là ý sai, vòng nét đứt là đáp án đúng ở chỗ học sinh làm sai hoặc bỏ trống, vòng xanh dương là số báo danh và mã đề. Khung xanh dương là 4 góc phiếu máy tìm thấy.</p></div>';
+    h += '<div class="card" style="margin-top:14px"><h2>Ảnh đã nhận diện</h2><div id="cvHost"></div><p class="hint">Vòng xanh lá là ý đúng, vòng đỏ là ý sai, vòng nét đứt là đáp án đúng ở chỗ học sinh làm sai hoặc bỏ trống, vòng xanh dương là số báo danh và mã đề. Khung xanh dương là 4 góc phiếu máy tìm thấy, vòng nhỏ xanh lá là các ô neo đã nhận, vòng cam là ô neo máy ước tính.</p></div>';
     h += '<div class="card" style="margin-top:14px"><h2>Kiểm tra từng câu</h2><p class="hint">Máy đọc sai chỗ nào thì chạm hoặc gõ lại chỗ đó, điểm tự tính lại.</p>';
     if (cfg.n1) h += '<h3 class="ph">Phần I</h3><div id="rev1"></div>';
     if (cfg.n2) h += '<h3 class="ph">Phần II</h3><div id="rev2"></div>';
@@ -1837,38 +2134,84 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     del: function (id) { return IMG.tx('readwrite', function (st) { return st.delete(String(id)); }).catch(function () {}); },
     clear: function () { return IMG.tx('readwrite', function (st) { return st.clear(); }).catch(function () {}); }
   };
+  /* Ảnh nắn phẳng: cắt đúng vùng nhận dạng (giữa 4 ô neo, chừa lề nhỏ) và kéo về hình chữ nhật. Vòng chấm vẽ lại từ đáp án khi xem nên sửa bài xong ảnh cũng đổi theo. */
+  function rectGeom(outW) {
+    const x0 = CORNERS[0][0], y0 = CORNERS[0][1], gw = CORNERS[1][0] - x0, gh = CORNERS[3][1] - y0, M = Math.min(gw, gh) * 0.035, K = outW / (gw + 2 * M);
+    return { x0: x0, y0: y0, gw: gw, gh: gh, M: M, K: K, W: Math.round((gw + 2 * M) * K), H: Math.round((gh + 2 * M) * K) };
+  }
+  function rectCanvas(s, outW) {
+    const g = rectGeom(outW || 720), cv = document.createElement('canvas'); cv.width = g.W; cv.height = g.H;
+    const c = cv.getContext('2d'), ph = s.photo, sw = ph.width, sh = ph.height;
+    const src = ph.getContext('2d').getImageData(0, 0, sw, sh).data, out = c.createImageData(g.W, g.H), od = out.data;
+    for (let y = 0; y < g.H; y++) {
+      const ly = y / g.K - g.M + g.y0, H = hOf(s.HB, ly);
+      for (let x = 0; x < g.W; x++) {
+        const lx = x / g.K - g.M + g.x0, d = H[6] * lx + H[7] * ly + 1, u = (H[0] * lx + H[1] * ly + H[2]) / d, v = (H[3] * lx + H[4] * ly + H[5]) / d, o = (y * g.W + x) * 4;
+        if (u >= 0 && v >= 0 && u <= sw - 1 && v <= sh - 1) {
+          const x0 = u | 0, y0 = v | 0, x1 = Math.min(x0 + 1, sw - 1), y1 = Math.min(y0 + 1, sh - 1), fx = u - x0, fy = v - y0;
+          const i00 = (y0 * sw + x0) * 4, i10 = (y0 * sw + x1) * 4, i01 = (y1 * sw + x0) * 4, i11 = (y1 * sw + x1) * 4;
+          for (let k = 0; k < 3; k++) od[o + k] = (src[i00 + k] * (1 - fx) + src[i10 + k] * fx) * (1 - fy) + (src[i01 + k] * (1 - fx) + src[i11 + k] * fx) * fy;
+          od[o + 3] = 255;
+        } else { od[o] = od[o + 1] = od[o + 2] = 235; od[o + 3] = 255; }
+      }
+    }
+    c.putImageData(out, 0, 0);
+    return cv;
+  }
+  /* Vẽ lại vòng đúng/sai lên ảnh nắn phẳng từ đáp án đã nhận diện. rs gồm L, p1, p2, p3, sbd, md. */
+  function paintRect(cv, rs, cs, ver, sbdTxt, mdTxt) {
+    const geom = rectGeom(cv.width - 0), c = cv.getContext('2d');
+    const kx = cv.width / (geom.gw + 2 * geom.M);
+    const g = gradeAll({ p1: rs.p1, p2: rs.p2, p3: rs.p3 }, cs, ver);
+    const ring = function (sc2, b, f) {
+      const pts = [];
+      for (let i = 0; i < 20; i++) { const t = i * Math.PI / 10; pts.push([(b.x + RB * f * Math.cos(t) - geom.x0 + geom.M) * kx, (b.y + RB * f * Math.sin(t) - geom.y0 + geom.M) * kx]); }
+      return pts;
+    };
+    paintMarks(c, rs, g, ver, Math.max(1.6, RB * kx * 0.28), ring);
+    return g;
+  }
+  function withSheet(id, fn) {
+    const prev = cfg.sheet;
+    if (id && id !== prev) setSheet(id);
+    try { return fn(); } finally { if (id && id !== prev) setSheet(prev); }
+  }
+  /* Thêm dải thông tin phía trên ảnh (không đè lên phiếu), dùng khi lưu ảnh ra file */
+  function withBanner(cvs, sbd, md, g) {
+    const bh = Math.max(34, Math.round(cvs.width * 0.06)), out = document.createElement('canvas');
+    out.width = cvs.width; out.height = cvs.height + bh;
+    const c = out.getContext('2d'); c.fillStyle = '#111'; c.fillRect(0, 0, out.width, bh); c.drawImage(cvs, 0, bh);
+    c.fillStyle = '#fff'; c.font = '600 ' + Math.round(bh * 0.5) + 'px sans-serif'; c.textBaseline = 'middle';
+    c.fillText('SBD ' + (sbd || '—') + '  ·  Mã đề ' + (md || '—') + '  ·  Điểm ' + fmt(g.total) + '/' + fmt(g.max), 12, bh / 2);
+    return out;
+  }
+  function csOf() { return { n1: cfg.n1, n2: cfg.n2, n3: cfg.n3, p1: cfg.p1, p2: cfg.p2, p3: cfg.p3 }; }
   function annotatedCanvas(s, g) {
-    const ph = s.photo, k = Math.min(1, 1300 / Math.max(ph.width, ph.height)), cvs = document.createElement('canvas');
-    cvs.width = Math.round(ph.width * k); cvs.height = Math.round(ph.height * k);
-    const c = cvs.getContext('2d'); c.save(); c.scale(k, k); c.drawImage(ph, 0, 0);
-    c.strokeStyle = 'rgba(60,130,255,0.9)'; c.lineWidth = Math.max(2, s.ppm * 0.28);
-    c.beginPath(); s.P.forEach(function (p, i) { if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath(); c.stroke();
-    try { paintMarks(c, s, g, cfg.versions[s.ver], Math.max(1.8, s.ppm * 0.28)); } catch (e) {}
-    c.restore();
-    /* dải điểm ở đầu ảnh */
-    const bh = Math.max(34, Math.round(cvs.height * 0.055));
-    c.fillStyle = 'rgba(0,0,0,0.72)'; c.fillRect(0, 0, cvs.width, bh);
-    c.fillStyle = '#fff'; c.font = '600 ' + Math.round(bh * 0.55) + 'px sans-serif'; c.textBaseline = 'middle';
-    c.fillText('SBD ' + (s.sbdStr || '—') + '  ·  Mã đề ' + (s.mdStr || '—') + '  ·  Điểm ' + fmt(g.total) + '/' + fmt(g.max), 12, bh / 2);
+    if (!s.rect) s.rect = rectCanvas(s, 720);
+    const cvs = document.createElement('canvas'); cvs.width = s.rect.width; cvs.height = s.rect.height;
+    const c = cvs.getContext('2d'); c.drawImage(s.rect, 0, 0);
+    paintRect(cvs, { L: s.L, p1: s.p1, p2: s.p2, p3: s.p3, sbd: s.sbd, md: s.md }, csOf(), cfg.versions[s.ver]);
     return cvs;
   }
   function storeImage(s, g) {
     try {
-      const id = s.resId, cvs = annotatedCanvas(s, g);
-      cvs.toBlob(function (b) {
+      const id = s.resId, r0 = results.find(function (x) { return x.id === id; });
+      if (r0 && r0.rect) return;
+      if (!s.rect) s.rect = rectCanvas(s, 720);
+      s.rect.toBlob(function (b) {
         if (!b) return;
         IMG.put(id, b).then(function () {
           const r = results.find(function (x) { return x.id === id; });
-          if (r && !r.img) { r.img = true; saveResults(); }
+          if (r) { r.img = true; r.rect = true; saveResults(); }
         }).catch(function () { /* trình duyệt không cho lưu ảnh */ });
-      }, 'image/jpeg', 0.72);
+      }, 'image/jpeg', 0.78);
     } catch (e) { /* bỏ qua */ }
   }
   function pushResult(s) {
     const g = gradeAll({ p1: s.p1, p2: s.p2, p3: s.p3 }, cfg, cfg.versions[s.ver]);
-    const e = { t: Date.now(), sbd: s.sbdStr, md: s.mdStr, total: Math.round(g.total * 100) / 100, max: Math.round(g.max * 100) / 100, parts: [g.p1.pts, g.p2.pts, g.p3.pts].map(function (x) { return Math.round(x * 100) / 100; }), ans: { p1: s.p1, p2: s.p2, p3: s.p3 } };
+    const e = { t: Date.now(), sbd: s.sbdStr, md: s.mdStr, total: Math.round(g.total * 100) / 100, max: Math.round(g.max * 100) / 100, parts: [g.p1.pts, g.p2.pts, g.p3.pts].map(function (x) { return Math.round(x * 100) / 100; }), ans: { p1: s.p1, p2: s.p2, p3: s.p3 }, sheet: cfg.sheet, cs: csOf() };
     const k = s.resId ? results.findIndex(function (r) { return r.id === s.resId; }) : -1;
-    if (k >= 0) { e.id = s.resId; e.t = results[k].t; e.img = results[k].img; results[k] = e; }
+    if (k >= 0) { e.id = s.resId; e.t = results[k].t; e.img = results[k].img; e.rect = results[k].rect; results[k] = e; }
     else { e.id = s.resId = Date.now() + Math.floor(Math.random() * 1000); e.lid = lists.active; results.unshift(e); }
     if (results.length > 500) { results.slice(500).forEach(function (r) { IMG.del(r.id); }); results.length = 500; }
     saveResults(); s.saved = true; renderChip();
@@ -1937,13 +2280,12 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     view.forEach(function (r) {
       const d = new Date(r.t), tm = d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
       const pt = r.parts ? ' · I ' + fmt(r.parts[0]) + ' · II ' + fmt(r.parts[1]) + ' · III ' + fmt(r.parts[2]) : '';
-      h += '<div class="item"><div><div class="who">SBD ' + esc(r.sbd || '—') + ' · Mã đề ' + esc(r.md || '—') + '</div><div class="meta">' + tm + pt + (r.edited ? ' · đã sửa' : '') + '</div></div><span class="sc">' + fmt(r.total) + '</span>' + '<button type="button" data-del="' + r.id + '" aria-label="Xoá bài này">×</button>' + '<div class="rowbtns"><button type="button" class="editres" data-edit="' + r.id + '">Sửa bài</button>' + (r.img ? '<button type="button" class="viewimg" data-view="' + r.id + '">Xem ảnh bài đã chấm</button>' : '') + '</div></div>';
+      h += '<div class="item"><div><div class="who">SBD ' + esc(r.sbd || '—') + ' · Mã đề ' + esc(r.md || '—') + '</div><div class="meta">' + tm + pt + (r.edited ? ' · đã sửa' : '') + '</div></div><span class="sc">' + fmt(r.total) + '</span>' + '<button type="button" data-del="' + r.id + '" aria-label="Xoá bài này">×</button>' + '<div class="rowbtns"><button type="button" class="viewimg" data-edit="' + r.id + '">Xem và sửa bài</button></div></div>';
     });
     h += '</div><div class="actions"><button type="button" class="btn primary" id="csvBtn">Tải bảng điểm CSV</button><button type="button" class="btn ghost danger" id="clrBtn">Xoá tất cả</button></div><p class="hint" id="resMsg">Kết quả được giữ trong trình duyệt này. Tải CSV để lưu lại hoặc mở bằng Excel, Google Sheets.</p>';
     host.innerHTML = h; bindListBar(host);
     $$('[data-del]', host).forEach(function (b) { b.onclick = function () { IMG.del(b.dataset.del); results = results.filter(function (r) { return String(r.id) !== b.dataset.del; }); saveResults(); renderChip(); renderRes(); }; });
     $$('[data-edit]', host).forEach(function (b) { b.onclick = function () { openEdit(b.dataset.edit); }; });
-    $$('[data-view]', host).forEach(function (b) { b.onclick = function () { viewImage(b.dataset.view); }; });
     $('#csvBtn').onclick = exportCsv;
     $('#clrBtn').onclick = function () {
       this.textContent = 'Chạm lần nữa để xoá hết';
@@ -1957,45 +2299,66 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     const i = cfg.versions.findIndex(function (v) { return v.code && nz(v.code) === nz(code); });
     return cfg.versions[i >= 0 ? i : Math.min(cfg.active, cfg.versions.length - 1)];
   }
-  function edGrade() { return gradeAll({ p1: ed.p1, p2: ed.p2, p3: ed.p3 }, cfg, verForCode(ed.md)); }
-  function openEdit(id) {
+  function loadBlobImage(blob) {
+    return new Promise(function (res) { const u = URL.createObjectURL(blob), im = new Image(); im.onload = function () { res(im); }; im.onerror = function () { res(null); }; im.src = u; });
+  }
+  async function openEdit(id) {
     const r = results.find(function (x) { return String(x.id) === String(id); }); if (!r) return;
-    const a = r.ans;
-    ed = { id: r.id, sbd: r.sbd || '', md: r.md || '', hasAns: !!a, total: r.total, max: r.max,
+    const a = r.ans, sheet = r.sheet || cfg.sheet, cs = r.cs || csOf();
+    ed = { id: r.id, sbd: r.sbd || '', md: r.md || '', hasAns: !!a, total: r.total, max: r.max, sheet: sheet, cs: cs, base: null, legacy: false, msg: '',
       p1: a ? a.p1.map(function (m) { return m.slice(); }) : null, p2: a ? a.p2.map(function (x) { return x.slice(); }) : null, p3: a ? a.p3.slice() : null };
-    $('#resEdit').hidden = false; drawEdit();
+    $('#resEdit').hidden = false; $('#reBody').innerHTML = '<div class="busy"><span class="spin"></span>Đang mở bài…</div>';
+    if (r.img) {
+      try { const b = await IMG.get(r.id); if (b) { ed.base = await loadBlobImage(b); ed.blob = b; ed.legacy = !r.rect; } } catch (e) { /* không có ảnh */ }
+    }
+    if (ed && String(ed.id) === String(r.id)) drawEdit();
+  }
+  function edVer() { return verForCode(ed.md); }
+  function edGrade() { return withSheet(ed.sheet, function () { return gradeAll({ p1: ed.p1, p2: ed.p2, p3: ed.p3 }, ed.cs, edVer()); }); }
+  function edPaint() {
+    const cv = $('#reCv'); if (!cv || !ed.base) return;
+    cv.width = ed.base.naturalWidth || ed.base.width; cv.height = ed.base.naturalHeight || ed.base.height;
+    const c = cv.getContext('2d'); c.drawImage(ed.base, 0, 0);
+    if (ed.legacy || !ed.hasAns) return;
+    withSheet(ed.sheet, function () {
+      paintRect(cv, { L: makeLayout(ed.cs), p1: ed.p1, p2: ed.p2, p3: ed.p3, sbd: ed.sbd.split(''), md: ed.md.split('') }, ed.cs, edVer());
+    });
   }
   function drawEdit() {
-    const body = $('#reBody');
-    let h = '<div class="fields"><div class="field"><label class="lbl" for="reSbd">Số báo danh</label><input id="reSbd" class="mono" inputmode="numeric" maxlength="8" value="' + esc(ed.sbd) + '"></div>' +
+    const body = $('#reBody'), ver = edVer();
+    let h = '';
+    if (ed.base) h += '<div class="re-img"><canvas id="reCv" aria-label="Ảnh bài đã chấm"></canvas><div class="re-imgbar"><button type="button" class="btn small" id="reSaveImg">Lưu ảnh về máy</button><span class="hint" id="reMsg">' + esc(ed.msg || '') + '</span></div>' +
+      (ed.legacy ? '<p class="hint">Ảnh này lưu từ bản cũ nên không cập nhật vòng đúng/sai khi sửa.</p>' : '') + '</div>';
+    else h += '<p class="hint">Bài này không có ảnh lưu kèm.</p>';
+    h += '<div class="fields"><div class="field"><label class="lbl" for="reSbd">Số báo danh</label><input id="reSbd" class="mono" inputmode="numeric" maxlength="8" value="' + esc(ed.sbd) + '"></div>' +
       '<div class="field"><label class="lbl" for="reMd">Mã đề</label><input id="reMd" class="mono" inputmode="numeric" maxlength="4" value="' + esc(ed.md) + '"></div></div>';
     if (ed.hasAns) {
-      const g = edGrade(), ver = verForCode(ed.md);
+      const g = edGrade();
       h += '<div class="re-score"><b>' + fmt(g.total) + '</b><span>/' + fmt(g.max) + ' điểm</span></div>';
-      if (cfg.n1) h += '<h3 class="re-h">Phần I</h3><div id="reP1"></div>';
-      if (cfg.n2) h += '<h3 class="re-h">Phần II</h3><div id="reP2"></div>';
-      if (cfg.n3) h += '<h3 class="re-h">Phần III</h3><div id="reP3"></div>';
+      if (ed.cs.n1) h += '<h3 class="re-h">Phần I</h3><div id="reP1"></div>';
+      if (ed.cs.n2) h += '<h3 class="re-h">Phần II</h3><div id="reP2"></div>';
+      if (ed.cs.n3) h += '<h3 class="re-h">Phần III</h3><div id="reP3"></div>';
       body.innerHTML = h;
-      if (cfg.n1) {
+      if (ed.cs.n1) {
         const host = $('#reP1');
-        host.innerHTML = mcqGridHTML(cfg.n1, function (q, o) {
+        host.innerHTML = mcqGridHTML(ed.cs.n1, function (q, o) {
           const sel = (ed.p1[q] || []).indexOf(o) >= 0, st = g.p1.st[q];
           let c = sel ? 'sel' : ''; if (sel && st === 'ok') c += ' ok'; else if (sel && st !== 'skip') c += ' bad';
           return c;
         });
         host.onclick = function (e) { const b = e.target.closest('.o'); if (!b) return; const q = +b.dataset.q, o = +b.dataset.o, m = ed.p1[q] || []; ed.p1[q] = (m.length === 1 && m[0] === o) ? [] : [o]; keepEdit(); };
       }
-      if (cfg.n2) {
+      if (ed.cs.n2) {
         const host = $('#reP2');
-        host.innerHTML = tfRowsHTML(cfg.n2, function (q, r, v) {
+        host.innerHTML = tfRowsHTML(ed.cs.n2, function (q, r, v) {
           const sv = ed.p2[q][r], kv = ver.tf[q][r], sel = sv === v;
           let c = sel ? 'sel' : ''; if (sel && kv !== null) c += tfHas(kv, v) ? ' ok' : ' bad'; return c;
         });
         host.onclick = function (e) { const b = e.target.closest('.o'); if (!b) return; const q = +b.dataset.q, r = +b.dataset.r, v = b.dataset.v; ed.p2[q][r] = ed.p2[q][r] === v ? '' : v; keepEdit(); };
       }
-      if (cfg.n3) {
+      if (ed.cs.n3) {
         let t = '<div class="numlist">';
-        for (let q = 0; q < cfg.n3; q++) t += '<label class="numq ' + (g.p3.st[q] === 'ok' ? 'good' : (g.p3.st[q] === 'wrong' ? 'bad' : '')) + '"><span class="tqn">Câu ' + (q + 1) + '</span><input class="numin mono" data-q="' + q + '" maxlength="5" value="' + esc(ed.p3[q] || '') + '" placeholder="bỏ trống"></label>';
+        for (let q = 0; q < ed.cs.n3; q++) t += '<label class="numq ' + (g.p3.st[q] === 'ok' ? 'good' : (g.p3.st[q] === 'wrong' ? 'bad' : '')) + '"><span class="tqn">Câu ' + (q + 1) + '</span><input class="numin mono" data-q="' + q + '" maxlength="5" value="' + esc(ed.p3[q] || '') + '" placeholder="bỏ trống"></label>';
         $('#reP3').innerHTML = t + '</div>';
         $('#reP3').onchange = function (e) { const i = e.target.closest('.numin'); if (!i) return; ed.p3[+i.dataset.q] = cleanNum(i.value); keepEdit(); };
       }
@@ -2004,10 +2367,22 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         '<p class="hint">Bài này chấm từ bản cũ nên không lưu chi tiết từng câu. Bạn sửa được số báo danh, mã đề và điểm tổng.</p>';
       body.innerHTML = h;
     }
-    $('#reSbd').oninput = function () { ed.sbd = this.value.replace(/\D/g, ''); this.value = ed.sbd; };
-    $('#reMd').onchange = function () { ed.md = this.value.replace(/\D/g, ''); drawEdit(); };
+    $('#reSbd').oninput = function () { ed.sbd = this.value.replace(/[^0-9_?]/g, ''); this.value = ed.sbd; if (ed.hasAns) edPaint(); };
+    $('#reMd').onchange = function () { ed.md = this.value.replace(/[^0-9_?]/g, ''); keepEdit(); };
+    const si = $('#reSaveImg');
+    if (si) si.onclick = function () {
+      const cv0 = $('#reCv'); if (!cv0) return;
+      const cv = ed.hasAns && !ed.legacy ? withBanner(cv0, ed.sbd, ed.md, edGrade()) : cv0;
+      cv.toBlob(async function (b) {
+        if (!b) return;
+        const st = await saveFile('bai-' + (ed.sbd || 'khong-sbd') + '-' + (ed.md || 'khong-ma-de') + '.jpg', b);
+        ed.msg = st === 'saved' ? 'Đã lưu ảnh.' : (st === 'declined' ? 'Bạn đã huỷ lưu.' : 'Chế độ xem này không cho tải file. Nhấn giữ vào ảnh để lưu.');
+        const m = $('#reMsg'); if (m) m.textContent = ed.msg;
+      }, 'image/jpeg', 0.9);
+    };
+    edPaint();
   }
-  function keepEdit() { const sc = $('#reBody').scrollTop, bd = $('#resEdit .re-body'); const y = bd ? bd.scrollTop : 0; drawEdit(); if (bd) bd.scrollTop = y; }
+  function keepEdit() { const bd = $('#reBody'), y = bd ? bd.scrollTop : 0; drawEdit(); if (bd) bd.scrollTop = y; }
   $('#reClose').addEventListener('click', function () { $('#resEdit').hidden = true; ed = null; });
   $('#reSave').addEventListener('click', function () {
     if (!ed) return;
@@ -2016,7 +2391,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       r.sbd = ed.sbd; r.md = ed.md;
       if (ed.hasAns) {
         const g = edGrade();
-        r.total = Math.round(g.total * 100) / 100; r.max = Math.round(g.max * 100) / 100;
+        r.total = Math.round(g.total * 100) / 100; r.max = Math.round(g.max * 100) / 100; if (!r.cs) { r.cs = ed.cs; r.sheet = ed.sheet; }
         r.parts = [g.p1.pts, g.p2.pts, g.p3.pts].map(function (x) { return Math.round(x * 100) / 100; });
         r.ans = { p1: ed.p1, p2: ed.p2, p3: ed.p3 };
       } else {
@@ -2025,24 +2400,6 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       r.edited = true; saveResults();
     }
     $('#resEdit').hidden = true; ed = null; renderChip(); renderRes();
-  });
-  let viewUrl = null, viewBlob = null, viewName = '';
-  async function viewImage(id) {
-    const r = results.find(function (x) { return String(x.id) === String(id); }); if (!r) return;
-    const box = $('#imgView'); box.hidden = false; $('#ivMsg').textContent = 'Đang mở ảnh…'; $('#ivImg').removeAttribute('src');
-    try {
-      const b = await IMG.get(id);
-      if (!b) { $('#ivMsg').textContent = 'Không tìm thấy ảnh của bài này (có thể đã bị trình duyệt dọn bớt).'; return; }
-      if (viewUrl) URL.revokeObjectURL(viewUrl);
-      viewBlob = b; viewUrl = URL.createObjectURL(b); viewName = 'bai-' + (r.sbd || 'khong-sbd') + '-' + (r.md || 'khong-ma-de') + '.jpg';
-      $('#ivImg').src = viewUrl; $('#ivMsg').textContent = 'SBD ' + (r.sbd || '—') + ' · Mã đề ' + (r.md || '—') + ' · ' + fmt(r.total) + '/' + fmt(r.max) + ' điểm';
-    } catch (e) { $('#ivMsg').textContent = 'Không mở được ảnh.'; }
-  }
-  $('#ivClose').addEventListener('click', function () { $('#imgView').hidden = true; });
-  $('#ivSave').addEventListener('click', async function () {
-    if (!viewBlob) return;
-    const st = await saveFile(viewName, viewBlob);
-    $('#ivMsg').textContent = st === 'saved' ? 'Đã lưu ảnh.' : (st === 'declined' ? 'Bạn đã huỷ lưu.' : 'Chế độ xem này không cho tải file. Nhấn giữ vào ảnh để lưu về máy.');
   });
   async function exportCsv() {
     const rows = [['Thời gian', 'Số báo danh', 'Mã đề', 'Phần I', 'Phần II', 'Phần III', 'Tổng điểm', 'Điểm tối đa']];
