@@ -317,7 +317,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
           <input class="vh" type="file" id="pick" accept="image/*" multiple>
           <button class="btn ghost" type="button" id="btnSample">Chấm ảnh mẫu</button>
         </div>
-        <p class="hint">Đặt phiếu phẳng trên mặt bàn, chụp trọn cả tờ để thấy đủ 4 ô vuông đen ở góc. Nghiêng nhẹ hoặc hơi lệch sáng vẫn nhận được.</p>
+        <p class="hint">Đặt phiếu phẳng trên mặt bàn, chụp trọn cả tờ để thấy đủ 4 ô vuông đen ở góc. Nghiêng nhẹ hoặc hơi lệch sáng vẫn nhận được. Một ứng dụng của: Lê Hoài Sơn - Huế</p>
       </div>
       <div id="scanOut" aria-live="polite"></div>
     </section>
@@ -2044,7 +2044,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     const g = grade(), ver = cfg.versions[scan.ver], sample = scan.source === 'sample';
     const parts = [[g.p1, cfg.n1], [g.p2, cfg.n2], [g.p3, cfg.n3]];
     let h = '<div class="card" style="margin-top:14px">';
-    if (sample) h += '<div><span class="tag">Ảnh mẫu</span> <span class="hint">' + (cfg.sheet === 'kt' ? 'Ảnh phiếu B&T Pro (đã tô sẵn), chụp nghiêng và lệch sáng. Các ô tô khá mờ nên máy dùng độ nhạy cao hơn.' : 'Phiếu thật của bạn được tô thử bằng đáp án giả, chụp nghiêng và lệch sáng. Chưa phải bài của học sinh.') + '</span></div>';
+    if (sample) h += '<div><span class="tag">Ảnh mẫu</span> <span class="hint">' + (cfg.sheet === 'kt' ? 'Ảnh phiếu B&T Pro (đã tô sẵn), chụp nghiêng và lệch sáng. Các ô tô khá mờ nên máy dùng độ nhạy cao hơn.' : 'Đây là ảnh mẫu một phiếu được chấm.') + '</span></div>';
     h += '<div class="gradebox"><div class="grade" role="img" aria-label="Điểm ' + fmt(g.total) + ' trên ' + fmt(g.max) + '">' +
       '<svg viewBox="0 0 200 100" preserveAspectRatio="none" aria-hidden="true"><path d="M30 58C22 28 78 6 126 12c46 6 70 30 56 56-14 26-82 32-124 20C22 78 14 54 38 30" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></svg>' +
       '<span class="num">' + fmt(g.total) + '</span><span class="of">/' + fmt(g.max) + '</span></div>' +
