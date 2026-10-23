@@ -294,7 +294,7 @@ h3.ph { font-size: 13px; font-weight: 700; color: var(--ink); margin: 8px 0 0; }
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>B&amp;T Pro Mark - 1.1</h1>
+      <h1>B&amp;T Pro Mark - 1.0</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -2110,7 +2110,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     const g = grade(), ver = cfg.versions[scan.ver], sample = scan.source === 'sample';
     const parts = [[g.p1, cfg.n1], [g.p2, cfg.n2], [g.p3, cfg.n3]];
     let h = '<div class="card" style="margin-top:14px">';
-    if (sample) h += '<div><span class="tag">Ảnh mẫu</span> <span class="hint">' + 'Phiếu mẫu hiển thị mẫu.' + '</span></div>';
+    if (sample) h += '<div><span class="tag">Ảnh mẫu</span> <span class="hint">' + 'Phiếu hiển thị mẫu chấm.' + '</span></div>';
     h += '<div class="gradebox"><div class="grade" role="img" aria-label="Điểm ' + fmt(g.total) + ' trên ' + fmt(g.max) + '">' +
       '<svg viewBox="0 0 200 100" preserveAspectRatio="none" aria-hidden="true"><path d="M30 58C22 28 78 6 126 12c46 6 70 30 56 56-14 26-82 32-124 20C22 78 14 54 38 30" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></svg>' +
       '<span class="num">' + fmt(g.total) + '</span><span class="of">/' + fmt(g.max) + '</span></div>' +
