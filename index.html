@@ -3296,6 +3296,17 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     return new Array(n).fill(null);
   };
 
+  /* Trình duyệt cũ (iPhone iOS 15 trở xuống) chưa có roundRect nên bổ sung bản thay thế đơn giản. */
+  if (window.CanvasRenderingContext2D && !CanvasRenderingContext2D.prototype.roundRect)
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+      r = Math.min(Array.isArray(r) ? r[0] : r || 0, w / 2, h / 2);
+      this.moveTo(x + r, y);
+      this.arcTo(x + w, y, x + w, y + h, r);
+      this.arcTo(x + w, y + h, x, y + h, r);
+      this.arcTo(x, y + h, x, y, r);
+      this.arcTo(x, y, x + w, y, r);
+      this.closePath();
+    };
   /* ---------- Cấu hình & dữ liệu ---------- */
   const PRESETS = [
     { n1: 12, n2: 4, n3: 6, p1: 0.25, p2: 1, p3: 0.5 },
@@ -4141,6 +4152,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       await dl.save({ filename: name, data: data });
       return 'saved';
     } catch (e) {
+      saveFile.err = (e && (e.code || e.message)) || 'lỗi không rõ';
       return e && e.code === 'declined' ? 'declined' : 'unavailable';
     }
   }
@@ -5400,9 +5412,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     let h = '<div class="card" style="margin-top:14px">';
     if (sample)
       h +=
-        '<div><span class="tag">Ảnh mẫu</span> <span class="hint">' +
-        'Bài thi minh hoạ' +
-        '</span></div>';
+        '<div><span class="tag">Ảnh mẫu</span> <span class="hint">' + 'Phiếu chấm minh hoạ' + '</span></div>';
     h +=
       '<div class="gradebox"><div class="grade" role="img" aria-label="Điểm ' +
       fmt(g.total) +
@@ -6844,24 +6854,42 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         pages.push(await pdfStudentPage(view[i], i + 1, view.length, ln));
       }
       const blob = buildPdf(pages);
-      const st = await saveFile(
+      const fname =
         'bai-thi-' +
-          (ln
-            .normalize('NFD')
-            .replace(/[̀-ͯ]/g, '')
-            .replace(/đ/gi, 'd')
-            .replace(/[^A-Za-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '')
-            .toLowerCase() || 'dot') +
-          '.pdf',
-        blob
-      );
-      msg.textContent =
-        st === 'saved'
-          ? 'Đã lưu file PDF.'
-          : st === 'declined'
-            ? 'Bạn đã huỷ lưu. Nhấn lại nút để tải.'
-            : 'Chế độ xem này không cho tải file PDF.';
+        (ln
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/đ/gi, 'd')
+          .replace(/[^A-Za-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '')
+          .toLowerCase() || 'dot') +
+        '.pdf';
+      const report = function (st) {
+        msg.textContent =
+          st === 'saved'
+            ? 'Đã lưu file PDF.'
+            : st === 'declined'
+              ? 'Bạn đã huỷ lưu. Nhấn "Tải file PDF" bên dưới để tải lại.'
+              : 'Chưa lưu được file PDF' +
+                (saveFile.err ? ' (' + saveFile.err + ')' : '') +
+                '. Nhấn "Tải file PDF" bên dưới để thử lại.';
+        const old = $('#pdfAgain');
+        if (old) old.remove();
+        if (st !== 'saved') {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.id = 'pdfAgain';
+          b.className = 'btn small';
+          b.textContent = 'Tải file PDF';
+          b.onclick = async function () {
+            b.disabled = true;
+            saveFile.err = '';
+            report(await saveFile(fname, blob));
+          };
+          msg.insertAdjacentElement('afterend', b);
+        }
+      };
+      report(await saveFile(fname, blob));
     } catch (e) {
       msg.textContent = 'Không tạo được PDF: ' + ((e && e.message) || e);
     }
