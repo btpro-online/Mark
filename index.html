@@ -1346,6 +1346,86 @@ h3.ph {
   padding: 0 14px;
 }
 
+.stuname {
+  font-size: 13px;
+  min-height: 0;
+  margin: -4px 0 8px;
+  color: var(--ink);
+}
+.stuname:empty {
+  display: none;
+}
+.stu-no {
+  color: var(--warn);
+}
+.stu-sum {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.stu-list {
+  display: flex;
+  flex-direction: column;
+}
+.stu-row {
+  display: grid;
+  grid-template-columns: 92px 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+.stu-row:first-child {
+  border-top: 0;
+}
+.stu-id {
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+.stu-nm {
+  min-width: 0;
+  font-weight: 600;
+}
+.stu-nm small {
+  display: block;
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--muted);
+}
+.stu-sc {
+  font-family: var(--f-hand);
+  font-size: 20px;
+  color: var(--red);
+  min-width: 32px;
+  text-align: right;
+}
+.stu-row button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.stu-add {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.stu-add input {
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  min-width: 0;
+}
+.stu-add button {
+  grid-column: 1 / -1;
+}
+
 </style>
 
 <div class="wrap">
@@ -1417,8 +1497,8 @@ h3.ph {
       <div class="card" id="keyCard"></div>
     </section>
 
-    <section id="v-sheet" class="view" hidden aria-label="Phiếu in">
-      <div class="card" id="sheetCard"></div>
+    <section id="v-stu" class="view" hidden aria-label="Thí sinh">
+      <div class="card" id="stuCard"></div>
     </section>
 
     <section id="v-res" class="view" hidden aria-label="Kết quả">
@@ -1435,9 +1515,9 @@ h3.ph {
     <button class="tab" type="button" data-tab="key">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5l1.8 1.8L9 5M4 12.5l1.8 1.8L9 11M4 18.5l1.8 1.8L9 17"/><path d="M13 7h7M13 13h7M13 19h7"/></svg>
       Đáp án</button>
-    <button class="tab" type="button" data-tab="sheet">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><rect x="8.6" y="11" width="2.6" height="2.6"/><rect x="12.8" y="11" width="2.6" height="2.6" fill="currentColor"/><rect x="8.6" y="15.4" width="2.6" height="2.6"/></svg>
-      Phiếu in</button>
+    <button class="tab" type="button" data-tab="stu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6M18 14.4c1.8.9 3 2.8 3 5.6"/></svg>
+      Thí sinh</button>
     <button class="tab" type="button" data-tab="res">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>
       Kết quả<span class="bd" id="resBadge" hidden>0</span></button>
@@ -1448,7 +1528,6 @@ h3.ph {
 const SHEET_JPG="assets/sheet-1.jpg";
 const SHEET2_JPG="assets/sheet-2.jpg";
 const SHEET3_JPG="assets/sheet-3.jpg";
-const SHEET_PDF="assets/sheet.pdf";
 /* ===================== Lõi nhận diện phiếu TLTN (Nguyễn Huệ) ===================== */
 /* Toạ độ tính bằng mm trên trang 208 x 297 mm, đo trực tiếp từ file PDF gốc. */
 /* ---- Phiếu 1: PHIẾU TLTN Nguyễn Huệ (mm, trang 208 x 297) ---- */
@@ -3528,7 +3607,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     renderScan();
     renderChip();
     renderKey();
-    if (tab === 'sheet') renderSheet();
+    if (tab === 'stu') renderStu();
   }
   function saveResults() {
     LS.set('omr.results2', results);
@@ -3597,7 +3676,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     renderSheetSel();
     renderChip();
     if (tab === 'key') renderKey();
-    if (tab === 'sheet') renderSheet();
+    if (tab === 'stu') renderStu();
     return runPhoto(function () {
       return makeSample().then(function (s) {
         return s.canvas;
@@ -3615,7 +3694,11 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       else b.removeAttribute('aria-current');
     });
     if (t === 'key') renderKey();
-    if (t === 'sheet') renderSheet();
+    if (t === 'stu') renderStu();
+    if (t === 'scan') {
+      const nl = $('#sbdName');
+      if (nl && scan) nl.innerHTML = nameLineHTML(scan.sbdStr);
+    }
     if (t === 'res') renderRes();
     window.scrollTo(0, 0);
   }
@@ -4113,15 +4196,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       .slice(0, 5);
   }
 
-  /* ---------- Tab Phiếu in ---------- */
-  async function fetchBytes(url) {
-    try {
-      const r = await fetch(url);
-      return r.ok ? new Uint8Array(await r.arrayBuffer()) : null;
-    } catch (e) {
-      return null;
-    }
-  }
+  /* ---------- Lưu file về máy ---------- */
   async function saveFile(name, data) {
     if (!data) return 'unavailable';
     if (!window.claude) {
@@ -4156,83 +4231,6 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       return e && e.code === 'declined' ? 'declined' : 'unavailable';
     }
   }
-  function renderSheet() {
-    if (cfg.sheet === 'm') {
-      $('#sheetCard').innerHTML =
-        '<h2>Phiếu B&amp;T Pro - M</h2>' +
-        '<p class="hint">Mẫu phiếu M: số báo danh 8 chữ số, mã đề 4 chữ số, Phần I tối đa 12 câu, ' +
-        'Phần II tối đa 2 câu, Phần III tối đa 4 câu. Ứng dụng căn ảnh theo 6 ô vuông đen (4 góc ' +
-        'và 2 ô giữa hai mép bên), chiều của phiếu nhận ra nhờ các vòng tròn in sẵn.</p>' +
-        '<img class="sheetimg" alt="Xem trước phiếu B&T Pro - M" src="' +
-        SHEET3_JPG +
-        '">' +
-        '<div class="actions"><button type="button" class="btn primary" id="pdfBtn">Tải ảnh phiếu ' +
-        'mẫu (JPG)</button></div>' +
-        '<p class="hint" id="pdfMsg">Khi in, giữ tỉ lệ ngang như ảnh và in rõ cả 6 ô vuông đen. ' +
-        'Học sinh tô kín ô bằng bút chì đen hoặc bút mực đen, xanh. Mực hồng của phiếu không ảnh ' +
-        'hưởng đến việc đọc.</p>';
-      $('#pdfBtn').onclick = async function () {
-        const msg = $('#pdfMsg');
-        this.disabled = true;
-        const st = await saveFile('phieu-bt-pro-m.jpg', await fetchBytes(SHEET3_JPG));
-        if (st === 'saved') msg.textContent = 'Đã lưu ảnh phiếu.';
-        else if (st === 'declined') msg.textContent = 'Bạn đã huỷ lưu. Nhấn lại nút để tải.';
-        else msg.textContent = 'Chế độ xem này không cho tải file. Nhấn giữ ảnh phiếu ở trên để lưu về máy.';
-        this.disabled = false;
-      };
-      return;
-    }
-    if (cfg.sheet === 'kt') {
-      $('#sheetCard').innerHTML =
-        '<h2>Phiếu B&amp;T Pro - S</h2>' +
-        '<p class="hint">Mẫu phiếu S (ngắn): số thứ tự 2 chữ số, mã đề 3 chữ số, Phần I tối đa 10 ' +
-        'câu, Phần II tối đa 2 câu, Phần III tối đa 3 câu. Ứng dụng căn ảnh theo 4 ô vuông đen ở ' +
-        'góc, ô vuông thứ năm giữa mép trên giúp nhận ra phiếu bị đặt ngược.</p>' +
-        '<img class="sheetimg" alt="Xem trước phiếu B&T Pro - S" src="' +
-        SHEET2_JPG +
-        '">' +
-        '<div class="actions"><button type="button" class="btn primary" id="pdfBtn">Tải ảnh phiếu ' +
-        'mẫu (JPG)</button></div>' +
-        '<p class="hint" id="pdfMsg">Ảnh này là phiếu đã tô sẵn một số đáp án, dùng để tham khảo ' +
-        'bố cục. Hãy chụp trọn cả phiếu, thấy đủ 4 ô vuông đen ở góc.</p>';
-      $('#pdfBtn').onclick = async function () {
-        const msg = $('#pdfMsg');
-        this.disabled = true;
-        const st = await saveFile('phieu-bt-pro-s.jpg', await fetchBytes(SHEET2_JPG));
-        if (st === 'saved') msg.textContent = 'Đã lưu ảnh phiếu.';
-        else if (st === 'declined') msg.textContent = 'Bạn đã huỷ lưu. Nhấn lại nút để tải.';
-        else msg.textContent = 'Chế độ xem này không cho tải file. Nhấn giữ ảnh phiếu ở trên để lưu về máy.';
-        this.disabled = false;
-      };
-      return;
-    }
-    $('#sheetCard').innerHTML =
-      '<h2>Phiếu B&amp;T Pro - F</h2>' +
-      '<p class="hint">Ứng dụng chấm đúng trên mẫu phiếu này: số báo danh 8 chữ số, mã đề 4 chữ ' +
-      'số, Phần I tối đa 40 câu, Phần II tối đa 8 câu, Phần III tối đa 6 câu. Mỗi tờ có 4 ô ' +
-      'vuông đen ở góc để căn ảnh.</p>' +
-      '<img class="sheetimg" alt="Xem trước phiếu B&T Pro - F" src="' +
-      SHEET_JPG +
-      '">' +
-      '<div class="actions"><button type="button" class="btn primary" id="pdfBtn">Tải phiếu gốc ' +
-      '(PDF)</button></div>' +
-      '<p class="hint" id="pdfMsg">Khi in, chọn khổ A4 và tỉ lệ 100% (không chọn “vừa trang”). ' +
-      'Học sinh tô kín ô bằng bút chì đen hoặc bút mực đen, xanh. Mực hồng của phiếu không ảnh ' +
-      'hưởng đến việc đọc.</p>';
-    $('#pdfBtn').onclick = async function () {
-      const msg = $('#pdfMsg');
-      this.disabled = true;
-      const st = await saveFile('phieu-bt-pro-f.pdf', await fetchBytes(SHEET_PDF));
-      if (st === 'saved') msg.textContent = 'Đã lưu file PDF của phiếu.';
-      else if (st === 'declined') msg.textContent = 'Bạn đã huỷ lưu. Nhấn lại nút để tải.';
-      else
-        msg.textContent =
-          'Chế độ xem này không cho tải file. Nhấn giữ ảnh phiếu ở trên để lưu về máy, hoặc mở ứng ' +
-          'dụng trong Claude để tải PDF.';
-      this.disabled = false;
-    };
-  }
-
   /* ---------- Ảnh mẫu ---------- */
   /* Ảnh phiếu nằm ở file riêng: nạp qua fetch thành blob để vẽ lên canvas và đọc điểm ảnh được (không bị chặn
      do khác nguồn). Nếu fetch không dùng được thì nạp thẳng bằng đường dẫn. */
@@ -5447,7 +5445,9 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       MD_X.length +
       '" inputmode="numeric" value="' +
       esc(scan.mdStr) +
-      '"></div></div>';
+      '"></div></div><div class="stuname" id="sbdName">' +
+      nameLineHTML(scan.sbdStr) +
+      '</div>';
     if (cfg.versions.length > 1 || !scan.matched) {
       h += '<div class="vchips"><span class="lbl">Chấm theo</span>';
       cfg.versions.forEach(function (v, i) {
@@ -5978,6 +5978,525 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     }
   }
 
+  /* ---------- Tab Thí sinh: danh sách thí sinh của từng đợt, đối chiếu theo số báo danh ---------- */
+  const XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  const stuKey = function (s) {
+    return String(s == null ? '' : s)
+      .replace(/\D/g, '')
+      .replace(/^0+(?=\d)/, '');
+  };
+  let stuCache = { src: null, n: -1, map: null },
+    stuUndo = null,
+    stuMsg = null,
+    stuFilter = '',
+    stuShow = 60;
+  function stuList() {
+    const l = curList();
+    return (l && l.students) || [];
+  }
+  function stuMap() {
+    const arr = stuList();
+    if (stuCache.src !== arr || stuCache.n !== arr.length) {
+      const m = new Map();
+      arr.forEach(function (s) {
+        if (!m.has(s.k)) m.set(s.k, s);
+      });
+      stuCache = { src: arr, n: arr.length, map: m };
+    }
+    return stuCache.map;
+  }
+  /* Thí sinh ứng với một số báo danh (bỏ số 0 đứng đầu); không có thì trả null. */
+  function stuOf(sbd) {
+    const t = String(sbd || '');
+    if (!t || /[?_]/.test(t)) return null;
+    const k = stuKey(t);
+    return k ? stuMap().get(k) || null : null;
+  }
+  function stuLabel(s) {
+    return s.name + (s.cls ? ' · ' + s.cls : '');
+  }
+  /* Dòng hiện tên học sinh dưới ô số báo danh. */
+  function nameLineHTML(sbd) {
+    if (!stuList().length) return '';
+    const s = stuOf(sbd);
+    if (s) return '<b>' + esc(s.name) + '</b>' + (s.cls ? ' · ' + esc(s.cls) : '');
+    return '<span class="stu-no">Số báo danh này không có trong danh sách thí sinh.</span>';
+  }
+  function setStudents(arr) {
+    const l = curList();
+    l.students = arr;
+    saveLists();
+  }
+  /* Giải mã văn bản CSV / TSV thành mảng các dòng. */
+  function parseDelim(text) {
+    text = String(text).replace(/^﻿/, '');
+    const first = text.split(/\r?\n/).find(function (x) {
+      return x.trim();
+    });
+    if (!first) return [];
+    const cnt = function (ch) {
+      return first.split(ch).length - 1;
+    };
+    let d = '\t',
+      best = cnt('\t');
+    [';', ','].forEach(function (c) {
+      if (cnt(c) > best) {
+        best = cnt(c);
+        d = c;
+      }
+    });
+    const rows = [];
+    let row = [],
+      cell = '',
+      q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) {
+        if (ch === '"') {
+          if (text[i + 1] === '"') {
+            cell += '"';
+            i++;
+          } else q = false;
+        } else cell += ch;
+      } else if (ch === '"') q = true;
+      else if (ch === d) {
+        row.push(cell);
+        cell = '';
+      } else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && text[i + 1] === '\n') i++;
+        row.push(cell);
+        cell = '';
+        rows.push(row);
+        row = [];
+      } else cell += ch;
+    }
+    row.push(cell);
+    rows.push(row);
+    return rows;
+  }
+  const plain = function (s) {
+    return String(s == null ? '' : s)
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/đ/gi, 'd')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+  const cellText = function (v) {
+    if (typeof v === 'number') return Number.isInteger(v) ? String(v) : String(Math.round(v));
+    return String(v == null ? '' : v)
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+  /* Tìm cột số báo danh, họ tên, lớp trong bảng (dòng tiêu đề nằm trong 15 dòng đầu); nếu không có tiêu đề thì lấy
+     cột 1 = số báo danh, cột 2 = họ tên, cột 3 = lớp. */
+  function parseRoster(rows) {
+    rows = (rows || []).filter(function (r) {
+      return (
+        Array.isArray(r) &&
+        r.some(function (c) {
+          return cellText(c) !== '';
+        })
+      );
+    });
+    const idScore = function (h) {
+      if (/^(so )?bao danh$|^sbd$|so bao danh/.test(h)) return 4;
+      if (/so thu tu|^ma (hs|hoc sinh|thi sinh|ts)$|^ma$|^so$/.test(h)) return 3;
+      if (/^stt$|^tt$/.test(h)) return 1;
+      return 0;
+    };
+    const isName = function (h) {
+      return /^ho (va )?ten|^ho ten|^ten (hoc sinh|thi sinh)|^(ho va ten|hoten)$|^ten$/.test(h);
+    };
+    let head = -1,
+      cI = -1,
+      cN = -1,
+      cL = -1,
+      cH = -1,
+      cT = -1;
+    for (let r = 0; r < Math.min(15, rows.length) && head < 0; r++) {
+      const hs = rows[r].map(function (c) {
+        return plain(cellText(c));
+      });
+      let bi = -1,
+        bs = 0,
+        bn = -1,
+        bl = -1,
+        bh = -1,
+        bt = -1;
+      hs.forEach(function (h, i) {
+        const s = idScore(h);
+        if (s > bs) {
+          bs = s;
+          bi = i;
+        }
+        if (bn < 0 && isName(h) && h !== 'ten') bn = i;
+        if (bl < 0 && /^lop/.test(h)) bl = i;
+        if (bh < 0 && /^ho( dem)?$|^ho va dem$/.test(h)) bh = i;
+        if (bt < 0 && h === 'ten') bt = i;
+      });
+      if (bn < 0 && bh >= 0 && bt >= 0) {
+        head = r;
+        cI = bi;
+        cH = bh;
+        cT = bt;
+        cL = bl;
+      } else if (bn >= 0 || (bt >= 0 && bh < 0 && bi >= 0)) {
+        if (bi >= 0) {
+          head = r;
+          cI = bi;
+          cN = bn >= 0 ? bn : bt;
+          cL = bl;
+        }
+      }
+    }
+    let start = head + 1,
+      hdrNames = null;
+    if (head < 0) {
+      cI = 0;
+      cN = 1;
+      cL = 2;
+      start = rows.length && !/\d/.test(cellText(rows[0][0])) ? 1 : 0;
+    } else
+      hdrNames = {
+        sbd: cellText(rows[head][cI]),
+        name: cH >= 0 ? cellText(rows[head][cH]) + ' + ' + cellText(rows[head][cT]) : cellText(rows[head][cN])
+      };
+    const list = [];
+    let skipped = 0,
+      dup = 0;
+    const seen = {};
+    for (let r = start; r < rows.length; r++) {
+      const row = rows[r],
+        sbd = cellText(row[cI]).replace(/\.0+$/, ''),
+        name = (cH >= 0 ? cellText(row[cH]) + ' ' + cellText(row[cT]) : cellText(row[cN]))
+          .replace(/\s+/g, ' ')
+          .trim(),
+        k = stuKey(sbd);
+      if (!k || !name) {
+        skipped++;
+        continue;
+      }
+      if (seen[k]) {
+        dup++;
+        continue;
+      }
+      seen[k] = 1;
+      list.push({ k: k, sbd: sbd, name: name.normalize('NFC'), cls: cL >= 0 ? cellText(row[cL]) : '' });
+    }
+    return { list: list, skipped: skipped, dup: dup, hdr: hdrNames };
+  }
+  function stuApply(res, srcName) {
+    if (!res.list.length) {
+      stuMsg = {
+        kind: 'err',
+        text:
+          'Không tìm thấy thí sinh nào trong ' +
+          (srcName || 'dữ liệu') +
+          '. File cần có cột Số báo danh và cột Họ tên (có thể thêm cột Lớp).'
+      };
+      return;
+    }
+    const old = stuList().slice(),
+      cur = old.slice(),
+      idx = {};
+    cur.forEach(function (s, i) {
+      idx[s.k] = i;
+    });
+    let added = 0,
+      upd = 0;
+    res.list.forEach(function (s) {
+      if (idx[s.k] !== undefined) {
+        cur[idx[s.k]] = s;
+        upd++;
+      } else {
+        idx[s.k] = cur.length;
+        cur.push(s);
+        added++;
+      }
+    });
+    stuUndo = old;
+    setStudents(cur);
+    stuShow = 60;
+    stuMsg = {
+      kind: 'ok',
+      text:
+        'Đã nhập ' +
+        res.list.length +
+        ' thí sinh' +
+        (srcName ? ' từ ' + srcName : '') +
+        ' (thêm ' +
+        added +
+        ', cập nhật ' +
+        upd +
+        ')' +
+        (res.hdr
+          ? '. Cột số báo danh: “' + res.hdr.sbd + '”, cột họ tên: “' + res.hdr.name + '”'
+          : '. Không thấy dòng tiêu đề nên lấy cột 1 là số báo danh, cột 2 là họ tên, cột 3 là lớp') +
+        '.' +
+        (res.skipped ? ' Bỏ qua ' + res.skipped + ' dòng thiếu số báo danh hoặc họ tên.' : '') +
+        (res.dup ? ' Bỏ qua ' + res.dup + ' dòng trùng số báo danh.' : '')
+    };
+  }
+  async function stuFromFile(file) {
+    stuMsg = { kind: 'busy' };
+    renderStu();
+    await nextFrame();
+    try {
+      let rows = null;
+      if (/\.(xlsx|xlsm|xlsb|xls|ods)$/i.test(file.name)) {
+        try {
+          await loadScript(XLSX_URL);
+        } catch (e) {
+          stuMsg = {
+            kind: 'err',
+            text: 'Không tải được bộ đọc Excel (cần kết nối mạng). Hãy lưu file thành CSV rồi chọn lại, hoặc dán danh sách vào ô bên dưới.'
+          };
+          return;
+        }
+        const wb = window.XLSX.read(await file.arrayBuffer(), { type: 'array' });
+        let best = null;
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const r = parseRoster(
+            window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[i]], { header: 1, raw: true, defval: '' })
+          );
+          if (!best || r.list.length > best.list.length) best = r;
+        }
+        stuApply(best || parseRoster([]), file.name);
+        return;
+      }
+      const buf = await file.arrayBuffer();
+      let text = new TextDecoder('utf-8').decode(buf);
+      if (text.indexOf('\uFFFD') >= 0) {
+        try {
+          text = new TextDecoder('windows-1258').decode(buf);
+        } catch (e) {
+          /* giữ bản UTF-8 */
+        }
+      }
+      rows = parseDelim(text);
+      stuApply(parseRoster(rows), file.name);
+    } catch (e) {
+      stuMsg = { kind: 'err', text: 'Không đọc được file này. Thử lưu lại dưới dạng .xlsx hoặc .csv.' };
+    }
+  }
+  async function stuTemplate() {
+    const csv =
+      '﻿Số báo danh,Họ và tên,Lớp\r\n24011201,Nguyễn Văn An,10A1\r\n24011202,Trần Thị Bình,10A1\r\n24011203,Lê Hoàng Cường,10A2\r\n';
+    const st = await saveFile('mau-danh-sach-thi-sinh.csv', csv);
+    stuMsg =
+      st === 'saved'
+        ? {
+            kind: 'ok',
+            text: 'Đã lưu file mẫu. Mở bằng Excel, điền danh sách rồi chọn lại ở nút “Chọn file Excel / CSV”.'
+          }
+        : st === 'declined'
+          ? { kind: 'err', text: 'Bạn đã huỷ lưu file mẫu.' }
+          : {
+              kind: 'err',
+              text: 'Chế độ xem này không cho tải file. Bạn có thể tự tạo file Excel với 3 cột: Số báo danh, Họ và tên, Lớp.'
+            };
+  }
+  function renderStu() {
+    const host = $('#stuCard'),
+      arr = stuList(),
+      l = curList();
+    const graded = {};
+    listRes().forEach(function (r) {
+      const k = stuKey(r.sbd);
+      if (k && graded[k] === undefined) graded[k] = r;
+    });
+    let nGraded = 0;
+    arr.forEach(function (s) {
+      if (graded[s.k]) nGraded++;
+    });
+    const noMatch = listRes().filter(function (r) {
+      return !stuOf(r.sbd);
+    }).length;
+    let h =
+      '<div class="row"><h2>Danh sách thí sinh</h2><span class="hint">' +
+      arr.length +
+      ' thí sinh</span></div>' +
+      '<p class="hint">Danh sách thuộc đợt “<b>' +
+      esc(l.name) +
+      '</b>”. Khi chấm, app đối chiếu số báo danh trên phiếu với danh sách này để hiện tên học sinh ' +
+      'trong kết quả, bảng điểm CSV và file PDF. Số 0 đứng đầu được bỏ qua khi so khớp ' +
+      '(ví dụ “01” khớp với “1”). Muốn đổi đợt, vào mục Kết quả.</p>' +
+      '<div class="actions"><label class="btn primary" for="stuFile">Chọn file Excel / CSV</label>' +
+      '<button type="button" class="btn" id="stuTpl">Tải file mẫu</button></div>' +
+      '<input class="vh" type="file" id="stuFile" accept=".xlsx,.xls,.xlsm,.ods,.csv,.tsv,.txt,text/csv">' +
+      '<details class="qrpaste"' +
+      (stuMsg && stuMsg.kind === 'paste' ? ' open' : '') +
+      '><summary>Hoặc dán danh sách từ Excel</summary><div class="field"><textarea id="stuText" spellcheck="false" ' +
+      'placeholder="Số báo danh [Tab] Họ và tên [Tab] Lớp&#10;24011201  Nguyễn Văn An  10A1"></textarea></div>' +
+      '<div class="actions"><button type="button" class="btn small" id="stuParse">Nhập danh sách dán</button></div></details>';
+    if (stuMsg) {
+      if (stuMsg.kind === 'busy')
+        h += '<div class="busy"><span class="spin"></span>Đang đọc danh sách…</div>';
+      else
+        h +=
+          '<div class="note ' +
+          (stuMsg.kind === 'ok' ? 'ok' : 'err') +
+          '">' +
+          esc(stuMsg.text) +
+          '</div>' +
+          (stuMsg.kind === 'ok' && stuUndo
+            ? '<div class="actions"><button type="button" class="btn small" id="stuUndoBtn">Hoàn tác</button></div>'
+            : '');
+    }
+    if (arr.length) {
+      h +=
+        '<div class="stu-sum"><span class="chip ok">Đã chấm ' +
+        nGraded +
+        '/' +
+        arr.length +
+        '</span>' +
+        (arr.length - nGraded
+          ? '<span class="chip mid">Chưa chấm ' + (arr.length - nGraded) + '</span>'
+          : '') +
+        (noMatch ? '<span class="chip bad">' + noMatch + ' bài chưa khớp danh sách</span>' : '') +
+        '</div>';
+      const q = plain(stuFilter),
+        rows = arr.filter(function (s) {
+          return (
+            !q ||
+            plain(s.name).indexOf(q) >= 0 ||
+            s.k.indexOf(stuKey(q) || '\u0000') >= 0 ||
+            plain(s.cls).indexOf(q) >= 0
+          );
+        });
+      h +=
+        '<div class="field"><label class="lbl" for="stuQ">Tìm theo tên, lớp hoặc số báo danh</label><input id="stuQ" value="' +
+        esc(stuFilter) +
+        '" autocomplete="off"></div><div class="stu-list">';
+      rows.slice(0, stuShow).forEach(function (s) {
+        const r = graded[s.k];
+        h +=
+          '<div class="stu-row"><span class="stu-id mono">' +
+          esc(s.sbd) +
+          '</span><span class="stu-nm">' +
+          esc(s.name) +
+          (s.cls ? '<small>' + esc(s.cls) + '</small>' : '') +
+          '</span><span class="stu-sc">' +
+          (r ? fmt(r.total) : '') +
+          '</span><button type="button" data-sdel="' +
+          esc(s.k) +
+          '" aria-label="Xoá ' +
+          esc(s.name) +
+          '">×</button></div>';
+      });
+      if (!rows.length) h += '<div class="empty">Không có thí sinh nào khớp.</div>';
+      h += '</div>';
+      if (rows.length > stuShow)
+        h +=
+          '<div class="actions"><button type="button" class="btn small" id="stuMore">Hiện thêm (còn ' +
+          (rows.length - stuShow) +
+          ')</button></div>';
+    }
+    h +=
+      '<h3 class="ph">Thêm một thí sinh</h3><div class="stu-add"><input id="saId" inputmode="numeric" placeholder="Số báo danh" ' +
+      'aria-label="Số báo danh"><input id="saName" placeholder="Họ và tên" aria-label="Họ và tên"><input id="saCls" ' +
+      'placeholder="Lớp" aria-label="Lớp"><button type="button" class="btn small primary" id="saGo">Thêm</button></div>' +
+      (arr.length
+        ? '<div class="actions"><button type="button" class="btn ghost danger" id="stuClear">Xoá cả danh sách</button></div>'
+        : '');
+    host.innerHTML = h;
+    $('#stuFile').onchange = function () {
+      const f = this.files && this.files[0];
+      this.value = '';
+      if (f)
+        stuFromFile(f).then(function () {
+          renderStu();
+          renderRes();
+        });
+    };
+    $('#stuTpl').onclick = async function () {
+      await stuTemplate();
+      renderStu();
+    };
+    $('#stuParse').onclick = function () {
+      stuApply(parseRoster(parseDelim($('#stuText').value)), '');
+      renderStu();
+      renderRes();
+    };
+    const un = $('#stuUndoBtn');
+    if (un)
+      un.onclick = function () {
+        setStudents(stuUndo || []);
+        stuUndo = null;
+        stuMsg = { kind: 'ok', text: 'Đã hoàn tác lần nhập vừa rồi.' };
+        renderStu();
+      };
+    const qi = $('#stuQ');
+    if (qi)
+      qi.oninput = function () {
+        stuFilter = this.value;
+        stuShow = 60;
+        const pos = this.selectionStart;
+        renderStu();
+        const n = $('#stuQ');
+        n.focus();
+        try {
+          n.setSelectionRange(pos, pos);
+        } catch (e) {
+          /* bỏ qua */
+        }
+      };
+    const mo = $('#stuMore');
+    if (mo)
+      mo.onclick = function () {
+        stuShow += 100;
+        renderStu();
+      };
+    $$('[data-sdel]', host).forEach(function (b) {
+      b.onclick = function () {
+        stuUndo = null;
+        stuMsg = null;
+        setStudents(
+          stuList().filter(function (s) {
+            return s.k !== b.dataset.sdel;
+          })
+        );
+        renderStu();
+      };
+    });
+    $('#saGo').onclick = function () {
+      const sbd = $('#saId').value.trim(),
+        name = $('#saName').value.replace(/\s+/g, ' ').trim(),
+        k = stuKey(sbd);
+      if (!k || !name) {
+        stuMsg = { kind: 'err', text: 'Cần nhập cả số báo danh (chỉ chữ số) và họ tên.' };
+        renderStu();
+        return;
+      }
+      stuApply(
+        {
+          list: [{ k: k, sbd: sbd, name: name, cls: $('#saCls').value.trim() }],
+          skipped: 0,
+          dup: 0,
+          hdr: { sbd: '', name: '' }
+        },
+        ''
+      );
+      stuMsg.text = 'Đã lưu thí sinh ' + name + '.';
+      renderStu();
+      renderRes();
+    };
+    const cl = $('#stuClear');
+    if (cl)
+      cl.onclick = function () {
+        this.textContent = 'Chạm lần nữa để xoá cả danh sách';
+        this.onclick = function () {
+          stuUndo = stuList().slice();
+          setStudents([]);
+          stuMsg = { kind: 'ok', text: 'Đã xoá danh sách thí sinh của đợt này.' };
+          renderStu();
+          renderRes();
+        };
+      };
+  }
+
   /* ---------- Tab Kết quả ---------- */
   function listBar() {
     const L = lists.items;
@@ -6005,8 +6524,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       '</div>';
     if (listUI === 'new')
       h +=
-        '<label class="listcopy"><input type="checkbox" id="listCopy"> Sao chép đáp án và cấu trúc ' +
-        'từ đợt đang chọn</label>';
+        '<label class="listcopy"><input type="checkbox" id="listCopy"> Sao chép đáp án, cấu trúc và danh sách ' +
+        'thí sinh từ đợt đang chọn</label>';
     if (listUI === 'new' || listUI === 'ren')
       h +=
         '<div class="listrow"><input id="listName" maxlength="40" placeholder="Tên đợt, ví dụ: 10A1 · 45 phút" value="' +
@@ -6070,7 +6589,16 @@ function renderPhoto(sheetImg, cfg, marks, o) {
             nc.versions = [emptyVer('')];
             nc.active = 0;
           }
-          lists.items.push({ id: id, name: name, cfg: nc });
+          lists.items.push({
+            id: id,
+            name: name,
+            cfg: nc,
+            students: cp
+              ? stuList().map(function (s) {
+                  return Object.assign({}, s);
+                })
+              : []
+          });
           listUI = null;
           applyList(id);
           renderRes();
@@ -6143,15 +6671,18 @@ function renderPhoto(sheetImg, cfg, marks, o) {
           d.toLocaleDateString('vi-VN') +
           ' ' +
           d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-      const pt = r.parts
-        ? ' · I ' + fmt(r.parts[0]) + ' · II ' + fmt(r.parts[1]) + ' · III ' + fmt(r.parts[2])
-        : '';
+      const st = stuOf(r.sbd),
+        pt = r.parts
+          ? ' · I ' + fmt(r.parts[0]) + ' · II ' + fmt(r.parts[1]) + ' · III ' + fmt(r.parts[2])
+          : '';
       h +=
-        '<div class="item"><div><div class="who">SBD ' +
-        esc(r.sbd || '—') +
-        ' · Mã đề ' +
-        esc(r.md || '—') +
+        '<div class="item"><div><div class="who">' +
+        (st ? esc(st.name) : 'SBD ' + esc(r.sbd || '—') + ' · Mã đề ' + esc(r.md || '—')) +
         '</div><div class="meta">' +
+        (st
+          ? 'SBD ' + esc(r.sbd) + ' · Mã đề ' + esc(r.md || '—') + (st.cls ? ' · ' + esc(st.cls) : '') + ' · '
+          : '') +
+        (!st && stuList().length ? '<span class="stu-no">không có trong danh sách</span> · ' : '') +
         tm +
         pt +
         (r.edited ? ' · đã sửa' : '') +
@@ -6346,7 +6877,9 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       '"></div>' +
       '<div class="field"><label class="lbl" for="reMd">Mã đề</label><input id="reMd" class="mono" inputmode="numeric" maxlength="4" value="' +
       esc(ed.md) +
-      '"></div></div>';
+      '"></div></div><div class="stuname" id="reName">' +
+      nameLineHTML(ed.sbd) +
+      '</div>';
     if (ed.hasAns) {
       const g = edGrade();
       h += '<div class="re-score"><b>' + fmt(g.total) + '</b><span>/' + fmt(g.max) + ' điểm</span></div>';
@@ -6427,6 +6960,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     $('#reSbd').oninput = function () {
       ed.sbd = this.value.replace(/[^0-9_?]/g, '');
       this.value = ed.sbd;
+      $('#reName').innerHTML = nameLineHTML(ed.sbd);
       if (ed.hasAns) edPaint();
     };
     $('#reMd').onchange = function () {
@@ -6505,15 +7039,69 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   });
   async function exportCsv() {
     const rows = [
-      ['Thời gian', 'Số báo danh', 'Mã đề', 'Phần I', 'Phần II', 'Phần III', 'Tổng điểm', 'Điểm tối đa']
+      [
+        'Thời gian',
+        'Số báo danh',
+        'Họ tên',
+        'Lớp',
+        'Mã đề',
+        'Phần I',
+        'Phần II',
+        'Phần III',
+        'Tổng điểm',
+        'Điểm tối đa'
+      ]
     ];
-    listRes()
-      .slice()
-      .reverse()
-      .forEach(function (r) {
-        const p = r.parts || ['', '', ''];
-        rows.push([new Date(r.t).toLocaleString('vi-VN'), r.sbd, r.md, p[0], p[1], p[2], r.total, r.max]);
+    const lr = listRes().slice().reverse(),
+      cnt = [0, 0, 0];
+    lr.forEach(function (r) {
+      const an = r.ans || {};
+      ['p1', 'p2', 'p3'].forEach(function (k, i) {
+        cnt[i] = Math.max(cnt[i], (an[k] || []).length);
       });
+    });
+    ['I', 'II', 'III'].forEach(function (nm, i) {
+      for (let q = 1; q <= cnt[i]; q++) rows[0].push('Phần ' + nm + ' - Câu ' + q);
+    });
+    lr.forEach(function (r) {
+      const p = r.parts || ['', '', ''];
+      const st = stuOf(r.sbd);
+      rows.push([
+        new Date(r.t).toLocaleString('vi-VN'),
+        r.sbd,
+        st ? st.name : '',
+        st ? st.cls : '',
+        r.md,
+        p[0],
+        p[1],
+        p[2],
+        r.total,
+        r.max
+      ]);
+      const an = r.ans || {},
+        row = rows[rows.length - 1];
+      for (let q = 0; q < cnt[0]; q++) {
+        const m = (an.p1 && an.p1[q]) || [];
+        row.push(
+          m
+            .map(function (o) {
+              return LET[o];
+            })
+            .join('')
+        );
+      }
+      for (let q = 0; q < cnt[1]; q++) {
+        const m = (an.p2 && an.p2[q]) || [];
+        row.push(
+          m
+            .map(function (x) {
+              return x === 'X' ? '?' : x || '-';
+            })
+            .join('')
+        );
+      }
+      for (let q = 0; q < cnt[2]; q++) row.push((an.p3 && an.p3[q]) || '');
+    });
     const csv =
       '﻿' +
       rows
@@ -6662,10 +7250,27 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     c.fillStyle = '#111827';
     c.font = '700 46px ' + F;
     c.textAlign = 'left';
-    c.fillText('SBD ' + (r.sbd || '—') + ' · Mã đề ' + (r.md || '—'), M, 140);
+    const stu = stuOf(r.sbd),
+      info = 'SBD ' + (r.sbd || '—') + ' · Mã đề ' + (r.md || '—');
+    if (stu) {
+      /* tên dài thì thu nhỏ chữ cho vừa chỗ bên trái điểm số */
+      let fs = 46;
+      c.font = '700 ' + fs + 'px ' + F;
+      while (c.measureText(stu.name).width > W - 2 * M - 360 && fs > 26) {
+        fs -= 2;
+        c.font = '700 ' + fs + 'px ' + F;
+      }
+      c.fillText(stu.name, M, 140);
+    } else c.fillText(info, M, 140);
     c.fillStyle = '#6b7280';
     c.font = '400 24px ' + F;
-    c.fillText(new Date(r.t).toLocaleString('vi-VN') + (r.edited ? ' · đã sửa' : ''), M, 178);
+    c.fillText(
+      (stu ? info + (stu.cls ? ' · Lớp ' + stu.cls : '') + ' · ' : '') +
+        new Date(r.t).toLocaleString('vi-VN') +
+        (r.edited ? ' · đã sửa' : ''),
+      M,
+      178
+    );
     c.textAlign = 'right';
     c.fillStyle = '#1d3a8a';
     c.font = '800 96px ' + F;
@@ -6780,8 +7385,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       pcts.reduce(function (a, b) {
         return a + b;
       }, 0) / (pcts.length || 1);
-    const colx = [M, M + 80, M + 260, M + 380, M + 560, M + 740, M + 920],
-      hd = ['STT', 'Số báo danh', 'Mã đề', 'Phần I', 'Phần II', 'Phần III', 'Tổng điểm'];
+    const colx = [M, M + 62, M + 215, M + 560, M + 650, M + 735, M + 820, M + 910],
+      hd = ['STT', 'SBD', 'Họ tên', 'Mã đề', 'Phần I', 'Phần II', 'Phần III', 'Tổng điểm'];
     for (let p = 0; p < np; p++) {
       const cv = document.createElement('canvas');
       cv.width = W;
@@ -6821,9 +7426,14 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         }
         c.fillStyle = '#111827';
         c.font = '400 26px ' + F;
+        const sn = stuOf(r.sbd);
+        let nm = sn ? sn.name : '';
+        while (nm && c.measureText(nm).width > 325) nm = nm.slice(0, -2);
+        if (sn && nm !== sn.name) nm += '…';
         [
           p * per + j + 1,
           r.sbd || '—',
+          nm,
           r.md || '—',
           pt[0] === '' ? '' : fmt(pt[0]),
           pt[1] === '' ? '' : fmt(pt[1]),
@@ -6832,7 +7442,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
           c.fillText(String(t), colx[i], y);
         });
         c.font = '700 28px ' + F;
-        c.fillText(fmt(r.total) + ' / ' + fmt(r.max), colx[6], y);
+        c.fillText(fmt(r.total) + ' / ' + fmt(r.max), colx[7], y);
         y += 44;
       });
       out.push({ w: W, h: H, jpg: await canvasJpeg(cv, 0.85) });
