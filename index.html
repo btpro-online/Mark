@@ -1426,6 +1426,17 @@ h3.ph {
   grid-column: 1 / -1;
 }
 
+.item button.sure {
+  width: auto;
+  min-width: 52px;
+  padding: 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--red, #c62828);
+  border-color: transparent;
+}
+
 </style>
 
 <div class="wrap">
@@ -6281,6 +6292,143 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       stuMsg = { kind: 'err', text: 'Không đọc được file này. Thử lưu lại dưới dạng .xlsx hoặc .csv.' };
     }
   }
+  /* Điểm đã chấm mới nhất của từng thí sinh (theo số báo danh). */
+  function stuScoreMap() {
+    const m = {};
+    listRes().forEach(function (r) {
+      const k = stuKey(r.sbd);
+      if (k && !/[?_]/.test(String(r.sbd)) && m[k] === undefined) m[k] = r;
+    });
+    return m;
+  }
+  const stuCmp = function (a, b) {
+    const x = Number(a.k),
+      y = Number(b.k);
+    if (isFinite(x) && isFinite(y) && x !== y) return x - y;
+    return a.k < b.k ? -1 : a.k > b.k ? 1 : 0;
+  };
+  /* Nút 1: ghi điểm các bài đã chấm vào danh sách thí sinh và xếp theo số báo danh. */
+  function stuSync() {
+    const sc = stuScoreMap(),
+      arr = stuList();
+    stuUndo = arr.map(function (s) {
+      return Object.assign({}, s);
+    });
+    let n = 0;
+    const out = arr.map(function (s) {
+      const r = sc[s.k],
+        t = { k: s.k, sbd: s.sbd, name: s.name, cls: s.cls };
+      if (r) {
+        const p = r.parts || ['', '', ''];
+        t.md = r.md || '';
+        t.p = [p[0], p[1], p[2]];
+        t.tot = r.total;
+        t.max = r.max;
+        n++;
+      }
+      return t;
+    });
+    out.sort(stuCmp);
+    setStudents(out);
+    stuMsg = {
+      kind: 'ok',
+      text:
+        'Đã cập nhật điểm cho ' +
+        n +
+        '/' +
+        out.length +
+        ' thí sinh và xếp theo số báo danh.' +
+        (out.length - n ? ' ' + (out.length - n) + ' thí sinh chưa có bài chấm.' : '')
+    };
+  }
+  /* Nút 2: xuất Excel danh sách thí sinh kèm điểm. */
+  async function stuExport() {
+    stuSync();
+    const arr = stuList(),
+      head = [
+        'STT',
+        'Số báo danh',
+        'Họ và tên',
+        'Lớp',
+        'Mã đề',
+        'Phần I',
+        'Phần II',
+        'Phần III',
+        'Tổng điểm',
+        'Điểm tối đa'
+      ],
+      rows = [head];
+    arr.forEach(function (s, i) {
+      const p = s.p || ['', '', ''];
+      rows.push([
+        i + 1,
+        s.sbd,
+        s.name,
+        s.cls || '',
+        s.md || '',
+        p[0],
+        p[1],
+        p[2],
+        s.tot == null ? '' : s.tot,
+        s.max == null ? '' : s.max
+      ]);
+    });
+    const extra = [['Số báo danh', 'Mã đề', 'Phần I', 'Phần II', 'Phần III', 'Tổng điểm', 'Điểm tối đa']];
+    listRes()
+      .slice()
+      .reverse()
+      .forEach(function (r) {
+        if (stuOf(r.sbd)) return;
+        const p = r.parts || ['', '', ''];
+        extra.push([r.sbd, r.md, p[0], p[1], p[2], r.total, r.max]);
+      });
+    let st = 'unavailable',
+      ext = 'xlsx';
+    try {
+      await loadScript(XLSX_URL);
+      const wb = window.XLSX.utils.book_new(),
+        ws = window.XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [6, 14, 28, 10, 8, 9, 9, 9, 11, 12].map(function (w) {
+        return { wch: w };
+      });
+      window.XLSX.utils.book_append_sheet(wb, ws, 'Điểm thí sinh');
+      if (extra.length > 1)
+        window.XLSX.utils.book_append_sheet(wb, window.XLSX.utils.aoa_to_sheet(extra), 'Chưa khớp danh sách');
+      const buf = window.XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      st = await saveFile(
+        'danh-sach-thi-sinh-co-diem.xlsx',
+        new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      );
+    } catch (e) {
+      ext = 'csv';
+      const csv =
+        '\uFEFF' +
+        rows
+          .map(function (r) {
+            return r
+              .map(function (c) {
+                return '"' + String(c).replace(/"/g, '""') + '"';
+              })
+              .join(',');
+          })
+          .join('\r\n');
+      st = await saveFile('danh-sach-thi-sinh-co-diem.csv', csv);
+    }
+    stuMsg =
+      st === 'saved'
+        ? {
+            kind: 'ok',
+            text:
+              'Đã lưu file ' +
+              (ext === 'xlsx' ? 'Excel' : 'CSV (không tải được bộ ghi Excel)') +
+              ' gồm ' +
+              arr.length +
+              ' thí sinh kèm điểm.'
+          }
+        : st === 'declined'
+          ? { kind: 'err', text: 'Bạn đã huỷ lưu file.' }
+          : { kind: 'err', text: 'Chế độ xem này không cho tải file.' };
+  }
   async function stuTemplate() {
     const csv =
       '﻿Số báo danh,Họ và tên,Lớp\r\n24011201,Nguyễn Văn An,10A1\r\n24011202,Trần Thị Bình,10A1\r\n24011203,Lê Hoàng Cường,10A2\r\n';
@@ -6325,6 +6473,10 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       '(ví dụ “01” khớp với “1”). Muốn đổi đợt, vào mục Kết quả.</p>' +
       '<div class="actions"><label class="btn primary" for="stuFile">Chọn file Excel / CSV</label>' +
       '<button type="button" class="btn" id="stuTpl">Tải file mẫu</button></div>' +
+      (arr.length
+        ? '<div class="actions"><button type="button" class="btn" id="stuSync">Cập nhật điểm đã chấm vào danh sách</button>' +
+          '<button type="button" class="btn primary" id="stuXls">Xuất Excel danh sách có điểm</button></div>'
+        : '') +
       '<input class="vh" type="file" id="stuFile" accept=".xlsx,.xls,.xlsm,.ods,.csv,.tsv,.txt,text/csv">' +
       '<details class="qrpaste"' +
       (stuMsg && stuMsg.kind === 'paste' ? ' open' : '') +
@@ -6379,7 +6531,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
           esc(s.name) +
           (s.cls ? '<small>' + esc(s.cls) + '</small>' : '') +
           '</span><span class="stu-sc">' +
-          (r ? fmt(r.total) : '') +
+          (r ? fmt(r.total) : s.tot != null ? fmt(s.tot) : '') +
           '</span><button type="button" data-sdel="' +
           esc(s.k) +
           '" aria-label="Xoá ' +
@@ -6411,6 +6563,19 @@ function renderPhoto(sheetImg, cfg, marks, o) {
           renderRes();
         });
     };
+    const sy = $('#stuSync');
+    if (sy)
+      sy.onclick = function () {
+        stuSync();
+        renderStu();
+      };
+    const xl = $('#stuXls');
+    if (xl)
+      xl.onclick = async function () {
+        xl.disabled = true;
+        await stuExport();
+        renderStu();
+      };
     $('#stuTpl').onclick = async function () {
       await stuTemplate();
       renderStu();
@@ -6709,7 +6874,23 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     host.innerHTML = h;
     bindListBar(host);
     $$('[data-del]', host).forEach(function (b) {
+      let tm = 0;
       b.onclick = function () {
+        if (!b.classList.contains('sure')) {
+          b.classList.add('sure');
+          b.textContent = 'Xoá?';
+          const m = $('#resMsg');
+          if (m) m.textContent = 'Chạm lần nữa vào nút đỏ “Xoá?” để xoá bài này. Không thể hoàn tác.';
+          tm = setTimeout(function () {
+            b.classList.remove('sure');
+            b.textContent = '×';
+            if (m)
+              m.textContent =
+                'Kết quả được giữ trong trình duyệt này. Tải CSV để lưu lại hoặc mở bằng Excel, Google Sheets.';
+          }, 3500);
+          return;
+        }
+        clearTimeout(tm);
         IMG.del(b.dataset.del);
         IMG.del(b.dataset.del + 'n');
         results = results.filter(function (r) {
