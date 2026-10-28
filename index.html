@@ -4439,6 +4439,16 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       s.matched = false;
     }
   }
+  /* Bài đã chấm có mã đề không trùng đề nào đã nhập (chỉ xét khi đợt có nhiều mã đề). */
+  function mdMismatch(r) {
+    if (cfg.versions.length < 2) return false;
+    const nz = function (c) {
+      return String(c).replace(/^0+(?=\d)/, '');
+    };
+    return !cfg.versions.some(function (v) {
+      return v.code && nz(v.code) === nz(r.md || '');
+    });
+  }
   function pickVersion() {
     pickVersionFor(scan);
   }
@@ -5475,7 +5485,9 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       h += '</div>';
       if (!scan.matched && cfg.versions.length > 1)
         h +=
-          '<p class="hint">Mã đề đọc được chưa trùng đề nào đã nhập, đang chấm theo Đề ' +
+          '<p class="note err">⚠ Mã đề đọc được (' +
+          esc(scan.mdStr || '—') +
+          ') chưa trùng đề nào đã nhập, đang chấm theo Đề ' +
           (scan.ver + 1) +
           '.</p>';
     }
@@ -6474,7 +6486,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       '<div class="actions"><label class="btn primary" for="stuFile">Chọn file Excel / CSV</label>' +
       '<button type="button" class="btn" id="stuTpl">Tải file mẫu</button></div>' +
       (arr.length
-        ? '<div class="actions"><button type="button" class="btn" id="stuSync">Cập nhật điểm đã chấm</button>' +
+        ? '<div class="actions"><button type="button" class="btn" id="stuSync">Cập nhật điểm đã chấm vào danh sách</button>' +
           '<button type="button" class="btn primary" id="stuXls">Xuất Excel danh sách có điểm</button></div>'
         : '') +
       '<input class="vh" type="file" id="stuFile" accept=".xlsx,.xls,.xlsm,.ods,.csv,.tsv,.txt,text/csv">' +
@@ -6815,6 +6827,14 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       view.length +
       ' bài</span></div>' +
       listBar() +
+      (function () {
+        const k = view.filter(mdMismatch).length;
+        return k
+          ? '<div class="note err">⚠ Có ' +
+              k +
+              ' bài có mã đề không khớp đề nào đã nhập (đã chấm theo đáp án đang chọn). Hãy kiểm tra lại mã đề ở các bài có cảnh báo.</div>'
+          : '';
+      })() +
       '<div class="stats"><span>Trung bình <b>' +
       fmt(avg * sc) +
       '</b></span><span>Cao nhất <b>' +
@@ -6848,6 +6868,9 @@ function renderPhoto(sheetImg, cfg, marks, o) {
           ? 'SBD ' + esc(r.sbd) + ' · Mã đề ' + esc(r.md || '—') + (st.cls ? ' · ' + esc(st.cls) : '') + ' · '
           : '') +
         (!st && stuList().length ? '<span class="stu-no">không có trong danh sách</span> · ' : '') +
+        (mdMismatch(r)
+          ? '<span class="stu-no">⚠ mã đề không khớp đề nào, đang chấm theo đáp án đang chọn</span> · '
+          : '') +
         tm +
         pt +
         (r.edited ? ' · đã sửa' : '') +
@@ -7487,26 +7510,6 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         c.fillText(fmt(parts[i]) + (mx ? ' / ' + fmt(mx[i]) : ''), x + 20, y + 70);
       });
       y += 84 + 24;
-    }
-    let nm = null;
-    try {
-      const nb = await IMG.get(r.id + 'n');
-      if (nb) nm = await blobToImg(nb);
-    } catch (e) {
-      /* bỏ qua */
-    }
-    if (nm) {
-      c.fillStyle = '#6b7280';
-      c.font = '500 22px ' + F;
-      c.textAlign = 'left';
-      c.fillText('Họ tên học sinh', M, y + 22);
-      const nh = Math.min(100, ((nm.height * 400) / nm.width) * 1.0),
-        nw = (nh * nm.width) / nm.height;
-      c.strokeStyle = '#d1d5db';
-      c.lineWidth = 2;
-      c.strokeRect(M, y + 34, Math.min(nw, 520), nh);
-      c.drawImage(nm, M, y + 34, Math.min(nw, 520), nh);
-      y += 34 + nh + 24;
     }
     let base = null;
     try {
