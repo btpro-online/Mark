@@ -3251,8 +3251,16 @@ function detectCorners(imgData, w, h, wins) {
   }
   area = Math.abs(area) / 2;
   const fit = orient(g, w, h, pts);
+  /* 4 ô neo nằm đúng thế tờ phiếu đặt thẳng trong khung nhưng chưa phân biệt được chiều (ảnh mờ, vòng tròn mờ):
+     vẫn cho chấm thử ở độ phân giải cao, nơi nhận chiều chắc hơn. */
+  const dd = function (a, b) {
+      return Math.hypot(pts[a][0] - pts[b][0], pts[a][1] - pts[b][1]);
+    },
+    asp = (CORNERS[1][0] - CORNERS[0][0]) / (CORNERS[3][1] - CORNERS[0][1]),
+    ratio = (dd(0, 1) + dd(3, 2)) / (dd(0, 3) + dd(1, 2));
   return {
     found: fit ? 2 : 1,
+    plausible: ratio > asp * 0.65 && ratio < asp * 1.4 && area > 0,
     pts: fit ? fit.P : pts,
     side: (sides[0] + sides[1] + sides[2] + sides[3]) / 4,
     areaFrac: area / (w * h)
@@ -4946,18 +4954,18 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     }
     const now = Date.now();
     if (LV.needLeave) {
-      if (d.found === 2) LV.leaveMiss = 0;
+      if (d.found === 2 || (d.found === 1 && d.plausible)) LV.leaveMiss = 0;
       else LV.leaveMiss++;
     }
     if (now < LV.cool || (LV.needLeave && LV.leaveMiss < 4)) {
       if (now >= LV.cool && LV.needLeave) lvMsg('Đã chấm xong. Bỏ phiếu ra rồi đưa tờ tiếp theo vào');
-      lvOverlay(d.found === 2 ? d.pts : null, 'ok');
+      lvOverlay(d.found === 2 || (d.found === 1 && d.plausible) ? d.pts : null, 'ok');
       LV.timer = setTimeout(lvTick, 120);
       return;
     }
     LV.needLeave = false;
     const minArea = { kt: 0.06, m: 0.11 }[SHEET.id] || 0.14;
-    if (d.found === 2 && d.areaFrac >= minArea) {
+    if ((d.found === 2 || (d.found === 1 && d.plausible)) && d.areaFrac >= minArea) {
       LV.side = d.side;
       const diag = Math.hypot(w, h);
       LV.stable = lvSameQuad(LV.last, d.pts, diag) ? LV.stable + 1 : 1;
