@@ -4972,6 +4972,38 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       d = { found: 0 };
     }
     const now = Date.now();
+    /* Ánh sáng không đều làm cửa sổ nhỏ ở góc khó thấy ô vuông, trong khi phân tích cả vùng khung vẫn nhận
+       được phiếu. Khi đó dùng kết quả phân tích cả vùng để vẫn cho chấm. */
+    if (d.found < 2 && now >= LV.cool && now - (LV.fbT || 0) > 300) {
+      LV.fbT = now;
+      try {
+        const rd = lvRead(v);
+        if (rd && rd.scan && rd.scan.P) {
+          const f = k / rd.k,
+            P = rd.scan.P.map(function (p) {
+              return [p[0] * f, p[1] * f];
+            });
+          let ar = 0;
+          for (let i = 0; i < 4; i++) {
+            const p = P[i],
+              q = P[(i + 1) % 4];
+            ar += p[0] * q[1] - q[0] * p[1];
+          }
+          d = {
+            found: 2,
+            pts: P,
+            side: Math.max(4, MS * rd.scan.ppm * f),
+            areaFrac: Math.abs(ar) / 2 / (w * h),
+            fb: true
+          };
+          LV.rd = rd;
+          LV.rdT = now;
+          lvShowScore(rd);
+        }
+      } catch (e) {
+        /* bỏ qua */
+      }
+    }
     if (LV.needLeave) {
       if (d.found === 2 || (d.found === 1 && d.plausible)) LV.leaveMiss = 0;
       else LV.leaveMiss++;
