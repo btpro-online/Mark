@@ -1369,7 +1369,7 @@ h3.ph {
 }
 .stu-row {
   display: grid;
-  grid-template-columns: 92px 1fr auto auto;
+  grid-template-columns: 62px 1fr auto auto;
   gap: 8px;
   align-items: center;
   padding: 8px 0;
@@ -1379,8 +1379,8 @@ h3.ph {
   border-top: 0;
 }
 .stu-id {
-  font-size: 13px;
-  letter-spacing: 0.02em;
+  font-size: 11.5px;
+  letter-spacing: 0;
   overflow-wrap: anywhere;
 }
 .stu-nm {
@@ -2925,23 +2925,42 @@ function scanSheet(g, w, h, L, cfg, HB, thr, ga) {
       return p - q;
     });
   const base = sv.length ? Math.min(sv[Math.floor(sv.length * 0.5)], 0.25) : 0;
-  /* Ô số báo danh và mã đề có in sẵn chữ số bên trong nên mỗi chữ số tối khác nhau (số 8 tối hơn số 1).
-     Lấy mức tối thấp của cùng một chữ số ở các cột làm nền riêng cho chữ số đó. */
+  /* Ô số báo danh và mã đề có in sẵn chữ số bên trong nên mỗi chữ số tối khác nhau (số 8 tối hơn số 1), và
+     mỗi cột có thể sáng/tối khác nhau do ánh sáng. Mỗi cột chỉ tô tối đa một ô nên trung vị của cột là mức
+     nền của cột; sau khi trừ, trung vị theo chữ số (trên cả các cột số báo danh và mã đề) là mức nền của chữ
+     số đó. Nhờ vậy cột để trống không bị đọc nhầm thành đã tô. */
   const idB = [].concat(L.sbd, L.md),
-    dBase = [];
-  for (let d = 0; d < 10; d++) {
-    const v = idB
-      .filter(function (b) {
-        return b.d === d;
-      })
-      .map(raw)
-      .sort(function (p, q) {
+    med = function (a) {
+      const s = a.slice().sort(function (p, q) {
         return p - q;
       });
-    dBase.push(v.length >= 3 ? v[Math.floor(0.3 * (v.length - 1))] : 0);
-  }
+      return s.length ? s[Math.floor((s.length - 1) / 2)] : 0;
+    },
+    colV = {},
+    colOff = {},
+    digV = [];
+  idB.forEach(function (b) {
+    const k = b.blk + '-' + b.c;
+    (colV[k] = colV[k] || []).push(raw(b));
+  });
+  Object.keys(colV).forEach(function (k) {
+    colOff[k] = med(colV[k]);
+  });
+  for (let d = 0; d < 10; d++) digV.push([]);
+  idB.forEach(function (b) {
+    digV[b.d].push(raw(b) - colOff[b.blk + '-' + b.c]);
+  });
+  const digOff = digV.map(function (a) {
+      const s = a.slice().sort(function (p, q) {
+        return p - q;
+      });
+      return s.length ? s[Math.floor((s.length >= 8 ? 0.5 : 0.2) * (s.length - 1))] : 0;
+    }),
+    idRd = function (b) {
+      return Math.max(0, raw(b) - colOff[b.blk + '-' + b.c] - digOff[b.d]);
+    };
   const rd = function (b) {
-    return Math.max(0, raw(b) - (b.blk === 'sbd' || b.blk === 'md' ? Math.max(base, dBase[b.d]) : base));
+    return b.blk === 'sbd' || b.blk === 'md' ? idRd(b) : Math.max(0, raw(b) - base);
   };
   /* Mức nhiễu: trong mỗi nhóm lựa chọn (một câu Phần I, một cột Phần III, một cột số báo danh hoặc mã đề)
      chỉ tối đa một ô được tô nên ô cao thứ hai chính là nhiễu. Lấy trung vị làm sàn, ô nào không vượt rõ
@@ -3038,7 +3057,7 @@ function scanSheet(g, w, h, L, cfg, HB, thr, ga) {
       sc[b.c][b.d] = rd(b);
     });
     for (let c = 0; c < cols; c++) {
-      const m = decideMarks(sc[c], thr);
+      const m = decideMarks(sc[c], Math.max(thr, SHEET.ORIENT === 'rings' ? 0.1 : 0));
       out.push(m.length === 1 ? String(m[0]) : m.length === 0 ? '_' : '?');
     }
     return out;
