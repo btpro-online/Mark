@@ -3530,7 +3530,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         p1: clampP(c.p1, 0.25),
         p2: clampP(c.p2, 1),
         p3: clampP(c.p3, 0.25),
-        thr: c.td ? Math.max(0.08, Math.min(0.7, +c.thr || 0.08)) : 0.08,
+        thr: c.td ? Math.max(0.05, Math.min(0.7, +c.thr || 0.08)) : 0.08,
         td: 1,
         thrs: c.td && c.thrs && typeof c.thrs === 'object' ? c.thrs : {},
         structs: c.structs && typeof c.structs === 'object' ? c.structs : {},
