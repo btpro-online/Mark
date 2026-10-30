@@ -1369,7 +1369,7 @@ h3.ph {
 }
 .stu-row {
   display: grid;
-  grid-template-columns: 62px 1fr auto auto;
+  grid-template-columns: 92px 1fr auto auto;
   gap: 8px;
   align-items: center;
   padding: 8px 0;
@@ -1379,8 +1379,8 @@ h3.ph {
   border-top: 0;
 }
 .stu-id {
-  font-size: 11.5px;
-  letter-spacing: 0;
+  font-size: 13px;
+  letter-spacing: 0.02em;
   overflow-wrap: anywhere;
 }
 .stu-nm {
@@ -1664,70 +1664,66 @@ const SHEET_KT = {
   MAX2: 2,
   MAX3: 3
 };
-/* ---- Phiếu B&T Pro M (đơn vị = điểm ảnh của ảnh mẫu 1267 x 1110): 6 ô vuông neo (4 góc + 2 giữa mép),
-   Phần I 12 câu, Phần II 4 câu (2 x 2), Phần III 4 câu ---- */
+/* ---- Phiếu B&T Pro M (đơn vị = điểm ảnh của ảnh mẫu 1100 x 914): 6 ô vuông neo (4 góc + 2 giữa mép),
+   Phần I 12 câu, Phần II 2 câu, Phần III 4 câu ---- */
 const SHEET_M = {
   id: 'm',
   name: 'Phiếu B&T Pro - M',
-  PW: 1267,
-  PH: 1110,
-  RB: 8.4,
-  K: 5.5,
-  MS: 24,
-  RR: 8.8,
+  PW: 1100,
+  PH: 914,
+  RB: 6.4,
+  K: 4.8,
+  MS: 18,
+  RR: 7.6,
   ORIENT: 'rings',
   P1N: 12,
   CORNERS: [
-    [39, 62],
-    [1235, 57],
-    [1238, 1065],
-    [39, 1065]
+    [31.5, 48.5],
+    [1072.5, 44.5],
+    [1075.5, 894.4],
+    [31.5, 894.5]
   ],
-  NAME: [560, 352, 272, 40],
+  NAME: [478, 311, 232, 30],
   MARK_ROWS: [
     [
-      [39, 62],
-      [1235, 57]
+      [31.5, 48.5],
+      [1072.5, 44.5]
     ],
     [
-      [39, 548.5],
-      [1238, 548.5]
+      [31.5, 472.5],
+      [1075.5, 472.5]
     ],
     [
-      [39, 1065],
-      [1238, 1065]
+      [31.5, 894.5],
+      [1075.5, 894.4]
     ]
   ],
-  BAND_Y: [548.5],
+  BAND_Y: [472.5],
   bands: true,
-  SBD_X: [888.1, 912.5, 937.1, 962.2, 986.7, 1011.5, 1036.4, 1061.0],
-  MD_X: [1106.3, 1130.7, 1155.5, 1180.4],
-  ID_Y: [208.8, 244.6, 280.4, 316.3, 352.1, 388.0, 423.9, 459.7, 495.6, 531.4],
-  P1_X: [[127.5, 158.3, 189.0, 219.5]],
-  P1_Y: [664.5, 695.0, 726.0, 757.0, 788.0, 818.2, 849.0, 880.0, 910.5, 940.9, 972.0, 1002.5],
+  SBD_X: [770.2, 791.9, 813.7, 835.3, 857.0, 878.6, 900.1, 922.0],
+  MD_X: [961.0, 982.5, 1004.0, 1026.0],
+  ID_Y: [177.5, 208.5, 239.9, 271.0, 302.4, 333.5, 364.5, 396.0, 427.0, 458.4],
+  P1_X: [[114.5, 141.5, 168.0, 194.5]],
+  P1_Y: [574.0, 600.5, 628.0, 654.5, 681.5, 708.5, 734.5, 761.5, 788.5, 815.0, 841.5, 868.5],
   P2_X: [
-    [329.8, 361.2],
-    [458.6, 489.9],
-    [329.8, 361.2],
-    [458.6, 489.9]
+    [310.5, 337.9],
+    [310.5, 337.9]
   ],
   P2_Y: [
-    [663.5, 694.0, 725.0, 755.5],
-    [663.5, 694.0, 725.0, 755.5],
-    [912.8, 943.6, 974.0, 1005.0],
-    [912.8, 943.6, 974.0, 1005.0]
+    [573.5, 600.0, 626.5, 653.5],
+    [788.5, 815.0, 841.5, 868.5]
   ],
   P3_X: [
-    [585.0, 615.7, 646.4, 677.1],
-    [756.5, 787.2, 817.9, 848.6],
-    [928.1, 958.8, 989.5, 1020.2],
-    [1099.7, 1130.4, 1161.1, 1191.8]
+    [442.5, 469.5, 496.5, 522.5],
+    [602.9, 629.5, 656.5, 683.5],
+    [763.5, 789.9, 816.5, 843.5],
+    [923.5, 950.5, 976.7, 1003.5]
   ],
-  P3_DASH: 666.0,
-  P3_COMMA: 697.0,
-  P3_D: [728.0, 758.7, 789.4, 820.1, 850.8, 881.5, 912.2, 942.9, 973.6, 1004.3],
+  P3_DASH: 574.1,
+  P3_COMMA: 600.5,
+  P3_D: [628.0, 654.5, 681.5, 708.5, 734.6, 761.5, 788.5, 815.0, 841.5, 868.5],
   MAX1: 12,
-  MAX2: 4,
+  MAX2: 2,
   MAX3: 4
 };
 const SHEETS = { nh: SHEET_NH, kt: SHEET_KT, m: SHEET_M };
@@ -2925,42 +2921,23 @@ function scanSheet(g, w, h, L, cfg, HB, thr, ga) {
       return p - q;
     });
   const base = sv.length ? Math.min(sv[Math.floor(sv.length * 0.5)], 0.25) : 0;
-  /* Ô số báo danh và mã đề có in sẵn chữ số bên trong nên mỗi chữ số tối khác nhau (số 8 tối hơn số 1), và
-     mỗi cột có thể sáng/tối khác nhau do ánh sáng. Mỗi cột chỉ tô tối đa một ô nên trung vị của cột là mức
-     nền của cột; sau khi trừ, trung vị theo chữ số (trên cả các cột số báo danh và mã đề) là mức nền của chữ
-     số đó. Nhờ vậy cột để trống không bị đọc nhầm thành đã tô. */
+  /* Ô số báo danh và mã đề có in sẵn chữ số bên trong nên mỗi chữ số tối khác nhau (số 8 tối hơn số 1).
+     Lấy mức tối thấp của cùng một chữ số ở các cột làm nền riêng cho chữ số đó. */
   const idB = [].concat(L.sbd, L.md),
-    med = function (a) {
-      const s = a.slice().sort(function (p, q) {
+    dBase = [];
+  for (let d = 0; d < 10; d++) {
+    const v = idB
+      .filter(function (b) {
+        return b.d === d;
+      })
+      .map(raw)
+      .sort(function (p, q) {
         return p - q;
       });
-      return s.length ? s[Math.floor((s.length - 1) / 2)] : 0;
-    },
-    colV = {},
-    colOff = {},
-    digV = [];
-  idB.forEach(function (b) {
-    const k = b.blk + '-' + b.c;
-    (colV[k] = colV[k] || []).push(raw(b));
-  });
-  Object.keys(colV).forEach(function (k) {
-    colOff[k] = med(colV[k]);
-  });
-  for (let d = 0; d < 10; d++) digV.push([]);
-  idB.forEach(function (b) {
-    digV[b.d].push(raw(b) - colOff[b.blk + '-' + b.c]);
-  });
-  const digOff = digV.map(function (a) {
-      const s = a.slice().sort(function (p, q) {
-        return p - q;
-      });
-      return s.length ? s[Math.floor((s.length >= 8 ? 0.5 : 0.2) * (s.length - 1))] : 0;
-    }),
-    idRd = function (b) {
-      return Math.max(0, raw(b) - colOff[b.blk + '-' + b.c] - digOff[b.d]);
-    };
+    dBase.push(v.length >= 3 ? v[Math.floor(0.3 * (v.length - 1))] : 0);
+  }
   const rd = function (b) {
-    return b.blk === 'sbd' || b.blk === 'md' ? idRd(b) : Math.max(0, raw(b) - base);
+    return Math.max(0, raw(b) - (b.blk === 'sbd' || b.blk === 'md' ? Math.max(base, dBase[b.d]) : base));
   };
   /* Mức nhiễu: trong mỗi nhóm lựa chọn (một câu Phần I, một cột Phần III, một cột số báo danh hoặc mã đề)
      chỉ tối đa một ô được tô nên ô cao thứ hai chính là nhiễu. Lấy trung vị làm sàn, ô nào không vượt rõ
@@ -3057,7 +3034,7 @@ function scanSheet(g, w, h, L, cfg, HB, thr, ga) {
       sc[b.c][b.d] = rd(b);
     });
     for (let c = 0; c < cols; c++) {
-      const m = decideMarks(sc[c], Math.max(thr, SHEET.ORIENT === 'rings' ? 0.1 : 0));
+      const m = decideMarks(sc[c], thr);
       out.push(m.length === 1 ? String(m[0]) : m.length === 0 ? '_' : '?');
     }
     return out;
@@ -3270,16 +3247,8 @@ function detectCorners(imgData, w, h, wins) {
   }
   area = Math.abs(area) / 2;
   const fit = orient(g, w, h, pts);
-  /* 4 ô neo nằm đúng thế tờ phiếu đặt thẳng trong khung nhưng chưa phân biệt được chiều (ảnh mờ, vòng tròn mờ):
-     vẫn cho chấm thử ở độ phân giải cao, nơi nhận chiều chắc hơn. */
-  const dd = function (a, b) {
-      return Math.hypot(pts[a][0] - pts[b][0], pts[a][1] - pts[b][1]);
-    },
-    asp = (CORNERS[1][0] - CORNERS[0][0]) / (CORNERS[3][1] - CORNERS[0][1]),
-    ratio = (dd(0, 1) + dd(3, 2)) / (dd(0, 3) + dd(1, 2));
   return {
     found: fit ? 2 : 1,
-    plausible: ratio > asp * 0.65 && ratio < asp * 1.4 && area > 0,
     pts: fit ? fit.P : pts,
     side: (sides[0] + sides[1] + sides[2] + sides[3]) / 4,
     areaFrac: area / (w * h)
@@ -3440,7 +3409,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     { n1: 10, n2: 0, n3: 0, p1: 1, p2: 0, p3: 0 }
   ];
   const PRESETS_M = [
-    { n1: 12, n2: 4, n3: 4, p1: 0.25, p2: 1, p3: 0.75 },
+    { n1: 12, n2: 2, n3: 4, p1: 0.25, p2: 1, p3: 0.5 },
     { n1: 12, n2: 0, n3: 0, p1: 0.5, p2: 0, p3: 0 },
     { n1: 8, n2: 2, n3: 2, p1: 0.25, p2: 1, p3: 0.5 }
   ];
@@ -3530,7 +3499,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         p1: clampP(c.p1, 0.25),
         p2: clampP(c.p2, 1),
         p3: clampP(c.p3, 0.25),
-        thr: c.td ? Math.max(0.05, Math.min(0.7, +c.thr || 0.08)) : 0.08,
+        thr: c.td ? Math.max(0.08, Math.min(0.7, +c.thr || 0.08)) : 0.08,
         td: 1,
         thrs: c.td && c.thrs && typeof c.thrs === 'object' ? c.thrs : {},
         structs: c.structs && typeof c.structs === 'object' ? c.structs : {},
@@ -3911,7 +3880,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       'tô</label><span class="mono" id="thrVal">' +
       Math.round(cfg.thr * 100) +
       '%</span></div>' +
-      '<input id="thrIn" type="range" min="5" max="60" step="1" value="' +
+      '<input id="thrIn" type="range" min="8" max="60" step="1" value="' +
       Math.round(cfg.thr * 100) +
       '"><div class="range-lbls"><span>Nhạy, nhận cả nét mờ</span><span>Chặt, chỉ nhận ô tô ' +
       'đậm</span></div></div>';
@@ -4349,14 +4318,14 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     if (cfg.sheet === 'm')
       o = Object.assign(
         {
-          ppm: 1.2,
+          ppm: 1.4,
           w: 1500,
-          h: 1350,
+          h: 1250,
           quad: [
-            [105, 80],
-            [1395, 45],
-            [1425, 1260],
-            [75, 1300]
+            [105, 120],
+            [1395, 80],
+            [1430, 1150],
+            [75, 1195]
           ],
           light: 0.2,
           noise: 8
@@ -4972,51 +4941,19 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       d = { found: 0 };
     }
     const now = Date.now();
-    /* Ánh sáng không đều làm cửa sổ nhỏ ở góc khó thấy ô vuông, trong khi phân tích cả vùng khung vẫn nhận
-       được phiếu. Khi đó dùng kết quả phân tích cả vùng để vẫn cho chấm. */
-    if (d.found < 2 && now >= LV.cool && now - (LV.fbT || 0) > 300) {
-      LV.fbT = now;
-      try {
-        const rd = lvRead(v);
-        if (rd && rd.scan && rd.scan.P) {
-          const f = k / rd.k,
-            P = rd.scan.P.map(function (p) {
-              return [p[0] * f, p[1] * f];
-            });
-          let ar = 0;
-          for (let i = 0; i < 4; i++) {
-            const p = P[i],
-              q = P[(i + 1) % 4];
-            ar += p[0] * q[1] - q[0] * p[1];
-          }
-          d = {
-            found: 2,
-            pts: P,
-            side: Math.max(4, MS * rd.scan.ppm * f),
-            areaFrac: Math.abs(ar) / 2 / (w * h),
-            fb: true
-          };
-          LV.rd = rd;
-          LV.rdT = now;
-          lvShowScore(rd);
-        }
-      } catch (e) {
-        /* bỏ qua */
-      }
-    }
     if (LV.needLeave) {
-      if (d.found === 2 || (d.found === 1 && d.plausible)) LV.leaveMiss = 0;
+      if (d.found === 2) LV.leaveMiss = 0;
       else LV.leaveMiss++;
     }
     if (now < LV.cool || (LV.needLeave && LV.leaveMiss < 4)) {
       if (now >= LV.cool && LV.needLeave) lvMsg('Đã chấm xong. Bỏ phiếu ra rồi đưa tờ tiếp theo vào');
-      lvOverlay(d.found === 2 || (d.found === 1 && d.plausible) ? d.pts : null, 'ok');
+      lvOverlay(d.found === 2 ? d.pts : null, 'ok');
       LV.timer = setTimeout(lvTick, 120);
       return;
     }
     LV.needLeave = false;
     const minArea = { kt: 0.06, m: 0.11 }[SHEET.id] || 0.14;
-    if ((d.found === 2 || (d.found === 1 && d.plausible)) && d.areaFrac >= minArea) {
+    if (d.found === 2 && d.areaFrac >= minArea) {
       LV.side = d.side;
       const diag = Math.hypot(w, h);
       LV.stable = lvSameQuad(LV.last, d.pts, diag) ? LV.stable + 1 : 1;
