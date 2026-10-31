@@ -1448,7 +1448,7 @@ h3.ph {
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>B&amp;T Pro Mark - 1.0</h1>
+      <h1>B&amp;T Pro Mark - 2.0</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -3078,16 +3078,40 @@ function scanSheet(g, w, h, L, cfg, HB, thr, ga) {
   };
 }
 
-function analyzeImage(imgData, w, h, cfg, thr) {
+/* hint (không bắt buộc): { pts } = 4 góc phiếu theo thứ tự trái-trên, phải-trên, phải-dưới, trái-dưới (toạ độ
+   điểm ảnh của ảnh đang phân tích), dùng khi người chấm đặt phiếu thẳng trong khung nhưng ảnh quá tối/mờ nên
+   không tự tìm được ô neo hoặc không phân biệt được chiều phiếu bằng các vòng tròn in sẵn. */
+function analyzeImage(imgData, w, h, cfg, thr, hint) {
   const L = makeLayout(cfg);
   const g = redOf(imgData.data, w * h),
     gm = markGray(imgData.data, w * h);
   const cands = findMarkers(imgData.data, w, 0, 0, w, h);
-  if (cands.length < 4) return { error: 'markers', found: cands.length };
-  const quad = pickQuad(cands, w, h, { d: imgData.data, w: w, h: h });
-  if (!quad) return { error: 'quad' };
-  const fit = orient(gm, w, h, quad.pts, cands);
-  if (!fit) return { error: 'orient' };
+  let fit = null,
+    err = null;
+  if (cands.length < 4) err = { error: 'markers', found: cands.length };
+  else {
+    const quad = pickQuad(cands, w, h, { d: imgData.data, w: w, h: h });
+    if (!quad) err = { error: 'quad' };
+    else {
+      fit = orient(gm, w, h, quad.pts, cands);
+      if (!fit) err = { error: 'orient' };
+    }
+  }
+  if (!fit && hint && hint.pts && hint.pts.length === 4) {
+    const P = hint.pts,
+      H = solveHomography(CORNERS, P);
+    if (H)
+      fit = {
+        H: H,
+        P: P,
+        bar: 0,
+        raw: 0,
+        mid: midHits(H, P, cands),
+        ref: paperRef(gm, w, h, H),
+        hinted: true
+      };
+  }
+  if (!fit) return err;
   const ppm = (dist(fit.P[0], fit.P[1]) + dist(fit.P[3], fit.P[2])) / 2 / (CORNERS[1][0] - CORNERS[0][0]);
   const bands = buildBands(fit, cands, ppm, { d: imgData.data, w: w, h: h });
   const res = scanSheet(g, w, h, L, cfg, bands.H, thr, gm);
@@ -3354,15 +3378,17 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         b *= 0.94;
       } else {
         const s = 0.88 + 0.12 * Math.sin(v / 9 + u / 210);
-        r = 96 * s;
-        g = 74 * s;
-        b = 58 * s;
+        const bg = o.bg || [96, 74, 58];
+        r = bg[0] * s;
+        g = bg[1] * s;
+        b = bg[2] * s;
       }
       const lf = 1 - light * ((u / DW) * 0.5 + (v / DH) * 0.5),
         nz = (rng() - 0.5) * noise;
-      od[p] = r * lf + nz;
-      od[p + 1] = g * lf + nz;
-      od[p + 2] = b * lf + nz;
+      const dm = o.dim || 1;
+      od[p] = r * lf * dm + nz;
+      od[p + 1] = g * lf * dm + nz;
+      od[p + 2] = b * lf * dm + nz;
       od[p + 3] = 255;
     }
   }
@@ -4434,10 +4460,10 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       renderScan();
     }
   }
-  function buildScan(cv, source) {
+  function buildScan(cv, source, hint) {
     const c = cv.getContext('2d', { willReadFrequently: true });
     const id = c.getImageData(0, 0, cv.width, cv.height);
-    const r = analyzeImage(id, cv.width, cv.height, cfg, cfg.thr);
+    const r = analyzeImage(id, cv.width, cv.height, cfg, cfg.thr, hint);
     if (r.error) return { error: r.error, source: source, photo: cv };
     const s = r;
     s.photo = cv;
@@ -4892,7 +4918,17 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       if (Math.hypot(a[i][0] - b[i][0], a[i][1] - b[i][1]) > diag * 0.03) return false;
     return true;
   }
-  function lvRead(v) {
+  /* Đổi 4 góc đã dò (toạ độ ảnh tick) sang toạ độ ảnh phân tích có tỉ lệ ka khác. */
+  function lvHint(h, ka) {
+    if (!h || !h.pts) return null;
+    const f = ka / h.k;
+    return {
+      pts: h.pts.map(function (p) {
+        return [p[0] * f, p[1] * f];
+      })
+    };
+  }
+  function lvRead(v, hint) {
     const RG = lvRegion(v, { kt: 1300, m: 1100 }[SHEET.id] || 1000),
       w = RG.w,
       h = RG.h;
@@ -4903,7 +4939,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     }
     const c = cv.getContext('2d', { willReadFrequently: true });
     c.drawImage(v, RG.rx, RG.ry, RG.rw, RG.rh, 0, 0, w, h);
-    const r = analyzeImage(c.getImageData(0, 0, w, h), w, h, cfg, cfg.thr);
+    const r = analyzeImage(c.getImageData(0, 0, w, h), w, h, cfg, cfg.thr, hint ? lvHint(hint, RG.ka) : null);
     if (r.error) return null;
     r.sbdStr = r.sbd.join('');
     r.mdStr = r.md.join('');
@@ -5018,6 +5054,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     const minArea = { kt: 0.06, m: 0.11 }[SHEET.id] || 0.14;
     if ((d.found === 2 || (d.found === 1 && d.plausible)) && d.areaFrac >= minArea) {
       LV.side = d.side;
+      LV.hint = { pts: d.pts, k: k };
       const diag = Math.hypot(w, h);
       LV.stable = lvSameQuad(LV.last, d.pts, diag) ? LV.stable + 1 : 1;
       LV.last = d.pts;
@@ -5030,7 +5067,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       if (LV.stable >= 1 && t - LV.rdT > 450) {
         LV.rdT = t;
         try {
-          LV.rd = lvRead(v);
+          LV.rd = lvRead(v, LV.hint);
         } catch (e) {
           LV.rd = null;
         }
@@ -5071,7 +5108,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       errMsg = '';
     try {
       lvMsg('Đang chấm…');
-      const RG = lvRegion(v, 1600),
+      const hint0 = LV.hint,
+        RG = lvRegion(v, 1600),
         cv = document.createElement('canvas');
       cv.width = RG.w;
       cv.height = RG.h;
@@ -5090,7 +5128,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         v.pause();
       } catch (e) {}
       await nextFrame();
-      s = buildScan(cv, 'camera');
+      s = buildScan(cv, 'camera', lvHint(hint0, RG.ka));
     } catch (e) {
       errMsg = (e && e.message) || String(e);
       s = { error: 'load', source: 'camera' };
@@ -8400,4 +8438,4 @@ function renderPhoto(sheetImg, cfg, marks, o) {
 
 </script>
 
-</body></html>
+</body></html>f
