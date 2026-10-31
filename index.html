@@ -905,6 +905,8 @@ h3.ph {
   height: 100%;
   object-fit: cover;
   background: #000;
+  opacity: 0;
+  pointer-events: none;
 }
 .live canvas {
   position: absolute;
@@ -1481,6 +1483,7 @@ h3.ph {
     </div>
     <div id="live" class="live" hidden role="dialog" aria-label="Chấm trực tiếp">
       <video id="lvVideo" playsinline muted autoplay></video>
+      <canvas id="lvPrev"></canvas>
       <canvas id="lvOv"></canvas>
       <div class="lv-flash" id="lvFlash"></div>
       <div class="lv-res" id="lvRes" hidden>
@@ -5262,6 +5265,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     } catch (e) {}
     clearTimeout(LV.timer);
     LV.timer = 0;
+    cancelAnimationFrame(LV.raf);
+    LV.raf = 0;
     if (LV.stream) {
       LV.stream.getTracks().forEach(function (t) {
         t.stop();
@@ -5277,6 +5282,29 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     try {
       if (LV.count) renderChip();
     } catch (e) {}
+  }
+  /* Tự vẽ hình camera lên canvas (phủ kín khung, cắt theo kiểu "cover") thay vì để thẻ video tự hiển thị:
+     có lúc trình duyệt trên điện thoại vẽ video nhỏ lại giữa màn hình khiến 4 góc phiếu lệch khỏi khung. Cách
+     tính này trùng đúng với cách tìm vùng phân tích (lvRegion), nên khung hướng dẫn luôn khớp hình. */
+  function lvPaint() {
+    if (!LV.stream) return;
+    LV.raf = requestAnimationFrame(lvPaint);
+    const v = $('#lvVideo'),
+      cv = $('#lvPrev');
+    if (!cv || v.readyState < 2 || !v.videoWidth) return;
+    const r = cv.getBoundingClientRect(),
+      dpr = Math.min(2, window.devicePixelRatio || 1),
+      W = Math.round(r.width * dpr),
+      H = Math.round(r.height * dpr);
+    if (!W || !H) return;
+    if (cv.width !== W || cv.height !== H) {
+      cv.width = W;
+      cv.height = H;
+    }
+    const k = Math.max(W / v.videoWidth, H / v.videoHeight),
+      dw = v.videoWidth * k,
+      dh = v.videoHeight * k;
+    cv.getContext('2d').drawImage(v, (W - dw) / 2, (H - dh) / 2, dw, dh);
   }
   async function startLive() {
     if (!camSupported()) {
@@ -5324,6 +5352,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       const v = $('#lvVideo');
       v.srcObject = st;
       await v.play();
+      cancelAnimationFrame(LV.raf);
+      LV.raf = requestAnimationFrame(lvPaint);
       lvMsg('Đặt 4 ô vuông đen của phiếu vào 4 ô sáng ở góc');
       LV.timer = setTimeout(lvTick, 200);
     } catch (e) {
@@ -8438,4 +8468,4 @@ function renderPhoto(sheetImg, cfg, marks, o) {
 
 </script>
 
-</body></html>f
+</body></html>
