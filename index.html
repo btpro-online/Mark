@@ -1450,7 +1450,7 @@ h3.ph {
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>B&amp;T Pro Mark - 2.1</h1>
+      <h1>B&amp;T Pro Mark - 2.2</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -1539,15 +1539,15 @@ h3.ph {
 </nav>
 
 <script>
-const SHEET_JPG="assets/sheet-1.jpg";
-const SHEET2_JPG="assets/sheet-2.jpg";
-const SHEET3_JPG="assets/sheet-3.jpg";
+const SHEET_F_JPG="assets/sheet-f.jpg";
+const SHEET_M_JPG="assets/sheet-m.jpg";
+const SHEET_S_JPG="assets/sheet-s.jpg";
 /* ===================== Lõi nhận diện phiếu TLTN (Nguyễn Huệ) ===================== */
 /* Toạ độ tính bằng mm trên trang 208 x 297 mm, đo trực tiếp từ file PDF gốc. */
-/* ---- Phiếu 1: PHIẾU TLTN Nguyễn Huệ (mm, trang 208 x 297) ---- */
-const SHEET_NH = {
-  id: 'nh',
-  name: 'Phiếu 1 · Bộ GD-ĐT',
+/* ---- Phiếu B&T Pro F (mm, trang 208 x 297) ---- */
+const SHEET_F = {
+  id: 'f',
+  name: 'Phiếu B&T Pro - F',
   PW: 208,
   PH: 297,
   RB: 1.45,
@@ -1624,8 +1624,8 @@ const SHEET_NH = {
 };
 /* ---- Phiếu B&T Pro S (đơn vị = điểm ảnh của ảnh mẫu 1901 x 861): 4 ô góc + 1 ô giữa mép trên; Phần I 10
    câu, Phần II 2 câu, Phần III 3 câu ---- */
-const SHEET_KT = {
-  id: 'kt',
+const SHEET_S = {
+  id: 's',
   name: 'Phiếu B&T Pro - S',
   PW: 1901,
   PH: 861,
@@ -1733,8 +1733,8 @@ const SHEET_M = {
   MAX2: 4,
   MAX3: 4
 };
-const SHEETS = { nh: SHEET_NH, kt: SHEET_KT, m: SHEET_M };
-let SHEET = SHEET_NH,
+const SHEETS = { f: SHEET_F, m: SHEET_M, s: SHEET_S };
+let SHEET = SHEET_F,
   K = 1,
   MS = 3.8,
   P1N = 10,
@@ -1764,7 +1764,7 @@ let SHEET = SHEET_NH,
   MAX2,
   MAX3;
 function setSheet(id) {
-  SHEET = SHEETS[id] || SHEET_NH;
+  SHEET = SHEETS[id] || SHEET_F;
   K = SHEET.K || 1;
   MS = SHEET.MS || 3.8;
   P1N = SHEET.P1N || 10;
@@ -1794,7 +1794,7 @@ function setSheet(id) {
   MAX2 = SHEET.MAX2;
   MAX3 = SHEET.MAX3;
 }
-setSheet('nh');
+setSheet('f');
 
 function makeLayout(cfg) {
   const L = { p1: [], p2: [], p3: [], sbd: [], md: [] };
@@ -3458,12 +3458,12 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       this.closePath();
     };
   /* ---------- Cấu hình & dữ liệu ---------- */
-  const PRESETS = [
+  const PRESETS_F = [
     { n1: 12, n2: 4, n3: 6, p1: 0.25, p2: 1, p3: 0.5 },
     { n1: 18, n2: 4, n3: 6, p1: 0.25, p2: 1, p3: 0.25 },
     { n1: 40, n2: 0, n3: 0, p1: 0.25, p2: 0, p3: 0 }
   ];
-  const PRESETS_KT = [
+  const PRESETS_S = [
     { n1: 6, n2: 2, n3: 3, p1: 0.5, p2: 2, p3: 1 },
     { n1: 10, n2: 2, n3: 3, p1: 0.3, p2: 1.5, p3: 1 },
     { n1: 10, n2: 0, n3: 0, p1: 1, p2: 0, p3: 0 }
@@ -3474,7 +3474,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     { n1: 8, n2: 2, n3: 2, p1: 0.25, p2: 1, p3: 0.5 }
   ];
   const presetsFor = function (id) {
-    return id === 'kt' ? PRESETS_KT : id === 'm' ? PRESETS_M : PRESETS;
+    return id === 's' ? PRESETS_S : id === 'm' ? PRESETS_M : PRESETS_F;
   };
   const presetsNow = function () {
     return presetsFor(cfg && cfg.sheet);
@@ -3501,7 +3501,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     v.num = ['2,5', '-1', '12', '0,75', '3', '-4,2'];
     return {
       v: 2,
-      sheet: 'nh',
+      sheet: 'f',
       n1: 18,
       n2: 4,
       n3: 6,
@@ -3522,9 +3522,22 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     x = +String(x).replace(',', '.');
     return isFinite(x) && x >= 0 && x <= 100 ? x : d;
   };
+  /* Dữ liệu lưu từ bản cũ dùng id 'nh' và 'kt'; nay thống nhất là 'f' và 's'. */
+  const sid = function (id) {
+    return id === 'nh' ? 'f' : id === 'kt' ? 's' : id;
+  };
+  const sidKeys = function (o) {
+    const out = {};
+    if (o && typeof o === 'object')
+      Object.keys(o).forEach(function (k) {
+        out[sid(k)] = o[k];
+      });
+    return out;
+  };
   function sanitizeCfg(c) {
     try {
       if (!c || c.v !== 2 || !c.versions || !c.versions.length) return null;
+      c = Object.assign({}, c, { sheet: sid(c.sheet), thrs: sidKeys(c.thrs), structs: sidKeys(c.structs) });
       const vs = c.versions.slice(0, 20).map(function (v) {
         const e = emptyVer(
           String(v.code || '')
@@ -3548,7 +3561,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         for (let q = 0; q < 6; q++) e.num[q] = String((v.num && v.num[q]) || '').slice(0, 5);
         return e;
       });
-      const sh = SHEETS[c.sheet] ? c.sheet : 'nh',
+      const sh = SHEETS[c.sheet] ? c.sheet : 'f',
         mx = SHEETS[sh];
       return {
         v: 2,
@@ -3573,7 +3586,10 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   let cfg = sanitizeCfg(LS.get('omr.cfg2', null)) || defaultCfg();
   let results = LS.get('omr.results2', []);
   if (!Array.isArray(results)) results = [];
-  setSheet(cfg.sheet || 'nh');
+  results.forEach(function (r) {
+    if (r && r.sheet) r.sheet = sid(r.sheet);
+  });
+  setSheet(cfg.sheet || 'f');
   const IDN = function () {
     return { sbd: SBD_X.length, md: MD_X.length };
   };
@@ -3670,7 +3686,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     lists.active = id;
     const c = sanitizeCfg(curList().cfg) || defaultCfg();
     cfg = c;
-    setSheet(cfg.sheet || 'nh');
+    setSheet(cfg.sheet || 'f');
     LS.set('omr.cfg2', cfg);
     saveLists();
     scan = null;
@@ -3699,9 +3715,9 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     e.innerHTML =
       '<span class="lbl">Loại phiếu</span><div class="vchips">' +
       [
-        ['nh', 'Phiếu B&amp;T Pro - F'],
+        ['f', 'Phiếu B&amp;T Pro - F'],
         ['m', 'Phiếu B&amp;T Pro - M'],
-        ['kt', 'Phiếu B&amp;T Pro - S']
+        ['s', 'Phiếu B&amp;T Pro - S']
       ]
         .map(function (x) {
           return (
@@ -3732,7 +3748,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     cfg.thr = cfg.thrs[id] || 0.08;
     cfg.structs = cfg.structs || {};
     cfg.structs[prevId] = { n1: cfg.n1, n2: cfg.n2, n3: cfg.n3, p1: cfg.p1, p2: cfg.p2, p3: cfg.p3 };
-    const st = cfg.structs[id] || (id === 'kt' ? PRESETS_KT[0] : id === 'm' ? PRESETS_M[0] : PRESETS[1]);
+    const st = cfg.structs[id] || (id === 's' ? PRESETS_S[0] : id === 'm' ? PRESETS_M[0] : PRESETS_F[1]);
     cfg.n1 = Math.min(st.n1, MAX1);
     cfg.n2 = Math.min(st.n2, MAX2);
     cfg.n3 = Math.min(st.n3, MAX3);
@@ -4329,11 +4345,11 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     }
     return loadImgUrl(src);
   }
-  const sheetReady = loadImg(SHEET_JPG),
-    sheet2Ready = loadImg(SHEET2_JPG),
-    sheet3Ready = loadImg(SHEET3_JPG);
+  const sheetFReady = loadImg(SHEET_F_JPG),
+    sheetMReady = loadImg(SHEET_M_JPG),
+    sheetSReady = loadImg(SHEET_S_JPG);
   const curSheetImg = function () {
-    return cfg.sheet === 'kt' ? sheet2Ready : cfg.sheet === 'm' ? sheet3Ready : sheetReady;
+    return cfg.sheet === 's' ? sheetSReady : cfg.sheet === 'm' ? sheetMReady : sheetFReady;
   };
   function buildMarks(ver) {
     const rng = mulberry32(5),
@@ -4392,7 +4408,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         },
         o || {}
       );
-    if (cfg.sheet === 'kt')
+    if (cfg.sheet === 's')
       o = Object.assign(
         {
           ppm: 0.92,
@@ -4932,7 +4948,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     };
   }
   function lvRead(v, hint) {
-    const RG = lvRegion(v, { kt: 1300, m: 1100 }[SHEET.id] || 1000),
+    const RG = lvRegion(v, { s: 1300, m: 1100 }[SHEET.id] || 1000),
       w = RG.w,
       h = RG.h;
     const cv = LV.rdc || (LV.rdc = document.createElement('canvas'));
@@ -5054,7 +5070,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       return;
     }
     LV.needLeave = false;
-    const minArea = { kt: 0.06, m: 0.11 }[SHEET.id] || 0.14;
+    const minArea = { s: 0.06, m: 0.11 }[SHEET.id] || 0.14;
     if ((d.found === 2 || (d.found === 1 && d.plausible)) && d.areaFrac >= minArea) {
       LV.side = d.side;
       LV.hint = { pts: d.pts, k: k };
@@ -7984,16 +8000,23 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     rows = rows.filter(function (r) {
       return Array.isArray(r) && r.length > 1;
     });
+    return parseKeyRows(rows);
+  }
+  /* rows: mỗi phần tử là mảng [mã đề, đáp án…] hoặc đối tượng { code, letters, nums } (dùng khi nhập từ Excel). */
+  function parseKeyRows(rows) {
     if (!rows.length) return { error: 'shape' };
     const P = [],
       faulty = [];
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i],
-        raw = String(r[0]).replace(/\D/g, '').slice(0, 4),
-        rest = r.slice(1);
+        obj = !Array.isArray(r),
+        raw = String(obj ? r.code : r[0])
+          .replace(/\D/g, '')
+          .slice(0, 4),
+        rest = obj ? [] : r.slice(1);
       let j = rest.length;
       while (j > 0 && numLike(rest[j - 1])) j--;
-      const letters = rest.slice(0, j).map(qrTok);
+      const letters = (obj ? r.letters : rest.slice(0, j)).map(qrTok);
       if (
         letters.some(function (x) {
           return !/^[ABCDS*-]$/.test(x);
@@ -8003,7 +8026,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       letters.forEach(function (x, k) {
         if (x === '*') faulty.push({ code: raw, pos: k });
       });
-      P.push({ code: raw, letters: letters, nums: rest.slice(j) });
+      P.push({ code: raw, letters: letters, nums: obj ? r.nums : rest.slice(j) });
     }
     const L = P[0].letters.length,
       N3 = P[0].nums.length;
@@ -8014,7 +8037,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     )
       return { error: 'inconsistent' };
     const order = [cfg.sheet].concat(
-      ['m', 'nh', 'kt'].filter(function (id) {
+      ['m', 'f', 's'].filter(function (id) {
         return id !== cfg.sheet;
       })
     );
@@ -8112,23 +8135,106 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     };
   }
 
+  /* Bảng đáp án trong Excel: hàng đầu là "Câu\\Mã đề" rồi các mã đề; cột đầu là số câu; mỗi ô là đáp án của
+     câu đó ở mã đề tương ứng (Phần I: A–D; Phần II: 4 chữ Đ/S của 4 ý; Phần III: số). Ô để trống là câu không
+     chấm, số 0 hoặc dấu * ở Phần I, II là câu lỗi. Trả về { rows } để đưa vào parseKeyRows, hoặc { error }. */
+  function excelKeyRows(tbl) {
+    const rows = (tbl || []).filter(function (r) {
+      return (
+        Array.isArray(r) &&
+        r.some(function (c) {
+          return cellText(c) !== '';
+        })
+      );
+    });
+    if (rows.length < 2) return { error: 'xshape' };
+    let hi = 0;
+    for (let i = 0; i < Math.min(8, rows.length); i++) {
+      const cs = rows[i].slice(1).filter(function (c) {
+        return cellText(c) !== '';
+      });
+      if (cs.length && /ma de|cau/.test(plain(cellText(rows[i][0])))) {
+        hi = i;
+        break;
+      }
+      if (
+        cs.length &&
+        cs.every(function (c) {
+          return /^\d{2,4}$/.test(cellText(c));
+        })
+      ) {
+        hi = i;
+        break;
+      }
+    }
+    const cols = [];
+    rows[hi].forEach(function (c, k) {
+      const t = cellText(c).replace(/\D/g, '');
+      if (k > 0 && t) cols.push({ k: k, code: t.slice(0, 4) });
+    });
+    if (!cols.length) return { error: 'xshape' };
+    const norm = function (c) {
+      return String(c == null ? '' : c)
+        .replace(/\s+/g, '')
+        .toUpperCase()
+        .replace(/Đ/g, 'D');
+    };
+    const kind = function (s) {
+      if (/^[A-D]$/.test(s)) return 'L';
+      if (/^[DS]{4}$/.test(s)) return 'T';
+      return /^-?\d+([.,]\d+)?$/.test(s) && s !== '0' ? 'N' : '';
+    };
+    const P = cols.map(function (c) {
+      return { code: c.code, letters: [], nums: [] };
+    });
+    const body = rows.slice(hi + 1);
+    let prev = 'L';
+    for (let i = 0; i < body.length; i++) {
+      const vals = cols.map(function (c) {
+          return body[i][c.k];
+        }),
+        cnt = { L: 0, T: 0, N: 0 };
+      vals.forEach(function (v) {
+        const k = kind(norm(v));
+        if (k) cnt[k]++;
+      });
+      let type = cnt.T >= cnt.L && cnt.T >= cnt.N ? 'T' : cnt.L >= cnt.N ? 'L' : 'N';
+      if (!cnt.T && !cnt.L && !cnt.N) type = prev;
+      prev = type;
+      vals.forEach(function (v, j) {
+        const s = norm(v);
+        if (type === 'N') P[j].nums.push(typeof v === 'number' ? numToKey(v) : s.replace('.', ','));
+        else if (type === 'L') P[j].letters.push(s === '' ? '-' : s === '0' || s === '*' ? '*' : s.charAt(0));
+        else if (s === '') P[j].letters.push('-', '-', '-', '-');
+        else if (s === '0' || s === '*') P[j].letters.push('*', '*', '*', '*');
+        else
+          s.slice(0, 4)
+            .padEnd(4, '-')
+            .split('')
+            .forEach(function (ch) {
+              P[j].letters.push(ch === 'D' || ch === 'S' ? ch : ch === '0' || ch === '*' ? '*' : '-');
+            });
+      });
+    }
+    if (!P[0].letters.length) return { error: 'xshape' };
+    return { rows: P };
+  }
   let qrState = { kind: 'idle' },
     qrUndo = null;
   function renderQr() {
     const host = $('#qrCard');
     let h =
-      '<h2>Nhập đáp án bằng mã QR</h2><p class="hint">Chụp hoặc chọn ảnh mã QR chứa đáp án các ' +
-      'mã đề. App đọc xong là nhập luôn, các mã đề cũ vẫn được giữ lại.</p>' +
-      '<div class="actions"><label class="btn primary" for="qrCam">Chụp mã QR</label><label class="btn" for="qrPick">Chọn ' +
+      '<h2>Nhập đáp án</h2><p class="hint">Nhập từ file Excel: hàng đầu là các mã đề, cột đầu là số câu, ' +
+      'mỗi ô là đáp án (Phần I: A–D; Phần II: 4 chữ Đ/S của 4 ý, ví dụ ĐSSĐ; Phần III: số). Hoặc chụp ' +
+      'mã QR chứa đáp án. Nhập xong là áp dụng luôn, các mã đề cũ vẫn được giữ lại.</p>' +
+      '<div class="actions"><label class="btn primary" for="keyXls">Nhập từ file Excel</label>' +
+      '<button type="button" class="btn" id="keyTpl">Tải file mẫu</button></div>' +
+      '<input class="vh" type="file" id="keyXls" accept=".xlsx,.xls,.xlsm,.ods,.csv,.tsv,.txt,text/csv">' +
+      '<div class="actions"><label class="btn" for="qrCam">Chụp mã QR</label><label class="btn" for="qrPick">Chọn ' +
       'ảnh QR</label><button type="button" class="btn ghost" id="qrClearAll">Xoá tất cả mã ' +
       'đề</button></div>' +
-      '<input class="vh" type="file" id="qrCam" accept="image/*" capture="environment"><input class="vh" type="file" id="qrPick" accept="image/*">' +
-      '<details class="qrpaste"' +
-      (qrState.kind === 'paste' ? ' open' : '') +
-      '><summary>Hoặc dán nội dung mã QR</summary><div class="field"><textarea id="qrText" spellcheck="false" placeholder=\'[["0101","A","B",…],["0102",…]]\'></textarea></div>' +
-      '<div class="actions"><button type="button" class="btn small" id="qrParse">Đọc nội ' +
-      'dung</button></div></details>';
-    if (qrState.kind === 'busy') h += '<div class="busy"><span class="spin"></span>Đang đọc mã QR…</div>';
+      '<input class="vh" type="file" id="qrCam" accept="image/*" capture="environment"><input class="vh" type="file" id="qrPick" accept="image/*">';
+    if (qrState.kind === 'busy') h += '<div class="busy"><span class="spin"></span>Đang đọc…</div>';
     else if (qrState.kind === 'error')
       h += '<div class="note err"><b>' + esc(qrState.title) + '</b><br>' + esc(qrState.body) + '</div>';
     else if (qrState.kind === 'preview') {
@@ -8188,7 +8294,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     } else if (qrState.kind === 'done') {
       h +=
         '<div class="note ok"><b>' +
-        (qrState.head || 'Đã nhập đáp án từ mã QR.') +
+        (qrState.head || 'Đã nhập đáp án.') +
         '</b> ' +
         esc(qrState.text) +
         '</div>' +
@@ -8209,9 +8315,12 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         if (f) qrFromFile(f);
       };
     });
-    $('#qrParse').onclick = function () {
-      qrFromText($('#qrText').value, true);
+    $('#keyXls').onchange = function () {
+      const f = this.files && this.files[0];
+      this.value = '';
+      if (f) keyFromFile(f);
     };
+    $('#keyTpl').onclick = keyTemplate;
     const ap = $('#qrApply');
     if (ap) ap.onclick = applyQr;
     const ca = $('#qrCancel');
@@ -8238,7 +8347,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     nocode: [
       'Không đọc được mã QR trong ảnh.',
       'Chụp gần hơn để mã chiếm gần hết khung hình, đủ sáng, giữ máy thẳng và không để mã bị ' +
-        'chói. Hoặc quét bằng ứng dụng khác rồi dán nội dung vào ô bên dưới.'
+        'chói. Hoặc nhập đáp án từ file Excel.'
     ],
     json: [
       'Đọc được mã nhưng nội dung không phải bộ đáp án.',
@@ -8248,15 +8357,19 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       'Nội dung mã QR không đúng định dạng đáp án.',
       'Mỗi mã đề cần có mã đề, đáp án Phần I (A đến D), Phần II (D là đúng, S là sai) và Phần III (số).'
     ],
-    inconsistent: ['Các mã đề trong mã QR có số câu khác nhau.', 'Kiểm tra lại mã QR hoặc quét lại.'],
+    inconsistent: ['Các mã đề có số câu khác nhau.', 'Kiểm tra lại file hoặc mã QR.'],
+    xshape: [
+      'Không nhận ra bảng đáp án trong file này.',
+      'Hàng đầu cần có các mã đề (ví dụ 0101, 0102…), cột đầu là số câu, các ô bên dưới là đáp án.'
+    ],
     toomany: [
       'Phần III trong mã QR có nhiều câu hơn mọi loại phiếu hiện có.',
-      'Phiếu có ô tô cho tối đa ' + Math.max(SHEET_NH.MAX3, SHEET_KT.MAX3, SHEET_M.MAX3) + ' câu Phần III.'
+      'Phiếu có ô tô cho tối đa ' + Math.max(SHEET_F.MAX3, SHEET_S.MAX3, SHEET_M.MAX3) + ' câu Phần III.'
     ],
     structure: [
       'Không suy ra được số câu của từng phần.',
       'Tổng số đáp án không khớp với cấu trúc của phiếu nào (Phần II mỗi câu 4 ý; Phần I tối đa ' +
-        Math.max(SHEET_NH.MAX1, SHEET_KT.MAX1, SHEET_M.MAX1) +
+        Math.max(SHEET_F.MAX1, SHEET_S.MAX1, SHEET_M.MAX1) +
         ' câu).'
     ]
   };
@@ -8271,10 +8384,114 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       return;
     }
     renderQr();
-    if (fromPaste) {
-      const d = $('#qrCard .qrpaste');
-      if (d) d.open = true;
+  }
+  async function keyFromFile(file) {
+    qrState = { kind: 'busy' };
+    renderQr();
+    await nextFrame();
+    const fail = function (title, body) {
+      qrState = { kind: 'error', title: title, body: body };
+      renderQr();
+    };
+    try {
+      let tbl = null;
+      if (/\.(xlsx|xlsm|xlsb|xls|ods)$/i.test(file.name)) {
+        try {
+          await loadScript(XLSX_URL);
+        } catch (e) {
+          fail(
+            'Không tải được bộ đọc Excel.',
+            'Cần kết nối mạng. Bạn có thể lưu file thành CSV rồi chọn lại.'
+          );
+          return;
+        }
+        const wb = window.XLSX.read(await file.arrayBuffer(), { type: 'array' });
+        let best = null;
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const t = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[i]], {
+              header: 1,
+              raw: true,
+              defval: ''
+            }),
+            r = excelKeyRows(t);
+          if (!r.error && (!best || r.rows.length > best.rows.length)) best = r;
+        }
+        if (!best) return fail(QR_ERR.xshape[0], QR_ERR.xshape[1]);
+        tbl = best;
+      } else {
+        const buf = await file.arrayBuffer();
+        let text = new TextDecoder('utf-8').decode(buf);
+        if (text.indexOf('\uFFFD') >= 0) {
+          try {
+            text = new TextDecoder('windows-1258').decode(buf);
+          } catch (e) {
+            /* giữ bản UTF-8 */
+          }
+        }
+        tbl = excelKeyRows(parseDelim(text));
+        if (tbl.error) return fail(QR_ERR.xshape[0], QR_ERR.xshape[1]);
+      }
+      const r = parseKeyRows(tbl.rows);
+      if (r.error) {
+        const m = QR_ERR[r.error] || QR_ERR.xshape;
+        return fail(m[0], m[1]);
+      }
+      qrState = { kind: 'preview', res: r };
+      applyQr();
+    } catch (e) {
+      fail('Không đọc được file này.', 'Thử lưu lại dưới dạng .xlsx hoặc .csv rồi chọn lại.');
     }
+  }
+  /* File mẫu đáp án (giống bảng Excel nhập vào). */
+  async function keyTemplate() {
+    const rows = [
+      ['Câu\\Mã đề', '0101', '0102'],
+      [1, 'A', 'B'],
+      [2, 'C', 'D'],
+      [3, 'B', 'A'],
+      [4, 'D', 'C'],
+      [5, 'SSĐĐ', 'ĐSSĐ'],
+      [6, 'ĐSĐS', 'ĐĐSS'],
+      [7, '2,67', '16'],
+      [8, '-20', '0,44']
+    ];
+    let st = 'unavailable';
+    try {
+      await loadScript(XLSX_URL);
+      const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, window.XLSX.utils.aoa_to_sheet(rows), 'BTPRO');
+      st = await saveFile(
+        'mau-dap-an.xlsx',
+        new Blob([window.XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        })
+      );
+    } catch (e) {
+      st = await saveFile(
+        'mau-dap-an.csv',
+        '\uFEFF' +
+          rows
+            .map(function (r) {
+              return r
+                .map(function (c) {
+                  return '"' + String(c).replace(/"/g, '""') + '"';
+                })
+                .join(',');
+            })
+            .join('\r\n')
+      );
+    }
+    qrState =
+      st === 'saved'
+        ? {
+            kind: 'done',
+            head: 'Đã lưu file mẫu.',
+            text: 'Điền đáp án rồi chọn lại ở nút “Nhập từ file Excel”.'
+          }
+        : st === 'declined'
+          ? { kind: 'error', title: 'Bạn đã huỷ lưu file mẫu.', body: '' }
+          : { kind: 'error', title: 'Chế độ xem này không cho tải file.', body: '' };
+    renderQr();
   }
   async function qrFromFile(file) {
     qrState = { kind: 'busy' };
@@ -8403,7 +8620,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     qrUndo = null;
     if (c) {
       cfg = c;
-      setSheet(cfg.sheet || 'nh');
+      setSheet(cfg.sheet || 'f');
       renderSheetSel();
     }
     qrState = { kind: 'idle' };
