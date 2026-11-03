@@ -1439,6 +1439,12 @@ h3.ph {
   border-color: transparent;
 }
 
+.listcard { margin-bottom: 12px; padding-top: 4px; padding-bottom: 12px; }
+.listcard .listbar { margin: 6px 0 0; }
+.sortbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 6px 0 10px; font-size: 13px; color: var(--muted); }
+.chipb { min-height: 34px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: inherit; font: inherit; font-size: 13px; cursor: pointer; }
+.chipb.on { background: var(--ink); color: var(--ink-fg); border-color: transparent; font-weight: 600; }
+
 </style>
 
 <div class="wrap">
@@ -1450,10 +1456,12 @@ h3.ph {
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>B&amp;T Pro Mark - 2.2</h1>
+      <h1>B&amp;T Pro Mark - 2.5</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
+
+  <div class="card listcard" id="listCard"></div>
 
   <main>
     <section id="v-scan" class="view" aria-label="Chấm bài">
@@ -3695,6 +3703,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     renderChip();
     renderKey();
     if (tab === 'stu') renderStu();
+    if (tab === 'res') renderResBody();
   }
   function saveResults() {
     LS.set('omr.results2', results);
@@ -3800,6 +3809,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     const n = listRes().length;
     bd.hidden = !n;
     bd.textContent = n > 99 ? '99+' : n;
+    if (!listUI) renderListBar();
   }
 
   /* ---------- Thành phần dùng chung ---------- */
@@ -6857,7 +6867,17 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         '"><button type="button" class="btn small primary" id="listOk">Lưu</button><button type="button" class="btn small ghost" id="listNo">Huỷ</button></div>';
     return h + '</div>';
   }
+  function renderListBar() {
+    const host = $('#listCard');
+    if (!host) return;
+    host.innerHTML = listBar();
+    bindListBar(host);
+  }
   function bindListBar(host) {
+    const renderRes = function () {
+      renderListBar();
+      renderResBody();
+    };
     $('#listSel').onchange = function () {
       listUI = null;
       applyList(this.value);
@@ -6944,16 +6964,38 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     }
   }
   function renderRes() {
+    renderListBar();
+    renderResBody();
+  }
+  /* Sắp xếp bài thi: mới nhất trước, hoặc theo số báo danh tăng dần (SBD lỗi/trống xếp cuối) */
+  let resSort = LS.get('omr.ressort', 'new') === 'sbd' ? 'sbd' : 'new';
+  function sbdSorted(arr) {
+    const bad = function (r) {
+      return !stuKey(r.sbd) || /[?_]/.test(String(r.sbd));
+    };
+    return arr.slice().sort(function (a, b) {
+      const ba = bad(a),
+        bb = bad(b);
+      if (ba !== bb) return ba ? 1 : -1;
+      if (!ba) {
+        const c = stuCmp({ k: stuKey(a.sbd) }, { k: stuKey(b.sbd) });
+        if (c) return c;
+      }
+      return (a.t || 0) - (b.t || 0);
+    });
+  }
+  function resView() {
+    return resSort === 'sbd' ? sbdSorted(listRes()) : listRes();
+  }
+  function renderResBody() {
     const host = $('#resCard'),
-      view = listRes();
+      view = resView();
     if (!view.length) {
       host.innerHTML =
         '<h2>Kết quả đã lưu</h2>' +
-        listBar() +
         '<div class="empty">Đợt này chưa có bài nào. Chấm một phiếu, điểm sẽ tự lưu vào đợt “' +
         esc(curList().name) +
         '”.</div>';
-      bindListBar(host);
       return;
     }
     const pcts = view.map(function (r) {
@@ -6973,7 +7015,11 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       '<div class="row"><h2>Kết quả đã lưu</h2><span class="hint">' +
       view.length +
       ' bài</span></div>' +
-      listBar() +
+      '<div class="sortbar"><span>Sắp xếp</span><button type="button" class="chipb' +
+      (resSort === 'new' ? ' on' : '') +
+      '" data-sort="new">Mới chấm trước</button><button type="button" class="chipb' +
+      (resSort === 'sbd' ? ' on' : '') +
+      '" data-sort="sbd">Theo số báo danh</button></div>' +
       (function () {
         const k = view.filter(mdMismatch).length;
         return k
@@ -7042,7 +7088,13 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       'cả</button></div><p class="hint" id="resMsg">Kết quả được giữ trong trình duyệt này. Tải ' +
       'CSV để lưu lại hoặc mở bằng Excel, Google Sheets.</p>';
     host.innerHTML = h;
-    bindListBar(host);
+    $$('[data-sort]', host).forEach(function (b) {
+      b.onclick = function () {
+        resSort = b.dataset.sort;
+        LS.set('omr.ressort', resSort);
+        renderResBody();
+      };
+    });
     $$('[data-del]', host).forEach(function (b) {
       let tm = 0;
       b.onclick = function () {
@@ -7403,7 +7455,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         'Điểm tối đa'
       ]
     ];
-    const lr = listRes().slice().reverse(),
+    const lr = resSort === 'sbd' ? sbdSorted(listRes()) : listRes().slice().reverse(),
       cnt = [0, 0, 0];
     lr.forEach(function (r) {
       const an = r.ans || {};
@@ -7783,13 +7835,13 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   async function exportPdf() {
     const btn = $('#pdfBtn'),
       msg = $('#resMsg'),
-      view = listRes().slice().reverse(),
+      view = resSort === 'sbd' ? sbdSorted(listRes()) : listRes().slice().reverse(),
       ln = curList().name;
     if (!view.length) return;
     btn.disabled = true;
     const t0 = btn.textContent;
     try {
-      const pages = await pdfSummaryPages(view.slice().reverse(), ln);
+      const pages = await pdfSummaryPages(resSort === 'sbd' ? view : view.slice().reverse(), ln);
       for (let i = 0; i < view.length; i++) {
         btn.textContent = 'Đang tạo PDF… ' + (i + 1) + '/' + view.length;
         pages.push(await pdfStudentPage(view[i], i + 1, view.length, ln));
