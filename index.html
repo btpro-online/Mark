@@ -8082,19 +8082,22 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       Object.keys(data).forEach(function (k) {
         const v = data[k];
         if (typeof v !== 'string' || v.indexOf('#') < 0) return;
+        /* Phần II và Phần III có thể cách nhau bằng # hoặc nối liền bằng _: tách theo từng đoạn */
         const seg = v.split('#'),
-          clean = function (t) {
-            return String(t || '').replace(/[\s_]/g, '');
-          },
-          letters = clean(seg[0]).split('').concat(clean(seg[1]).split('')),
-          nums = String(seg[2] || '')
-            .split('_')
-            .map(function (x) {
-              return x.trim();
-            })
-            .filter(function (x) {
-              return x !== '';
-            });
+          letters = String(seg[0] || '')
+            .replace(/[\s_]/g, '')
+            .split(''),
+          nums = [];
+        seg
+          .slice(1)
+          .join('_')
+          .split('_')
+          .forEach(function (t) {
+            t = t.trim();
+            if (!t) return;
+            if (/^[ĐđDdSs*?-]+$/.test(t)) Array.prototype.push.apply(letters, t.split(''));
+            else nums.push(t);
+          });
         rows.push({ code: k, letters: letters, nums: nums });
       });
       if (!rows.length) return { error: 'shape' };
