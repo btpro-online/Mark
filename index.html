@@ -1464,7 +1464,7 @@ h3.ph {
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>B&amp;T Pro Mark - 2.6</h1>
+      <h1>B&amp;T Pro Mark - 2.8</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -1558,6 +1558,7 @@ h3.ph {
 const SHEET_F_JPG="assets/sheet-f.jpg";
 const SHEET_M_JPG="assets/sheet-m.jpg";
 const SHEET_S_JPG="assets/sheet-s.jpg";
+const SHEET_E_JPG="assets/sheet-e.jpg";
 /* ===================== Lõi nhận diện phiếu TLTN (Nguyễn Huệ) ===================== */
 /* Toạ độ tính bằng mm trên trang 208 x 297 mm, đo trực tiếp từ file PDF gốc. */
 /* ---- Phiếu B&T Pro F (mm, trang 208 x 297) ---- */
@@ -1749,7 +1750,45 @@ const SHEET_M = {
   MAX2: 4,
   MAX3: 4
 };
-const SHEETS = { f: SHEET_F, m: SHEET_M, s: SHEET_S };
+/* ---- Phiếu B&T Pro E (mm): nửa trên của phiếu F, cắt sau hàng ô neo thứ ba. Chỉ có Phần I (40 câu),
+   cùng toạ độ với phiếu F; ảnh mẫu 685 x 543 điểm ảnh, 3,29 điểm ảnh / mm ---- */
+const SHEET_E = Object.assign({}, SHEET_F, {
+  id: 'e',
+  name: 'Phiếu B&T Pro - E',
+  PW: 685 / 3.29,
+  PH: 543 / 3.29,
+  CORNERS: [
+    [6.69, 5.46],
+    [202.41, 5.38],
+    [202.46, 161.23],
+    [6.98, 161.23]
+  ],
+  MARK_ROWS: [
+    [
+      [6.69, 5.46],
+      [202.41, 5.38]
+    ],
+    [
+      [6.98, 96.38],
+      [202.46, 96.38]
+    ],
+    [
+      [6.98, 161.23],
+      [202.46, 161.23]
+    ]
+  ],
+  BAND_Y: [96.38],
+  P2_X: [],
+  P2_Y: [],
+  P3_X: [],
+  P3_DASH: 0,
+  P3_COMMA: 0,
+  P3_D: [],
+  MAX1: 40,
+  MAX2: 0,
+  MAX3: 0
+});
+const SHEETS = { f: SHEET_F, m: SHEET_M, s: SHEET_S, e: SHEET_E };
 let SHEET = SHEET_F,
   K = 1,
   MS = 3.8,
@@ -3489,8 +3528,13 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     { n1: 12, n2: 0, n3: 0, p1: 0.5, p2: 0, p3: 0 },
     { n1: 8, n2: 2, n3: 2, p1: 0.25, p2: 1, p3: 0.5 }
   ];
+  const PRESETS_E = [
+    { n1: 40, n2: 0, n3: 0, p1: 0.25, p2: 0, p3: 0 },
+    { n1: 30, n2: 0, n3: 0, p1: 1 / 3, p2: 0, p3: 0 },
+    { n1: 20, n2: 0, n3: 0, p1: 0.5, p2: 0, p3: 0 }
+  ];
   const presetsFor = function (id) {
-    return id === 's' ? PRESETS_S : id === 'm' ? PRESETS_M : PRESETS_F;
+    return id === 's' ? PRESETS_S : id === 'm' ? PRESETS_M : id === 'e' ? PRESETS_E : PRESETS_F;
   };
   const presetsNow = function () {
     return presetsFor(cfg && cfg.sheet);
@@ -3734,7 +3778,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       [
         ['f', 'Phiếu B&amp;T Pro - F'],
         ['m', 'Phiếu B&amp;T Pro - M'],
-        ['s', 'Phiếu B&amp;T Pro - S']
+        ['s', 'Phiếu B&amp;T Pro - S'],
+        ['e', 'Phiếu B&amp;T Pro - E']
       ]
         .map(function (x) {
           return (
@@ -3765,7 +3810,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     cfg.thr = cfg.thrs[id] || 0.08;
     cfg.structs = cfg.structs || {};
     cfg.structs[prevId] = { n1: cfg.n1, n2: cfg.n2, n3: cfg.n3, p1: cfg.p1, p2: cfg.p2, p3: cfg.p3 };
-    const st = cfg.structs[id] || (id === 's' ? PRESETS_S[0] : id === 'm' ? PRESETS_M[0] : PRESETS_F[1]);
+    const st = cfg.structs[id] || (id === 's' ? PRESETS_S[0] : id === 'm' ? PRESETS_M[0] : id === 'e' ? PRESETS_E[0] : PRESETS_F[1]);
     cfg.n1 = Math.min(st.n1, MAX1);
     cfg.n2 = Math.min(st.n2, MAX2);
     cfg.n3 = Math.min(st.n3, MAX3);
@@ -4365,9 +4410,16 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   }
   const sheetFReady = loadImg(SHEET_F_JPG),
     sheetMReady = loadImg(SHEET_M_JPG),
-    sheetSReady = loadImg(SHEET_S_JPG);
+    sheetSReady = loadImg(SHEET_S_JPG),
+    sheetEReady = loadImg(SHEET_E_JPG);
   const curSheetImg = function () {
-    return cfg.sheet === 's' ? sheetSReady : cfg.sheet === 'm' ? sheetMReady : sheetFReady;
+    return cfg.sheet === 's'
+      ? sheetSReady
+      : cfg.sheet === 'm'
+        ? sheetMReady
+        : cfg.sheet === 'e'
+          ? sheetEReady
+          : sheetFReady;
   };
   function buildMarks(ver) {
     const rng = mulberry32(5),
@@ -4420,6 +4472,23 @@ function renderPhoto(sheetImg, cfg, marks, o) {
             [1395, 45],
             [1425, 1260],
             [75, 1300]
+          ],
+          light: 0.2,
+          noise: 8
+        },
+        o || {}
+      );
+    if (cfg.sheet === 'e')
+      o = Object.assign(
+        {
+          ppm: 6,
+          w: 1500,
+          h: 1250,
+          quad: [
+            [85, 70],
+            [1415, 35],
+            [1430, 1200],
+            [65, 1225]
           ],
           light: 0.2,
           noise: 8
@@ -4966,7 +5035,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     };
   }
   function lvRead(v, hint) {
-    const RG = lvRegion(v, { s: 1300, m: 1100 }[SHEET.id] || 1000),
+    const RG = lvRegion(v, { s: 1300, m: 1100, e: 1100 }[SHEET.id] || 1000),
       w = RG.w,
       h = RG.h;
     const cv = LV.rdc || (LV.rdc = document.createElement('canvas'));
@@ -5088,7 +5157,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       return;
     }
     LV.needLeave = false;
-    const minArea = { s: 0.06, m: 0.11 }[SHEET.id] || 0.14;
+    const minArea = { s: 0.06, m: 0.11, e: 0.11 }[SHEET.id] || 0.14;
     if ((d.found === 2 || (d.found === 1 && d.plausible)) && d.areaFrac >= minArea) {
       LV.side = d.side;
       LV.hint = { pts: d.pts, k: k };
@@ -8147,7 +8216,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     )
       return { error: 'inconsistent' };
     const order = [cfg.sheet].concat(
-      ['m', 'f', 's'].filter(function (id) {
+      ['m', 'f', 's', 'e'].filter(function (id) {
         return id !== cfg.sheet;
       })
     );
