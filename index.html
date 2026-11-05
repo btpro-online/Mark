@@ -1445,6 +1445,14 @@ h3.ph {
 .chipb { min-height: 34px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: inherit; font: inherit; font-size: 13px; cursor: pointer; }
 .chipb.on { background: var(--ink); color: var(--ink-fg); border-color: transparent; font-weight: 600; }
 
+.qrlive { position: fixed; inset: 0; z-index: 60; background: #000; color: #fff; display: flex; flex-direction: column; justify-content: flex-end; }
+.qrlive video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.qrlive .ql-cv { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ql-frame { position: absolute; left: 50%; top: 42%; width: min(72vw, 360px); aspect-ratio: 1; transform: translate(-50%, -50%); border: 3px solid #3ddc84; border-radius: 18px; box-shadow: 0 0 0 100vmax #0006; pointer-events: none; }
+.ql-bar { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 10px; align-items: center; padding: 14px 16px max(18px, env(safe-area-inset-bottom)); background: linear-gradient(transparent, #000c); }
+.ql-msg { font-size: 15px; text-align: center; }
+.ql-msg.warn { color: #ffd166; }
+
 </style>
 
 <div class="wrap">
@@ -1456,7 +1464,7 @@ h3.ph {
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>B&amp;T Pro Mark - 2.5</h1>
+      <h1>B&amp;T Pro Mark - 2.6</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -8329,7 +8337,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       '<div class="actions"><label class="btn primary" for="keyXls">Nhập từ file Excel</label>' +
       '<button type="button" class="btn" id="keyTpl">Tải file mẫu</button></div>' +
       '<input class="vh" type="file" id="keyXls" accept=".xlsx,.xls,.xlsm,.ods,.csv,.tsv,.txt,text/csv">' +
-      '<div class="actions"><label class="btn" for="qrCam">Chụp mã QR</label><label class="btn" for="qrPick">Chọn ' +
+      '<div class="actions"><button type="button" class="btn" id="qrLive">Quét mã QR</button><label class="btn" for="qrPick">Chọn ' +
       'ảnh QR</label><button type="button" class="btn ghost" id="qrClearAll">Xoá tất cả mã ' +
       'đề</button></div>' +
       '<input class="vh" type="file" id="qrCam" accept="image/*" capture="environment"><input class="vh" type="file" id="qrPick" accept="image/*">';
@@ -8414,6 +8422,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         if (f) qrFromFile(f);
       };
     });
+    $('#qrLive').onclick = qrLiveOpen;
     $('#keyXls').onchange = function () {
       const f = this.files && this.files[0];
       this.value = '';
@@ -8591,6 +8600,163 @@ function renderPhoto(sheetImg, cfg, marks, o) {
           ? { kind: 'error', title: 'Bạn đã huỷ lưu file mẫu.', body: '' }
           : { kind: 'error', title: 'Chế độ xem này không cho tải file.', body: '' };
     renderQr();
+  }
+  /* Quét QR trực tiếp bằng camera: thấy mã đáp án hợp lệ là nhập luôn, không cần bấm chụp. */
+  const QL = { el: null, stream: null, raf: 0, timer: 0, bad: '', n: 0, det: null, busy: false };
+  function qrLiveClose() {
+    cancelAnimationFrame(QL.raf);
+    clearTimeout(QL.timer);
+    if (QL.stream)
+      QL.stream.getTracks().forEach(function (t) {
+        try {
+          t.stop();
+        } catch (e) {}
+      });
+    QL.stream = null;
+    if (QL.el) QL.el.remove();
+    QL.el = null;
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', qrLiveKey);
+  }
+  function qrLiveKey(e) {
+    if (e.key === 'Escape') qrLiveClose();
+  }
+  function qrLiveMsg(t, warn) {
+    const m = QL.el && QL.el.querySelector('.ql-msg');
+    if (m) {
+      m.textContent = t;
+      m.classList.toggle('warn', !!warn);
+    }
+  }
+  async function qrLiveOpen() {
+    if (!camSupported()) {
+      $('#qrCam').click();
+      return;
+    }
+    qrLiveClose();
+    const el = document.createElement('div');
+    el.className = 'qrlive';
+    el.innerHTML =
+      '<video playsinline muted></video><canvas class="ql-cv"></canvas><div class="ql-frame"><i></i></div>' +
+      '<div class="ql-bar"><div class="ql-msg">Đang mở camera…</div><button type="button" class="lv-btn" id="qlClose">Đóng</button></div>';
+    document.body.appendChild(el);
+    document.body.style.overflow = 'hidden';
+    QL.el = el;
+    QL.bad = '';
+    QL.n = 0;
+    $('#qlClose').onclick = qrLiveClose;
+    document.addEventListener('keydown', qrLiveKey);
+    loadScript(JSQR_URL).catch(function () {});
+    try {
+      QL.det = window.BarcodeDetector ? new window.BarcodeDetector({ formats: ['qr_code'] }) : null;
+    } catch (e) {
+      QL.det = null;
+    }
+    try {
+      let st;
+      try {
+        st = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+          audio: false
+        });
+      } catch (e1) {
+        if (e1 && (e1.name === 'NotAllowedError' || e1.name === 'SecurityError')) throw e1;
+        st = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
+      if (QL.el !== el) {
+        st.getTracks().forEach(function (t) {
+          t.stop();
+        });
+        return;
+      }
+      QL.stream = st;
+      const v = el.querySelector('video');
+      v.srcObject = st;
+      await v.play();
+      qrLivePaint();
+      qrLiveMsg('Đưa mã QR vào khung (mã dày thì lại gần hơn), app tự đọc ngay khi thấy mã');
+      QL.timer = setTimeout(qrLiveTick, 150);
+    } catch (e) {
+      qrLiveClose();
+      const denied = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError');
+      qrState = {
+        kind: 'error',
+        title: denied ? 'Trang này không được phép dùng camera trực tiếp.' : 'Không mở được camera.',
+        body: 'Hãy dùng nút “Chọn ảnh QR” để chụp hoặc chọn ảnh mã QR.'
+      };
+      renderQr();
+    }
+  }
+  /* Hiện hình camera bằng canvas (giữ đúng tỉ lệ, phủ kín màn hình) */
+  function qrLivePaint() {
+    if (!QL.el) return;
+    const v = QL.el.querySelector('video'),
+      c = QL.el.querySelector('.ql-cv');
+    if (v.videoWidth) {
+      const w = c.clientWidth || 320,
+        h = c.clientHeight || 480,
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (c.width !== Math.round(w * dpr)) {
+        c.width = Math.round(w * dpr);
+        c.height = Math.round(h * dpr);
+      }
+      const k = Math.max(c.width / v.videoWidth, c.height / v.videoHeight),
+        dw = v.videoWidth * k,
+        dh = v.videoHeight * k;
+      c.getContext('2d').drawImage(v, (c.width - dw) / 2, (c.height - dh) / 2, dw, dh);
+    }
+    QL.raf = requestAnimationFrame(qrLivePaint);
+  }
+  async function qrLiveTick() {
+    if (!QL.el || QL.busy) return;
+    QL.busy = true;
+    let text = null;
+    try {
+      const v = QL.el.querySelector('video');
+      if (v.videoWidth && v.readyState >= 2) {
+        if (QL.det) {
+          try {
+            const r = await QL.det.detect(v);
+            if (r && r.length && r[0].rawValue) text = r[0].rawValue;
+          } catch (e) {
+            QL.det = null;
+          }
+        }
+        if (!text && window.jsQR) {
+          const k = Math.min(1, 1280 / Math.max(v.videoWidth, v.videoHeight)) * (QL.n++ % 3 === 2 ? 0.6 : 1),
+            w = Math.round(v.videoWidth * k),
+            h = Math.round(v.videoHeight * k);
+          const c = QL.work || (QL.work = document.createElement('canvas'));
+          c.width = w;
+          c.height = h;
+          const x = c.getContext('2d', { willReadFrequently: true });
+          x.drawImage(v, 0, 0, w, h);
+          const d = x.getImageData(0, 0, w, h),
+            r = window.jsQR(d.data, w, h, { inversionAttempts: QL.n % 2 ? 'attemptBoth' : 'dontInvert' });
+          if (r && r.data) text = r.data;
+        }
+      }
+    } catch (e) {
+      /* quét khung sau */
+    }
+    QL.busy = false;
+    if (!QL.el) return;
+    if (text) {
+      const res = parseQrKey(text);
+      if (!res.error) {
+        try {
+          beepDone();
+        } catch (e) {}
+        qrLiveClose();
+        qrFromText(text, false);
+        return;
+      }
+      if (text !== QL.bad) {
+        QL.bad = text;
+        qrLiveMsg('Thấy mã QR nhưng không phải bộ đáp án. Thử mã khác.', true);
+      }
+    }
+    QL.timer = setTimeout(qrLiveTick, 120);
   }
   async function qrFromFile(file) {
     qrState = { kind: 'busy' };
