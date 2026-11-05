@@ -8037,14 +8037,61 @@ function renderPhoto(sheetImg, cfg, marks, o) {
      tự chọn loại phiếu phù hợp (kết quả trả về trong sheet). */
   function parseQrKey(text) {
     let data;
+    const src = String(text).trim();
     try {
-      data = JSON.parse(String(text).trim());
+      data = JSON.parse(src);
     } catch (e) {
-      return { error: 'json' };
+      /* QR bị cắt mất vài dấu đóng ở cuối: tự thêm ] hoặc } còn thiếu */
+      const st = [];
+      let inStr = false;
+      for (let i = 0; i < src.length; i++) {
+        const c = src[i];
+        if (inStr) {
+          if (c === '\\') i++;
+          else if (c === '"') inStr = false;
+        } else if (c === '"') inStr = true;
+        else if (c === '[') st.push(']');
+        else if (c === '{') st.push('}');
+        else if (c === ']' || c === '}') st.pop();
+      }
+      try {
+        data = JSON.parse(src + st.reverse().join(''));
+      } catch (e2) {
+        return { error: 'json' };
+      }
     }
     let rows;
     if (Array.isArray(data)) rows = data.length && Array.isArray(data[0]) ? data : [data];
-    else if (data && typeof data === 'object')
+    else if (
+      data &&
+      typeof data === 'object' &&
+      Object.keys(data).some(function (k) {
+        return typeof data[k] === 'string' && data[k].indexOf('#') >= 0;
+      })
+    ) {
+      /* Dạng {"mã đề":"Phần I#Phần II (các câu cách nhau _)#Phần III (các số cách nhau _)"} */
+      rows = [];
+      Object.keys(data).forEach(function (k) {
+        const v = data[k];
+        if (typeof v !== 'string' || v.indexOf('#') < 0) return;
+        const seg = v.split('#'),
+          clean = function (t) {
+            return String(t || '').replace(/[\s_]/g, '');
+          },
+          letters = clean(seg[0]).split('').concat(clean(seg[1]).split('')),
+          nums = String(seg[2] || '')
+            .split('_')
+            .map(function (x) {
+              return x.trim();
+            })
+            .filter(function (x) {
+              return x !== '';
+            });
+        rows.push({ code: k, letters: letters, nums: nums });
+      });
+      if (!rows.length) return { error: 'shape' };
+      return parseKeyRows(rows);
+    } else if (data && typeof data === 'object')
       rows = Object.keys(data).map(function (k) {
         return [k].concat(Array.isArray(data[k]) ? data[k] : []);
       });
