@@ -3678,7 +3678,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     try {
       if (!c || c.v !== 2 || !c.versions || !c.versions.length) return null;
       c = Object.assign({}, c, { sheet: sid(c.sheet), thrs: sidKeys(c.thrs), structs: sidKeys(c.structs) });
-      const vs = c.versions.slice(0, 20).map(function (v) {
+      const vs = c.versions.slice(0, c.pv ? 100 : 50).map(function (v) {
         const e = emptyVer(
           String(v.code || '')
             .replace(/\D/g, '')
@@ -8521,7 +8521,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
           '): app hiểu là câu lỗi, học sinh nào cũng được điểm câu đó.'
       );
     }
-    if (P.length > 20) warnings.push('Chỉ lấy 20 mã đề đầu tiên.');
+    const vmax = best.sheet === 'f' && best.n1 === 40 && best.n2 === 8 && N3 === 6 ? 100 : 50;
+    if (P.length > vmax) warnings.push('Chỉ lấy ' + vmax + ' mã đề đầu tiên.');
     const codes = P.map(function (p) {
       return p.code;
     });
@@ -8531,7 +8532,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       })
     )
       warnings.push('Có mã đề bị trùng nhau.');
-    const versions = P.slice(0, 20).map(function (p) {
+    const versions = P.slice(0, vmax).map(function (p) {
       const v = emptyVer(p.code);
       for (let i = 0; i < best.n1; i++) {
         const x = p.letters[i];
@@ -9167,7 +9168,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       updated = 0,
       first = -1;
     if (isUntouchedDefault()) {
-      cfg.versions = r.versions.slice(0, 20);
+      cfg.versions = r.versions.slice(0, cfg.pv ? 100 : 50);
       added = cfg.versions.length;
       first = 0;
     } else {
@@ -9182,7 +9183,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
           cfg.versions[k] = nv;
           updated++;
           if (first < 0) first = k;
-        } else if (cfg.versions.length < 20) {
+        } else if (cfg.versions.length < (cfg.pv ? 100 : 50)) {
           cfg.versions.push(nv);
           added++;
           if (first < 0) first = cfg.versions.length - 1;
