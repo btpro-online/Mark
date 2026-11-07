@@ -1481,6 +1481,7 @@ h3.ph {
 .listcard .vchip { background: rgba(255,255,255,.14); color: var(--ink-fg); border-color: rgba(255,255,255,.5); }
 .listcard .vchip[aria-pressed='true'] { background: #fff; color: #1c3f94; border-color: #fff; }
 .tabs { will-change: transform; }
+.vchip:disabled { opacity: 0.4; cursor: not-allowed; }
 
 </style>
 
@@ -3804,8 +3805,9 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   function renderSheetSel() {
     const e = $('#sheetSel');
     if (!e) return;
+    const lock = listRes().length > 0;
     e.innerHTML =
-      '<span class="lbl">Loại phiếu</span><div class="vchips">' +
+      '<span class="lbl">Loại phiếu của đợt này</span><div class="vchips">' +
       [
         ['f', 'Phiếu B&amp;T Pro - F'],
         ['m', 'Phiếu B&amp;T Pro - M'],
@@ -3818,13 +3820,18 @@ function renderPhoto(sheetImg, cfg, marks, o) {
             x[0] +
             '" aria-pressed="' +
             (cfg.sheet === x[0]) +
-            '">' +
+            '"' +
+            (lock && cfg.sheet !== x[0] ? ' disabled' : '') +
+            '>' +
             x[1] +
             '</button>'
           );
         })
         .join('') +
-      '</div>';
+      '</div>' +
+      (lock
+        ? '<p class="hint">Đợt này đã có bài chấm nên khoá theo phiếu đã chọn. Muốn dùng phiếu khác, hãy tạo đợt mới (＋ Đợt mới) và chọn phiếu ở đó.</p>'
+        : '<p class="hint">Đợt chưa có bài chấm nên vẫn đổi được phiếu.</p>');
     $$('[data-sh]', e).forEach(function (b) {
       b.onclick = function () {
         switchSheet(b.dataset.sh);
@@ -3894,6 +3901,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     bd.hidden = !n;
     bd.textContent = n > 99 ? '99+' : n;
     if (!listUI) renderListBar();
+    renderSheetSel();
   }
 
   /* ---------- Thành phần dùng chung ---------- */
@@ -8582,9 +8590,15 @@ function renderPhoto(sheetImg, cfg, marks, o) {
             return '<div class="note">' + esc(w) + '</div>';
           })
           .join('') +
-        '<div class="actions"><button type="button" class="btn primary" id="qrApply">' +
+        '<div class="actions">' +
+        (r.mismatch && listRes().length
+          ? '<div class="note err">Đợt này đã có bài chấm nên không đổi phiếu được. Hãy tạo đợt mới với ' +
+            esc(SHEETS[r.sheet].name) +
+            ' rồi nhập lại đáp án.</div>'
+          : '<button type="button" class="btn primary" id="qrApply">' +
         (r.mismatch ? 'Đổi sang ' + esc(SHEETS[r.sheet].name) + ' và dùng đáp án' : 'Dùng đáp án này') +
-        '</button><button type="button" class="btn ghost" id="qrCancel">Bỏ ' +
+        '</button>') +
+        '<button type="button" class="btn ghost" id="qrCancel">Bỏ ' +
         'qua</button></div></div>';
     } else if (qrState.kind === 'done') {
       h +=
