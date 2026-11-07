@@ -1483,6 +1483,11 @@ h3.ph {
 .tabs { will-change: transform; }
 .vchip:disabled { opacity: 0.4; cursor: not-allowed; }
 
+.pvbox { margin-top: 10px; }
+.pvrow { display: grid; grid-template-columns: 44px 1fr 1fr 1fr 40px auto; gap: 6px; align-items: center; margin-bottom: 6px; font-size: 13px; }
+.pvrow.head { font-size: 11px; color: var(--muted); font-weight: 600; }
+.pvrow .num-in { width: 100%; min-width: 0; }
+.pvrow small { display: block; font-size: 10px; color: var(--muted); }
 
 </style>
 
@@ -3236,6 +3241,8 @@ function tfHas(kv, v) {
 }
 const TF_LADDER = [0, 0.1, 0.25, 0.5, 1];
 function gradeAll(st, cfg, ver) {
+  /* cấu trúc 40·8·6: mỗi mã đề có bảng điểm riêng */
+  if (cfg.pv && ver && ver.pt) cfg = Object.assign({}, cfg, ver.pt);
   const out = {
     p1: { ok: 0, wrong: 0, blank: 0, multi: 0, st: [], pts: 0, max: 0 },
     p2: { st: [], per: [], pts: 0, max: 0 },
@@ -3548,7 +3555,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   const PRESETS_F = [
     { n1: 12, n2: 4, n3: 6, p1: 0.25, p2: 1, p3: 0.5 },
     { n1: 18, n2: 4, n3: 6, p1: 0.25, p2: 1, p3: 0.25 },
-    { n1: 40, n2: 0, n3: 0, p1: 0.25, p2: 0, p3: 0 }
+    { n1: 40, n2: 0, n3: 0, p1: 0.25, p2: 0, p3: 0 },
+    { n1: 40, n2: 8, n3: 6, p1: 0.25, p2: 1, p3: 0.5, pv: true }
   ];
   const PRESETS_S = [
     { n1: 6, n2: 2, n3: 3, p1: 0.5, p2: 2, p3: 1 },
@@ -3651,6 +3659,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
             e.tf[q][r] = x === 'D' || x === 'S' ? x : x === 'DS' || x === 'SD' ? 'DS' : null;
           }
         for (let q = 0; q < 6; q++) e.num[q] = String((v.num && v.num[q]) || '').slice(0, 5);
+        if (v.pt && typeof v.pt === 'object')
+          e.pt = { p1: clampP(v.pt.p1, 0.25), p2: clampP(v.pt.p2, 1), p3: clampP(v.pt.p3, 0.5) };
         return e;
       });
       const sh = SHEETS[c.sheet] ? c.sheet : 'f',
@@ -3665,6 +3675,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         p2: clampP(c.p2, 1),
         p3: clampP(c.p3, 0.25),
         p2e: !!c.p2e,
+        pv: !!c.pv,
         thr: c.td ? Math.max(0.08, Math.min(0.7, +c.thr || 0.08)) : 0.08,
         td: 1,
         thrs: c.td && c.thrs && typeof c.thrs === 'object' ? c.thrs : {},
@@ -3796,6 +3807,68 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   function curVer() {
     return cfg.versions[cfg.active];
   }
+  function pvOf(v) {
+    return v.pt || { p1: cfg.p1, p2: cfg.p2, p3: cfg.p3 };
+  }
+  function pvCount(v) {
+    let a = 0,
+      b = 0,
+      c = 0;
+    for (let i = 0; i < cfg.n1; i++) if (keyArr(v.mcq[i]).length) a++;
+    for (let q = 0; q < cfg.n2; q++)
+      if (
+        (v.tf[q] || []).some(function (x) {
+          return x === 'D' || x === 'S' || x === 'DS';
+        })
+      )
+        b++;
+    for (let q = 0; q < cfg.n3; q++) if (v.num[q]) c++;
+    return [a, b, c];
+  }
+  function pvMax(v) {
+    const n = pvCount(v),
+      p = pvOf(v);
+    return n[0] * p.p1 + n[1] * p.p2 + n[2] * p.p3;
+  }
+  function pvTable() {
+    let h =
+      '<div class="pvbox"><h3 class="re-h">Điểm từng mã đề</h3><p class="hint">Mỗi mã đề chấm số câu khác nhau nên có điểm riêng. ' +
+      'Ô trống trong đáp án là câu không chấm. Bấm "Quy 10" để tự chia lại cho tổng điểm mã đề bằng 10.</p>' +
+      '<div class="pvrow head"><span>Mã</span><span>Phần I</span><span>Phần II</span><span>Phần III</span><span>Tổng</span><span></span></div>';
+    cfg.versions.forEach(function (v, i) {
+      const p = pvOf(v),
+        n = pvCount(v);
+      h +=
+        '<div class="pvrow"><span class="mono">' +
+        esc(v.code || '—') +
+        '</span>' +
+        ['p1', 'p2', 'p3']
+          .map(function (k, j) {
+            return (
+              '<span><input class="num-in" inputmode="decimal" data-pv="' +
+              k +
+              '" data-vi="' +
+              i +
+              '" value="' +
+              String(p[k]).replace('.', ',') +
+              '" aria-label="Điểm ' +
+              ['Phần I', 'Phần II', 'Phần III'][j] +
+              ' mã ' +
+              esc(v.code || '') +
+              '"><small>' +
+              n[j] +
+              ' câu</small></span>'
+            );
+          })
+          .join('') +
+        '<b class="mono">' +
+        fmt(Math.round(pvMax(v) * 100) / 100) +
+        '</b><button type="button" class="btn small ghost" data-pv10="' +
+        i +
+        '">Quy 10</button></div>';
+    });
+    return h + '</div>';
+  }
   function maxTotal() {
     return cfg.n1 * cfg.p1 + cfg.n2 * cfg.p2 + cfg.n3 * cfg.p3;
   }
@@ -3848,7 +3921,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     setSheet(id);
     cfg.thr = cfg.thrs[id] || 0.08;
     cfg.structs = cfg.structs || {};
-    cfg.structs[prevId] = { n1: cfg.n1, n2: cfg.n2, n3: cfg.n3, p1: cfg.p1, p2: cfg.p2, p3: cfg.p3 };
+    cfg.structs[prevId] = { n1: cfg.n1, n2: cfg.n2, n3: cfg.n3, p1: cfg.p1, p2: cfg.p2, p3: cfg.p3, pv: !!cfg.pv };
     const st = cfg.structs[id] || (id === 's' ? PRESETS_S[0] : id === 'm' ? PRESETS_M[0] : id === 'e' ? PRESETS_E[0] : PRESETS_F[1]);
     cfg.n1 = Math.min(st.n1, MAX1);
     cfg.n2 = Math.min(st.n2, MAX2);
@@ -3856,6 +3929,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     cfg.p1 = st.p1;
     cfg.p2 = st.p2;
     cfg.p3 = st.p3;
+    cfg.pv = !!st.pv;
     cfg.versions.forEach(function (v) {
       v.code = String(v.code || '').slice(0, MD_X.length);
     });
@@ -4013,7 +4087,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         p.n3 === cfg.n3 &&
         p.p1 === cfg.p1 &&
         p.p2 === cfg.p2 &&
-        p.p3 === cfg.p3;
+        p.p3 === cfg.p3 &&
+        !!p.pv === !!cfg.pv;
       h +=
         '<button type="button" class="vchip" data-preset="' +
         i +
@@ -4053,7 +4128,9 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     h +=
       '<p class="hint">Tổng điểm tối đa <b class="mono">' +
       fmt(tot) +
-      '</b>. ' +
+      '</b>' +
+      (cfg.pv ? ' nếu chấm đủ mọi câu; điểm từng mã đề đặt ở bảng bên dưới' : '') +
+      '. ' +
       (cfg.p2e
         ? 'Phần II chia đều: mỗi ý đúng được 1/4 điểm tối đa của câu.'
         : 'Phần II tính theo số ý đúng trong câu: 1 ý được 10%, 2 ý 25%, 3 ý 50%, 4 ý 100% điểm tối đa của câu.') +
@@ -4063,6 +4140,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
           (cfg.p2e ? ' checked' : '') +
           '> Phần II: chia đều điểm (mỗi ý đúng được 1/4 điểm của câu)</label>'
         : '') +
+      (cfg.pv ? pvTable() : '') +
       '<div class="range-row"><div class="row"><label class="lbl" for="thrIn">Độ nhạy khi đọc ô ' +
       'tô</label><span class="mono" id="thrVal">' +
       Math.round(cfg.thr * 100) +
@@ -4075,7 +4153,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     $$('[data-preset]', $('#cfgCard')).forEach(function (b) {
       b.onclick = function () {
         const p = presetsNow()[+b.dataset.preset];
-        Object.assign(cfg, p);
+        Object.assign(cfg, { pv: false }, p);
         afterCfg();
       };
     });
@@ -4093,6 +4171,36 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         afterCfg();
       };
     });
+    $$('[data-pv]', $('#cfgCard')).forEach(function (inp) {
+      inp.onchange = function () {
+        const v = cfg.versions[+inp.dataset.vi];
+        v.pt = v.pt || { p1: cfg.p1, p2: cfg.p2, p3: cfg.p3 };
+        v.pt[inp.dataset.pv] = clampP(inp.value, v.pt[inp.dataset.pv]);
+        afterCfg();
+      };
+    });
+    $$('[data-pv10]', $('#cfgCard')).forEach(function (b) {
+      b.onclick = function () {
+        const v = cfg.versions[+b.dataset.pv10],
+          pt = pvOf(v),
+          m = pvMax(v);
+        if (m > 0) {
+          const k = 10 / m;
+          v.pt = {
+            p1: Math.round(pt.p1 * k * 10000) / 10000,
+            p2: Math.round(pt.p2 * k * 10000) / 10000,
+            p3: Math.round(pt.p3 * k * 10000) / 10000
+          };
+          afterCfg();
+        }
+      };
+    });
+    const s10 = $('#s10');
+    if (s10)
+      s10.onchange = function () {
+        cfg.s10 = this.checked;
+        afterCfg();
+      };
     const pe = $('#p2even');
     if (pe)
       pe.onchange = function () {
@@ -6165,7 +6273,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     return out;
   }
   function csOf() {
-    return { n1: cfg.n1, n2: cfg.n2, n3: cfg.n3, p1: cfg.p1, p2: cfg.p2, p3: cfg.p3, p2e: !!cfg.p2e };
+    return { n1: cfg.n1, n2: cfg.n2, n3: cfg.n3, p1: cfg.p1, p2: cfg.p2, p3: cfg.p3, p2e: !!cfg.p2e, pv: !!cfg.pv };
   }
   function annotatedCanvas(s, g) {
     if (!s.rect) s.rect = rectCanvas(s, 720);
@@ -9029,6 +9137,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       cfg.p1 = pr.p1;
       cfg.p2 = pr.p2;
       cfg.p3 = pr.p3;
+      cfg.pv = !!pr.pv;
     }
     let added = 0,
       updated = 0,
@@ -9045,6 +9154,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
             })
           : -1;
         if (k >= 0) {
+          if (cfg.versions[k].pt) nv.pt = cfg.versions[k].pt;
           cfg.versions[k] = nv;
           updated++;
           if (first < 0) first = k;
@@ -9055,6 +9165,19 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         }
       });
     }
+    if (cfg.pv)
+      cfg.versions.forEach(function (v) {
+        if (v.pt) return;
+        const m = pvMax(v);
+        if (m > 0) {
+          const k = 10 / m;
+          v.pt = {
+            p1: Math.round(cfg.p1 * k * 10000) / 10000,
+            p2: Math.round(cfg.p2 * k * 10000) / 10000,
+            p3: Math.round(cfg.p3 * k * 10000) / 10000
+          };
+        }
+      });
     cfg.active = Math.max(0, first);
     qrState = {
       kind: 'done',
