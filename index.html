@@ -3240,9 +3240,49 @@ function tfHas(kv, v) {
   return kv !== null && kv !== undefined && typeof kv === 'string' && kv.indexOf(v) >= 0;
 }
 const TF_LADDER = [0, 0.1, 0.25, 0.5, 1];
+/* Bảng điểm theo cấu trúc đề tốt nghiệp THPT: (số câu P.I, P.II, P.III) -> điểm mỗi câu P.I, P.II, P.III */
+const PV_TABLE = [
+  [18, 4, 6, 0.25, 1, 0.25],
+  [24, 4, 0, 0.25, 1, 0],
+  [12, 4, 6, 0.25, 1, 0.5],
+  [24, 6, 0, 0.25, 1, 0],
+  [40, 0, 0, 0.25, 0, 0]
+];
+function pvCounts(cfg, v) {
+  let a = 0,
+    b = 0,
+    c = 0;
+  for (let i = 0; i < cfg.n1; i++) if (keyArr(v.mcq[i]).length) a++;
+  for (let q = 0; q < cfg.n2; q++)
+    if (
+      (v.tf[q] || []).some(function (x) {
+        return x === 'D' || x === 'S' || x === 'DS';
+      })
+    )
+      b++;
+  for (let q = 0; q < cfg.n3; q++) if (v.num[q]) c++;
+  return [a, b, c];
+}
+function pvAutoPts(cfg, v) {
+  const n = pvCounts(cfg, v),
+    t = PV_TABLE.find(function (r) {
+      return r[0] === n[0] && r[1] === n[1] && r[2] === n[2];
+    });
+  if (t) return { p1: t[3], p2: t[4], p3: t[5], tab: true };
+  /* không có trong bảng: giữ tỉ lệ điểm mặc định, chia để tổng bằng 10 */
+  const m = n[0] * cfg.p1 + n[1] * cfg.p2 + n[2] * cfg.p3,
+    k = m > 0 ? 10 / m : 1,
+    r4 = function (x) {
+      return Math.round(x * k * 10000) / 10000;
+    };
+  return { p1: r4(cfg.p1), p2: r4(cfg.p2), p3: r4(cfg.p3), tab: false };
+}
 function gradeAll(st, cfg, ver) {
-  /* cấu trúc 40·8·6: mỗi mã đề có bảng điểm riêng */
-  if (cfg.pv && ver && ver.pt) cfg = Object.assign({}, cfg, ver.pt);
+  /* cấu trúc 40·8·6: mỗi mã đề có bảng điểm riêng (tự động theo bảng THPT, hoặc do người dùng đặt) */
+  if (cfg.pv && ver) {
+    const pt = ver.pt || pvAutoPts(cfg, ver);
+    cfg = Object.assign({}, cfg, { p1: pt.p1, p2: pt.p2, p3: pt.p3 });
+  }
   const out = {
     p1: { ok: 0, wrong: 0, blank: 0, multi: 0, st: [], pts: 0, max: 0 },
     p2: { st: [], per: [], pts: 0, max: 0 },
@@ -3807,23 +3847,14 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   function curVer() {
     return cfg.versions[cfg.active];
   }
+  function pvAuto(v) {
+    return pvAutoPts(cfg, v);
+  }
   function pvOf(v) {
-    return v.pt || { p1: cfg.p1, p2: cfg.p2, p3: cfg.p3 };
+    return v.pt || pvAuto(v);
   }
   function pvCount(v) {
-    let a = 0,
-      b = 0,
-      c = 0;
-    for (let i = 0; i < cfg.n1; i++) if (keyArr(v.mcq[i]).length) a++;
-    for (let q = 0; q < cfg.n2; q++)
-      if (
-        (v.tf[q] || []).some(function (x) {
-          return x === 'D' || x === 'S' || x === 'DS';
-        })
-      )
-        b++;
-    for (let q = 0; q < cfg.n3; q++) if (v.num[q]) c++;
-    return [a, b, c];
+    return pvCounts(cfg, v);
   }
   function pvMax(v) {
     const n = pvCount(v),
@@ -3833,7 +3864,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
   function pvTable() {
     let h =
       '<div class="pvbox"><h3 class="re-h">Điểm từng mã đề</h3><p class="hint">Mỗi mã đề chấm số câu khác nhau nên có điểm riêng. ' +
-      'Ô trống trong đáp án là câu không chấm. Bấm "Quy 10" để tự chia lại cho tổng điểm mã đề bằng 10.</p>' +
+      'Điểm tự động theo cấu trúc đề tốt nghiệp THPT (18·4·6, 24·4·0, 12·4·6, 24·6·0, 40·0·0); cấu trúc khác được chia cho tổng 10. Bạn có thể sửa tay từng mã đề, bấm "Tự động" để trả về cách chia tự động.</p>' +
+      '<div class="actions"><button type="button" class="btn small" id="pvAll">Chia tự động tất cả mã đề</button></div>' +
       '<div class="pvrow head"><span>Mã</span><span>Phần I</span><span>Phần II</span><span>Phần III</span><span>Tổng</span><span></span></div>';
     cfg.versions.forEach(function (v, i) {
       const p = pvOf(v),
@@ -3865,7 +3897,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         fmt(Math.round(pvMax(v) * 100) / 100) +
         '</b><button type="button" class="btn small ghost" data-pv10="' +
         i +
-        '">Quy 10</button></div>';
+        '"' + (v.pt ? '' : ' disabled') + '>' + (v.pt ? 'Tự động' : 'Tự động ✓') + '</button></div>';
     });
     return h + '</div>';
   }
@@ -4174,31 +4206,23 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     $$('[data-pv]', $('#cfgCard')).forEach(function (inp) {
       inp.onchange = function () {
         const v = cfg.versions[+inp.dataset.vi];
-        v.pt = v.pt || { p1: cfg.p1, p2: cfg.p2, p3: cfg.p3 };
+        v.pt = v.pt || { p1: pvOf(v).p1, p2: pvOf(v).p2, p3: pvOf(v).p3 };
         v.pt[inp.dataset.pv] = clampP(inp.value, v.pt[inp.dataset.pv]);
         afterCfg();
       };
     });
     $$('[data-pv10]', $('#cfgCard')).forEach(function (b) {
       b.onclick = function () {
-        const v = cfg.versions[+b.dataset.pv10],
-          pt = pvOf(v),
-          m = pvMax(v);
-        if (m > 0) {
-          const k = 10 / m;
-          v.pt = {
-            p1: Math.round(pt.p1 * k * 10000) / 10000,
-            p2: Math.round(pt.p2 * k * 10000) / 10000,
-            p3: Math.round(pt.p3 * k * 10000) / 10000
-          };
-          afterCfg();
-        }
+        delete cfg.versions[+b.dataset.pv10].pt;
+        afterCfg();
       };
     });
-    const s10 = $('#s10');
-    if (s10)
-      s10.onchange = function () {
-        cfg.s10 = this.checked;
+    const pa = $('#pvAll');
+    if (pa)
+      pa.onclick = function () {
+        cfg.versions.forEach(function (v) {
+          delete v.pt;
+        });
         afterCfg();
       };
     const pe = $('#p2even');
@@ -9165,19 +9189,6 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         }
       });
     }
-    if (cfg.pv)
-      cfg.versions.forEach(function (v) {
-        if (v.pt) return;
-        const m = pvMax(v);
-        if (m > 0) {
-          const k = 10 / m;
-          v.pt = {
-            p1: Math.round(cfg.p1 * k * 10000) / 10000,
-            p2: Math.round(cfg.p2 * k * 10000) / 10000,
-            p3: Math.round(cfg.p3 * k * 10000) / 10000
-          };
-        }
-      });
     cfg.active = Math.max(0, first);
     qrState = {
       kind: 'done',
