@@ -1464,7 +1464,7 @@ h3.ph {
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>B&amp;T Pro Mark - 2.8</h1>
+      <h1>B&amp;T Pro Mark - 2.9</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -3257,7 +3257,8 @@ function gradeAll(st, cfg, ver) {
         items.push('ok');
       } else items.push(sv === '' ? 'blank' : 'wrong');
     }
-    const frac = graded === 4 ? TF_LADDER[cnt] : graded ? cnt / graded : 0;
+    /* cfg.p2e: chia đều điểm, mỗi ý đúng được 1/4 điểm của câu; mặc định tính theo thang 10% - 25% - 50% - 100% */
+    const frac = cfg.p2e ? (graded ? cnt / graded : 0) : graded === 4 ? TF_LADDER[cnt] : graded ? cnt / graded : 0;
     out.p2.per.push({ cnt: cnt, graded: graded, items: items, pts: frac * cfg.p2 });
     out.p2.st.push(graded ? (cnt === graded ? 'ok' : cnt === 0 ? 'wrong' : 'part') : 'skip');
     if (graded) out.p2.max += cfg.p2;
@@ -3632,6 +3633,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         p1: clampP(c.p1, 0.25),
         p2: clampP(c.p2, 1),
         p3: clampP(c.p3, 0.25),
+        p2e: !!c.p2e,
         thr: c.td ? Math.max(0.08, Math.min(0.7, +c.thr || 0.08)) : 0.08,
         td: 1,
         thrs: c.td && c.thrs && typeof c.thrs === 'object' ? c.thrs : {},
@@ -4013,8 +4015,16 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     h +=
       '<p class="hint">Tổng điểm tối đa <b class="mono">' +
       fmt(tot) +
-      '</b>. Phần II tính theo số ý đúng trong câu: 1 ý được 10%, 2 ý 25%, 3 ý 50%, 4 ý 100% ' +
-      'điểm tối đa của câu.</p>' +
+      '</b>. ' +
+      (cfg.p2e
+        ? 'Phần II chia đều: mỗi ý đúng được 1/4 điểm tối đa của câu.'
+        : 'Phần II tính theo số ý đúng trong câu: 1 ý được 10%, 2 ý 25%, 3 ý 50%, 4 ý 100% điểm tối đa của câu.') +
+      '</p>' +
+      (cfg.n2 > 0
+        ? '<label class="listcopy"><input type="checkbox" id="p2even"' +
+          (cfg.p2e ? ' checked' : '') +
+          '> Phần II: chia đều điểm (mỗi ý đúng được 1/4 điểm của câu)</label>'
+        : '') +
       '<div class="range-row"><div class="row"><label class="lbl" for="thrIn">Độ nhạy khi đọc ô ' +
       'tô</label><span class="mono" id="thrVal">' +
       Math.round(cfg.thr * 100) +
@@ -4045,6 +4055,12 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         afterCfg();
       };
     });
+    const pe = $('#p2even');
+    if (pe)
+      pe.onchange = function () {
+        cfg.p2e = this.checked;
+        afterCfg();
+      };
     $('#thrIn').oninput = function () {
       cfg.thr = this.value / 100;
       $('#thrVal').textContent = this.value + '%';
@@ -6111,7 +6127,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     return out;
   }
   function csOf() {
-    return { n1: cfg.n1, n2: cfg.n2, n3: cfg.n3, p1: cfg.p1, p2: cfg.p2, p3: cfg.p3 };
+    return { n1: cfg.n1, n2: cfg.n2, n3: cfg.n3, p1: cfg.p1, p2: cfg.p2, p3: cfg.p3, p2e: !!cfg.p2e };
   }
   function annotatedCanvas(s, g) {
     if (!s.rect) s.rect = rectCanvas(s, 720);
