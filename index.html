@@ -1453,6 +1453,35 @@ h3.ph {
 .ql-msg { font-size: 15px; text-align: center; }
 .ql-msg.warn { color: #ffd166; }
 
+/* Khung Danh sách chấm: nền đậm, nổi bật */
+.listcard {
+  background: var(--ink);
+  color: var(--ink-fg);
+  border-color: var(--ink);
+  box-shadow: 0 3px 10px rgba(28, 63, 148, 0.28);
+}
+.listcard .lbl, .listcard .lbl2, .listcard .listcopy { color: var(--ink-fg); }
+.listcard .lbl { font-weight: 800; letter-spacing: 0.02em; }
+.listcard .listcopy.off { opacity: 0.6; }
+.listcard select, .listcard input:not([type='checkbox']) {
+  background: var(--card);
+  color: var(--fg);
+  border-color: transparent;
+}
+.listcard .btn.small {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--ink-fg);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+}
+.listcard .btn.small.primary { background: #fff; color: #1c3f94; border-color: #fff; }
+.listcard .btn.small.danger { color: #ffd2cd; }
+.listsheet { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 8px; }
+.listsheet .lbl2 { font-size: 13px; font-weight: 600; }
+.listsheet .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.listcard .vchip { background: rgba(255,255,255,.14); color: var(--ink-fg); border-color: rgba(255,255,255,.5); }
+.listcard .vchip[aria-pressed='true'] { background: #fff; color: #1c3f94; border-color: #fff; }
+.tabs { will-change: transform; }
+
 </style>
 
 <div class="wrap">
@@ -1464,7 +1493,7 @@ h3.ph {
         <path d="M16 11h5M16 18h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M20 26l3.4 3 6-8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>B&amp;T Pro Mark - 2.9</h1>
+      <h1>B&amp;T Pro Mark - 3.0</h1>
     </div>
     <span class="pill" id="cfgChip"></span>
   </header>
@@ -6937,6 +6966,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
           (l.id === lists.active ? ' selected' : '') +
           '>' +
           esc(l.name) +
+          ' · Phiếu ' +
+          String(l.id === lists.active ? cfg.sheet : (l.cfg && l.cfg.sheet) || 'f').toUpperCase() +
           ' (' +
           listRes(l.id).length +
           ' bài)</option>'
@@ -6949,17 +6980,41 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         ? '<button type="button" class="btn small ghost danger" id="listDel">Xoá đợt</button>'
         : '') +
       '</div>';
-    if (listUI === 'new')
+    if (listUI === 'new') {
+      if (!SHEETS[listSheet]) listSheet = cfg.sheet;
+      const same = listSheet === cfg.sheet;
       h +=
-        '<label class="listcopy"><input type="checkbox" id="listCopy"> Sao chép đáp án, cấu trúc và danh sách ' +
-        'thí sinh từ đợt đang chọn</label>';
+        '<div class="listsheet"><span class="lbl2">Loại phiếu của đợt:</span><div class="chips">' +
+        ['f', 'm', 's', 'e']
+          .map(function (id) {
+            return (
+              '<button type="button" class="vchip" data-ls="' +
+              id +
+              '" aria-pressed="' +
+              (id === listSheet) +
+              '">' +
+              esc(SHEETS[id].name.replace(/^Phiếu\s*/, '')) +
+              '</button>'
+            );
+          })
+          .join('') +
+        '</div></div><label class="listcopy' +
+        (same ? '' : ' off') +
+        '"><input type="checkbox" id="listCopy"' +
+        (same ? '' : ' disabled') +
+        '> Sao chép đáp án, cấu trúc và danh sách thí sinh từ đợt đang chọn' +
+        (same ? '' : ' (chỉ khi cùng loại phiếu)') +
+        '</label>';
+    }
     if (listUI === 'new' || listUI === 'ren')
       h +=
         '<div class="listrow"><input id="listName" maxlength="40" placeholder="Tên đợt, ví dụ: 10A1 · 45 phút" value="' +
-        (listUI === 'ren' ? esc(curList().name) : '') +
+        (listUI === 'ren' ? esc(curList().name) : esc(listDraft)) +
         '"><button type="button" class="btn small primary" id="listOk">Lưu</button><button type="button" class="btn small ghost" id="listNo">Huỷ</button></div>';
     return h + '</div>';
   }
+  let listSheet = 'f',
+    listDraft = '';
   function renderListBar() {
     const host = $('#listCard');
     if (!host) return;
@@ -6978,6 +7033,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     };
     $('#listNew').onclick = function () {
       listUI = 'new';
+      listSheet = cfg.sheet;
+      listDraft = '';
       renderRes();
       const i = $('#listName');
       if (i) i.focus();
@@ -7012,6 +7069,13 @@ function renderPhoto(sheetImg, cfg, marks, o) {
           renderRes();
         };
       };
+    host.querySelectorAll('[data-ls]').forEach(function (b) {
+      b.onclick = function () {
+        listDraft = ($('#listName') || {}).value || '';
+        listSheet = b.getAttribute('data-ls');
+        renderRes();
+      };
+    });
     const ok = $('#listOk');
     if (ok) {
       const go = function () {
@@ -7023,6 +7087,25 @@ function renderPhoto(sheetImg, cfg, marks, o) {
             cp = $('#listCopy') && $('#listCopy').checked,
             nc = JSON.parse(JSON.stringify(cfg));
           if (!cp) {
+            nc.versions = [emptyVer('')];
+            nc.active = 0;
+          }
+          if (listSheet !== cfg.sheet) {
+            nc.thrs = Object.assign({}, nc.thrs || {});
+            nc.thrs[cfg.sheet] = cfg.thr;
+            nc.structs = Object.assign({}, nc.structs || {});
+            nc.structs[cfg.sheet] = { n1: cfg.n1, n2: cfg.n2, n3: cfg.n3, p1: cfg.p1, p2: cfg.p2, p3: cfg.p3 };
+            const st = presetsFor(listSheet)[0],
+              S = SHEETS[listSheet];
+            nc.sheet = listSheet;
+            nc.thr = nc.thrs[listSheet] || 0.08;
+            nc.n1 = Math.min(st.n1, S.MAX1);
+            nc.n2 = Math.min(st.n2, S.MAX2);
+            nc.n3 = Math.min(st.n3, S.MAX3);
+            nc.p1 = st.p1;
+            nc.p2 = st.p2;
+            nc.p3 = st.p3;
+            nc.p2e = false;
             nc.versions = [emptyVer('')];
             nc.active = 0;
           }
@@ -8246,12 +8329,18 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     });
     if (!fits.length) return { error: firstErr || 'structure' };
     /* ưu tiên loại phiếu có sẵn đúng cấu trúc này (kể cả phiếu đang chọn), nếu không thì giữ phiếu đang chọn */
+    const cur = fits.find(function (f) {
+      return f.sheet === cfg.sheet;
+    });
     const best =
+      cur ||
       fits.find(function (f) {
         return f.exact;
-      }) || fits[0];
-    const warnings = [];
-    if (best.sheet !== cfg.sheet)
+      }) ||
+      fits[0];
+    const warnings = [],
+      mismatch = !cur;
+    if (mismatch)
       warnings.push(
         'Cấu trúc ' +
           best.n1 +
@@ -8259,9 +8348,11 @@ function renderPhoto(sheetImg, cfg, marks, o) {
           best.n2 +
           ' · ' +
           N3 +
-          ' khớp với ' +
+          ' không phù hợp ' +
+          SHEETS[cfg.sheet].name +
+          ' mà đợt này đang chọn, nhưng khớp với ' +
           SHEETS[best.sheet].name +
-          ', app đã chuyển sang loại phiếu này.'
+          '.'
       );
     if (best.multi)
       warnings.push(
@@ -8325,6 +8416,7 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       n2: best.n2,
       n3: N3,
       sheet: best.sheet,
+      mismatch: mismatch,
       warnings: warnings,
       total: P.length
     };
@@ -8434,10 +8526,17 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       h += '<div class="note err"><b>' + esc(qrState.title) + '</b><br>' + esc(qrState.body) + '</div>';
     else if (qrState.kind === 'preview') {
       const r = qrState.res,
-        pr = presetsNow().find(function (p) {
+        pr = presetsFor(r.sheet || cfg.sheet).find(function (p) {
           return p.n1 === r.n1 && p.n2 === r.n2 && p.n3 === r.n3;
         });
       h +=
+        (r.mismatch
+          ? '<div class="note err"><b>⚠ Đáp án không phù hợp phiếu đang chọn của đợt này.</b><br>Đợt đang dùng ' +
+            esc(SHEETS[cfg.sheet].name) +
+            ', còn đáp án này khớp với ' +
+            esc(SHEETS[r.sheet].name) +
+            '. Nếu dùng, đợt sẽ chuyển sang phiếu đó; hãy chắc chắn bài thi in đúng loại phiếu.</div>'
+          : '') +
         '<div class="qrprev"><div><b>Đọc được ' +
         r.total +
         ' mã đề:</b> <span class="mono">' +
@@ -8483,8 +8582,9 @@ function renderPhoto(sheetImg, cfg, marks, o) {
             return '<div class="note">' + esc(w) + '</div>';
           })
           .join('') +
-        '<div class="actions"><button type="button" class="btn primary" id="qrApply">Dùng đáp án ' +
-        'này</button><button type="button" class="btn ghost" id="qrCancel">Bỏ ' +
+        '<div class="actions"><button type="button" class="btn primary" id="qrApply">' +
+        (r.mismatch ? 'Đổi sang ' + esc(SHEETS[r.sheet].name) + ' và dùng đáp án' : 'Dùng đáp án này') +
+        '</button><button type="button" class="btn ghost" id="qrCancel">Bỏ ' +
         'qua</button></div></div>';
     } else if (qrState.kind === 'done') {
       h +=
@@ -8576,8 +8676,10 @@ function renderPhoto(sheetImg, cfg, marks, o) {
       qrState = { kind: 'error', title: m[0], body: m[1] };
     } else {
       qrState = { kind: 'preview', res: r };
-      applyQr();
-      return;
+      if (!r.mismatch) {
+        applyQr();
+        return;
+      }
     }
     renderQr();
   }
@@ -8633,7 +8735,8 @@ function renderPhoto(sheetImg, cfg, marks, o) {
         return fail(m[0], m[1]);
       }
       qrState = { kind: 'preview', res: r };
-      applyQr();
+      if (!r.mismatch) applyQr();
+      else renderQr();
     } catch (e) {
       fail('Không đọc được file này.', 'Thử lưu lại dưới dạng .xlsx hoặc .csv rồi chọn lại.');
     }
@@ -9034,8 +9137,38 @@ function renderPhoto(sheetImg, cfg, marks, o) {
     LV: LV,
     SND: SND
   };
-})();
 
+  /* Giữ thanh tab cố định kích thước khi người dùng phóng to (pinch-zoom hoặc zoom trang) */
+  (function () {
+    const tb = document.querySelector('.tabs'),
+      vv = window.visualViewport;
+    if (!tb) return;
+    const dpr0 = window.devicePixelRatio || 1;
+    function fix() {
+      try {
+        const sc = vv ? vv.scale || 1 : 1,
+          dz = dpr0 / (window.devicePixelRatio || dpr0);
+        tb.style.zoom = Math.abs(dz - 1) > 0.02 && dz > 0 ? String(dz) : '';
+        if (vv && Math.abs(sc - 1) > 0.01) {
+          tb.style.transform = tb.style.width = '';
+          const dy = vv.offsetTop + vv.height - tb.getBoundingClientRect().bottom,
+            dx = vv.offsetLeft;
+          tb.style.transformOrigin = 'left bottom';
+          tb.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + 1 / sc + ')';
+          tb.style.width = sc * 100 + '%';
+        } else {
+          tb.style.transform = tb.style.transformOrigin = tb.style.width = '';
+        }
+      } catch (e) {}
+    }
+    if (vv) {
+      vv.addEventListener('resize', fix);
+      vv.addEventListener('scroll', fix);
+    }
+    window.addEventListener('resize', fix);
+    fix();
+  })();
+})();
 </script>
 
 </body></html>
